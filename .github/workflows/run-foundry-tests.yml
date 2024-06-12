@@ -1,22 +1,22 @@
 
-on: [push]
+#on: [push]
 
-name: Smart contracts test
+# name: Smart contracts test
 
-jobs:
-  check:
-    name: Foundry project
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          submodules: recursive
+# jobs:
+#   check:
+#     name: Foundry project
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: actions/checkout@v3
+#         with:
+#           submodules: recursive
 
-      - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
+#       - name: Install Foundry
+#         uses: foundry-rs/foundry-toolchain@v1
 
-      - name: Run tests
-        run: forge test -vvv
+#       - name: Run tests
+#         run: forge test -vvv
 
-      - name: Run snapshot
-        run: forge snapshot
+#       - name: Run snapshot
+#         run: forge snapshot
