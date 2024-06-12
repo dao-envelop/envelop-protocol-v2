@@ -1,66 +1,27 @@
-## Foundry
+# Envelop Protocol V2
+![GitHub last commit](https://img.shields.io/github/last-commit/dao-envelop/envelop-protocol-v2)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/dao-envelop/envelop-protocol-v2)  
+Protocol for providing true value and utilities to your NFT  
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+## Envelop Protocol V2 smart contracts  
+This version of the protocol is currently being systematically developed. 
 
-Foundry consists of:
+## License
+All code provided with  `SPDX-License-Identifier: MIT`
 
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+## Deployment info  
+This version has many deployments in different chains. Please follow the docs:  
+https://docs.envelop.is/tech/smart-contracts/deployment-addresses  
 
-## Documentation
+## Audit  
+Coming soon
 
-https://book.getfoundry.sh/
+## Dev 
 
-## Usage
+**Foundry**  is main framework for Envelop Protocol V2
 
-### Build
-
+### First build
 ```shell
-$ forge build
-```
-
-### Test
-
-```shell
-$ forge test
-```
-
-### Format
-
-```shell
-$ forge fmt
-```
-
-### Gas Snapshots
-
-```shell
-$ forge snapshot
-```
-
-### Anvil
-
-```shell
-$ anvil
-```
-
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
+git clone git@gitlab.com:envelop/mintnft/mintfactory.git
+git submodule update --init --recursive
 ```
