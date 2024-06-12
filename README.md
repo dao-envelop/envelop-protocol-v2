@@ -22,6 +22,6 @@ Coming soon
 
 ### First build
 ```shell
-git clone git@gitlab.com:envelop/mintnft/mintfactory.git
+git clone  git@github.com:dao-envelop/envelop-protocol-v2.git 
 git submodule update --init --recursive
 ```
