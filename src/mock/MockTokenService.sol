@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 // ENVELOP(NIFTSY) protocol for NFT. 
-pragma solidity 0.8.25;
+pragma solidity 0.8.26;
 
-import "./../TokenService.sol";
-import "./../LibET.sol";
+import "./../utils/TokenService.sol";
+import "./../utils/LibET.sol";
 
 contract MockTokenService is TokenService {
 

@@ -15,7 +15,6 @@ import {ET} from "../src/utils/LibET.sol";
 // ERC1155
 contract TokenService_Test_a_01 is Test {
     uint256 public sendEtherAmount = 1e18;
-    P2POrderManager public p2p;
     MockERC721 public erc721;
     MockERC1155 public erc1155;
     MockERC20 public erc20;
@@ -28,7 +27,6 @@ contract TokenService_Test_a_01 is Test {
 
     receive() external payable virtual {}
     function setUp() public {
-        p2p = new P2POrderManager(_feePercent,_beneficiary);
         erc20 = new MockERC20('USDT', 'USDT');
         erc721 = new MockERC721('Mock ERC721', 'ERC');
         erc1155 = new MockERC1155('https://api.envelop.is/metadata/');
