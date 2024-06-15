@@ -2,7 +2,7 @@
 pragma solidity ^0.8.21;
 
 //import {TokenService} from "../TokenService.sol";
-import "../TokenService.sol";
+import "../utils/TokenService.sol";
 
 contract TestTokenService is TokenService {
 
