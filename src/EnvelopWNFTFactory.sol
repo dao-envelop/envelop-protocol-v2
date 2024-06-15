@@ -7,9 +7,7 @@ import "@openzeppelin/contracts/proxy/Clones.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
 contract EnvelopWNFTFactory {
-    
 
-    event EnvelopV2wNFTCreated();
     function creatWNFT(address _implementation, bytes memory _initCallData) 
         public 
         payable 
