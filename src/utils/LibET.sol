@@ -35,4 +35,34 @@ library ET {
         Price price;
         bool assetApproveExist;
     }
+    // ////////////////////////
+    //  For legacy wNFT support
+    // ////////////////////////
+    struct Fee {
+        bytes1 feeType;
+        uint256 param;
+        address token; 
+    }
+
+    struct Lock {
+        bytes1 lockType;
+        uint256 param; 
+    }
+
+    struct Royalty {
+        address beneficiary;
+        uint16 percent;
+    }
+
+    struct WNFT {
+        AssetItem inAsset;
+        AssetItem[] collateral;
+        address unWrapDestination;
+        Fee[] fees;
+        Lock[] locks;
+        Royalty[] royalties;
+        bytes2 rules;
+
+    }
+
 }
