@@ -20,11 +20,12 @@ import "../utils/LibET.sol";
 
 
 /**
- * @dev Implementation of WNFT that compatible with Envelop V1
+ * @dev Implementation of WNFT that partial compatible with Envelop V1
  */
 contract WNFTLegacy721 is Singleton721 {
     //using Strings for uint256;
     //using Strings for uint160;
+    string public constant INITIAL_SIGN_STR = "initialize()";
     
    
     /// @custom:storage-location erc7201:openzeppelin.storage.ERC721
@@ -86,11 +87,25 @@ contract WNFTLegacy721 is Singleton721 {
         ET.WNFT memory _wnftData
     ) internal onlyInitializing {
         WNFTLegacy721Storage storage $ = _getWNFTLegacy721Storage();
-        //$.wnftData = _wnftData;
-        // $._symbol = symbol_;
-        // $._owner = _creator;
-        // $._tokenURI = _tokenUri;
-        // emit MetadataUpdate(TOKEN_ID);
+        $.wnftData.inAsset = _wnftData.inAsset;
+        $.wnftData.unWrapDestination = _wnftData.unWrapDestination;
+        $.wnftData.rules = _wnftData.rules;
+        if (_wnftData.locks.length > 0) {
+            // TODO Check logs and put to storage
+            for (uint256 i = 0; i < _wnftData.locks.length; ++ i) {
+                _isValidLockRecord(_wnftData.locks[i]);
+                $.wnftData.locks.push(_wnftData.locks[i]);
+            }
+        }
+        if (_wnftData.collateral.length > 0) {
+            // TODO Check collateral Balance
+            // !!!! Dont save collateral info!!!
+             for (uint256 i = 0; i < _wnftData.collateral.length; ++ i) {
+                _isValidCollateralRecord(_wnftData.collateral[i]);
+                $.wnftData.collateral.push(_wnftData.collateral[i]);
+            }
+        }
+        // emit WnFTCreated....
     }
     ////////////////////////////////////////////////////////////////////////
     /**
@@ -102,9 +117,22 @@ contract WNFTLegacy721 is Singleton721 {
     }
 
     function wnftInfo(uint256 tokenId) external view returns (ET.WNFT memory) {
-        //return IWrapper(wrapperMinter).getWrappedToken(address(this), tokenId);
+        tokenId; // suppress solc warn
+        WNFTLegacy721Storage storage $ = _getWNFTLegacy721Storage();
+        return $.wnftData;
     }
 
+    function _isValidLockRecord(ET.Lock memory _lockRec) internal virtual view {
+
+    }
+
+    function _isValidCollateralRecord(ET.AssetItem memory _collateralRecord) 
+        internal 
+        virtual 
+        view 
+    {
+
+    }
     
 }
 
