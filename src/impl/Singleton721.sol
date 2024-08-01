@@ -37,7 +37,7 @@ abstract contract Singleton721 is Initializable, IERC721, IERC721Metadata, IERC7
     // to a traditional interface ID as ERC-4906 only
     // defines events and does not include any external function.
     bytes4 private constant ERC4906_INTERFACE_ID = bytes4(0x49064906);
-    uint256 private constant TOKEN_ID = 1;
+    uint256 public constant TOKEN_ID = 1;
     string private constant DEFAULT_BASE_URI = "https://api.envelop.is/metadata/";
     
     /// @custom:storage-location erc7201:openzeppelin.storage.ERC721
@@ -121,7 +121,7 @@ abstract contract Singleton721 is Initializable, IERC721, IERC721Metadata, IERC7
             interfaceId == type(IERC721).interfaceId ||
             interfaceId == type(IERC721Metadata).interfaceId ||
             interfaceId == type(IERC165).interfaceId ||
-            interfaceId == ERC4906_INTERFACE_ID;
+            interfaceId == ERC4906_INTERFACE_ID ;
     }
 
     /**

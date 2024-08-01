@@ -201,4 +201,26 @@ abstract contract TokenService {
         }
         
     }
+
+    function _getURI(
+        ET.AssetItem memory _assetItem
+    ) internal view virtual returns (string memory _uri){
+        if (_assetItem.asset.assetType == ET.AssetType.NATIVE ||
+            _assetItem.asset.assetType == ET.AssetType.ERC20
+        ) 
+        {
+            _uri = "";
+       
+        } else if (_assetItem.asset.assetType == ET.AssetType.ERC721) {
+            bytes memory _calldata = abi.encodeWithSignature("tokenURI(uint256)", _assetItem.tokenId);
+            bytes memory _returnedData = _assetItem.asset.contractAddress.functionStaticCall(_calldata);
+            _uri = abi.decode(_returnedData, (string));
+        } else if (_assetItem.asset.assetType == ET.AssetType.ERC1155) {
+            bytes memory _calldata = abi.encodeWithSignature("uri(uint256)", _assetItem.tokenId);
+            bytes memory _returnedData = _assetItem.asset.contractAddress.functionStaticCall(_calldata);
+            _uri = abi.decode(_returnedData, (string));
+        } else {
+            revert UnSupportedAsset(_assetItem);
+        }
+    }
 }
