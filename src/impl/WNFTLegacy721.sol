@@ -9,33 +9,16 @@ import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import "./Singleton721.sol";
 import "../utils/LibET.sol";
 import "../utils/TokenService.sol";
-//import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-
-// import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-// import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
-// import {IERC721Metadata} from "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
-// import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
-// import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
-// import {IERC721Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
-// import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
-
 
 /**
  * @dev Implementation of WNFT that partial compatible with Envelop V1
  */
 contract WNFTLegacy721 is Singleton721, TokenService {
-    //using Strings for uint256;
-    //using Strings for uint160;
     string public constant INITIAL_SIGN_STR = "initialize()";
     
    
-    /// @custom:storage-location erc7201:openzeppelin.storage.ERC721
     struct WNFTLegacy721Storage {
-        // Token name
         ET.WNFT wnftData;
-
-        // Token symbol
-
     }
 
     error InsufficientCollateral(ET.AssetItem declare, uint256 fact);
@@ -50,10 +33,16 @@ contract WNFTLegacy721 is Singleton721, TokenService {
         emit EtherTransfer(msg.value);
     }
 
-     modifier ifUnlocked() {
+    modifier ifUnlocked() {
         _checkLocks();
         _;
     }
+
+    modifier onlyWnftOwner() {
+        _wnftOwner();
+        _;
+    }
+
     // keccak256(abi.encode(uint256(keccak256("envelop.storage.WNFTLegacy721")) - 1)) & ~bytes32(uint256(0xff))
     bytes32 private constant WNFTLegacy721StorageLocation = 0xb25b7d902932741f4867febf64c52dbc3980210eefc4a36bf4280ce48f34a100;
 
@@ -79,8 +68,6 @@ contract WNFTLegacy721 is Singleton721, TokenService {
         }
     }
 
-    
-    
     /**
      * @dev Initializes the contract by setting a `name` and a `symbol` to the token collection.
      */
@@ -96,10 +83,6 @@ contract WNFTLegacy721 is Singleton721, TokenService {
     }
 
     function __WNFTLegacy721_init_unchained(
-        // string memory name_, 
-        // string memory symbol_,
-        // address _creator,
-        // string memory _tokenUrl,
         ET.WNFT memory _wnftData
     ) internal onlyInitializing {
         WNFTLegacy721Storage storage $ = _getWNFTLegacy721Storage();
@@ -107,7 +90,7 @@ contract WNFTLegacy721 is Singleton721, TokenService {
         $.wnftData.unWrapDestination = _wnftData.unWrapDestination;
         $.wnftData.rules = _wnftData.rules;
         if (_wnftData.locks.length > 0) {
-            // TODO Check logs and put to storage
+            // TODO Check locks and put to storage
             for (uint256 i = 0; i < _wnftData.locks.length; ++ i) {
                 _isValidLockRecord(_wnftData.locks[i]);
                 $.wnftData.locks.push(_wnftData.locks[i]);
@@ -139,26 +122,51 @@ contract WNFTLegacy721 is Singleton721, TokenService {
 
     function removeCollateral(ET.AssetItem calldata _collateral, address _to )
         public 
-        ifUnlocked() 
+        virtual
+        ifUnlocked()
+        onlyWnftOwner() 
     {
-        // TODO Check for removing InAsset - ask Alex
-        if (ownerOf(TOKEN_ID) == msg.sender) {
-            _transferSafe(_collateral, address(this), _to);
-        }
+        _isAbleForRemove(_collateral);
+        _transferSafe(_collateral, address(this), _to);
         
     }
 
     function removeCollateralBatch(ET.AssetItem[] calldata _collateral, address _to ) 
-        public 
+        public
+        virtual 
         ifUnlocked()
+        onlyWnftOwner()
     {
-        // TODO Check for removing InAsset - ask Alex
-        if (ownerOf(TOKEN_ID) == msg.sender) {
-            for (uint256 i = 0; i < _collateral.length; ++ i) 
-            _transferSafe(_collateral[i], address(this), _to);
-        }
-        
+            for (uint256 i = 0; i < _collateral.length; ++ i) {
+                _isAbleForRemove(_collateral[i]);
+                _transferSafe(_collateral[i], address(this), _to);    
+            } 
     }
+
+    function unWrap(ET.AssetItem[] calldata _collateral) 
+        public
+        virtual
+        ifUnlocked()
+        onlyWnftOwner()
+    {
+        WNFTLegacy721Storage storage $ = _getWNFTLegacy721Storage();
+        // Check No Unwrap rule
+        if (!_checkRule(0x0001, $.wnftData.rules)) {
+            revert WnftRuleViolation(0x0001);
+        }
+       
+        // Reurns original wrapped asset 
+        _transferEmergency($.wnftData.inAsset, address(this), msg.sender);
+       
+       // Returns collatral on demand
+        if (_collateral.length > 0) {
+            for (uint256 i = 0; i < _collateral.length; ++ i) {
+                _transferEmergency(_collateral[i], address(this), msg.sender);    
+            } 
+        }
+        delete $.wnftData;
+    }
+
     /**
      * @dev See {IERC165-supportsInterface}.
      */
@@ -175,6 +183,7 @@ contract WNFTLegacy721 is Singleton721, TokenService {
 
     function tokenURI(uint256 tokenId) public view  override returns (string memory uri_) {
         WNFTLegacy721Storage storage $ = _getWNFTLegacy721Storage();
+        // TODO   check  that still own inAsset
         uri_ = _getURI($.wnftData.inAsset);
         if (bytes(uri_).length == 0) {
             uri_ = super.tokenURI(tokenId);    
@@ -235,6 +244,36 @@ contract WNFTLegacy721 is Singleton721, TokenService {
             revert InsufficientCollateral(_collateralRecord, b);
         }
     }
+
+    function _isAbleForRemove(ET.AssetItem calldata _collateral) 
+        internal
+        virtual
+        view
+    {
+        WNFTLegacy721Storage storage $ = _getWNFTLegacy721Storage();
+        ET.AssetItem memory inA = $.wnftData.inAsset;
+        uint256 currBalance;
+        if (_collateral.asset.assetType == ET.AssetType.NATIVE ||
+            _collateral.asset.assetType == ET.AssetType.ERC20  ||
+            _collateral.asset.assetType == ET.AssetType.ERC1155
+        ) {
+            currBalance = _balanceOf(_collateral ,address(this));
+            require(currBalance - _collateral.amount >= inA.amount,
+                "Not sufficient balance of original wrapped asset"); 
+        }  else if (_collateral.asset.assetType == ET.AssetType.ERC721) {
+            require(
+                _collateral.asset.contractAddress != inA.asset.contractAddress &&
+                _collateral.tokenId != inA.tokenId,
+                "Can not remove original wrapped asset"
+            );
+
+        }
+
+    }
     
+    function  _wnftOwner() internal view virtual {
+        require(ownerOf(TOKEN_ID) == msg.sender, "Only for wNFT owner");
+
+    }
 }
 
