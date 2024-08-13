@@ -272,7 +272,12 @@ contract WNFTLegacy721 is Singleton721, TokenService {
     }
     
     function  _wnftOwner() internal view virtual {
-        require(ownerOf(TOKEN_ID) == msg.sender, "Only for wNFT owner");
+        address currOwner = ownerOf(TOKEN_ID);
+        require(
+            currOwner == msg.sender ||
+            isApprovedForAll(currOwner, msg.sender),
+            "Only for wNFT owner"
+        );
 
     }
 }
