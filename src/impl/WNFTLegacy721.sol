@@ -127,6 +127,8 @@ contract WNFTLegacy721 is Singleton721, TokenService {
         onlyWnftOwner() 
     {
         _isAbleForRemove(_collateral);
+
+        // transfer method from TokenService
         _transferSafe(_collateral, address(this), _to);
         
     }
@@ -139,6 +141,7 @@ contract WNFTLegacy721 is Singleton721, TokenService {
     {
             for (uint256 i = 0; i < _collateral.length; ++ i) {
                 _isAbleForRemove(_collateral[i]);
+                // transfer method from TokenService
                 _transferSafe(_collateral[i], address(this), _to);    
             } 
     }
@@ -167,6 +170,48 @@ contract WNFTLegacy721 is Singleton721, TokenService {
         delete $.wnftData;
     }
 
+     /**
+     * @dev Use this method for interact any dApps onchain
+     * @param _target address of dApp smart contract
+     * @param _value amount of native token in tx(msg.value)
+     * @param _data ABI encoded transaction payload
+     */
+    function executeEncodedTx(
+        address _target,
+        uint256 _value,
+        bytes memory _data
+    ) 
+        external 
+        ifUnlocked()
+        onlyWnftOwner()
+        returns (bytes memory r) 
+    {
+        r = Address.functionCallWithValue(_target, _data, _value);
+    }
+
+    /**
+     * @dev Use this method for interact any dApps onchain, executing as one batch
+     * @param _targetArray addressed of dApp smart contract
+     * @param _valueArray amount of native token in every tx(msg.value)
+     * @param _dataArray ABI encoded transaction payloads
+     */
+    function executeEncodedTxBatch(
+        address[] calldata _targetArray,
+        uint256[] calldata _valueArray,
+        bytes[] memory _dataArray
+    ) 
+        external 
+        ifUnlocked()
+        onlyWnftOwner() 
+        returns (bytes[] memory r) 
+    {
+    
+        r = new bytes[](_dataArray.length);
+        for (uint256 i = 0; i < _dataArray.length; ++ i){
+            r[i] = Address.functionCallWithValue(_targetArray[i], _dataArray[i], _valueArray[i]);
+        }
+    }
+
     /**
      * @dev See {IERC165-supportsInterface}.
      */
@@ -183,7 +228,8 @@ contract WNFTLegacy721 is Singleton721, TokenService {
 
     function tokenURI(uint256 tokenId) public view  override returns (string memory uri_) {
         WNFTLegacy721Storage storage $ = _getWNFTLegacy721Storage();
-        // TODO   check  that still own inAsset
+        // TODO   check  that still own inAsset ???
+        // method from TokenService
         uri_ = _getURI($.wnftData.inAsset);
         if (bytes(uri_).length == 0) {
             uri_ = super.tokenURI(tokenId);    
