@@ -14,7 +14,19 @@ import "../utils/TokenService.sol";
  * @dev Implementation of WNFT that partial compatible with Envelop V1
  */
 contract WNFTLegacy721 is Singleton721, TokenService {
-    string public constant INITIAL_SIGN_STR = "initialize()";
+    string public constant INITIAL_SIGN_STR = 
+        "initialize(address,string,string,string,"
+          "("
+            "((uint8,address),uint256,uint256),"
+            "((uint8,address),uint256,uint256)[],"
+            "address,"
+            "(bytes1,uint256,address)[],"
+            "(bytes1,uint256)[],"
+            "(address,uint16)[],"
+            "bytes2"
+          ")"
+        ")";
+    //string public constant INITIAL_SIGN_STR = "initialize(address,string,string,string)";
     
    
     struct WNFTLegacy721Storage {
@@ -51,7 +63,8 @@ contract WNFTLegacy721 is Singleton721, TokenService {
         string memory name_,
         string memory symbol_,
         string memory _tokenUrl,
-        ET.WNFT calldata _wnftData
+        ET.WNFT memory _wnftData
+        //ET.AssetItem memory _wnftData
     ) public initializer
     {
         
@@ -78,7 +91,7 @@ contract WNFTLegacy721 is Singleton721, TokenService {
         string memory _tokenUrl,
         ET.WNFT memory _wnftData
     ) internal onlyInitializing {
-        __ERC721_init(name_, symbol_, _creator, _tokenUrl);
+        __Singleton721_init(name_, symbol_, _creator, _tokenUrl);
         __WNFTLegacy721_init_unchained(_wnftData);
     }
 
