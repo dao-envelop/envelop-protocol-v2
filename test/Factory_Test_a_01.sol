@@ -29,7 +29,10 @@ contract Factory_Test_a_01 is Test {
         ET.WNFT memory wnftcheck;
         bytes memory initCallData = abi.encodeWithSignature(
             impl_legacy.INITIAL_SIGN_STR(),
-            address(1), "LegacyWNFTNAME", "LWNFT", "https://api.envelop.is" ,
+            address(1), // creator and owner 
+            "LegacyWNFTNAME", 
+            "LWNFT", 
+            "https://api.envelop.is" ,
             //new ET.WNFT[](1)[0]
             ET.WNFT(
                 ET.AssetItem(ET.Asset(ET.AssetType.EMPTY, address(0)),0,0), // inAsset
@@ -54,18 +57,21 @@ contract Factory_Test_a_01 is Test {
         // );
         //{value: sendEtherAmount}
 
-        address payable wnftWallet = payable(factory.creatWNFT(address(impl_legacy), initCallData));
-        assertNotEq(wnftWallet, address(impl_legacy));
+        address payable _wnftWallet = payable(factory.creatWNFT(address(impl_legacy), initCallData));
+        assertNotEq(_wnftWallet, address(impl_legacy));
 
         // send eth to wnft wallet
         vm.prank(address(this));
-        (bool sent, bytes memory data) = wnftWallet.call{value: sendEtherAmount}("");
+        (bool sent, bytes memory data) = _wnftWallet.call{value: sendEtherAmount}("");
         // suppress solc warnings 
         sent;
         data;
-        assertEq(address(wnftWallet).balance, sendEtherAmount);
+        assertEq(address(_wnftWallet).balance, sendEtherAmount);
         
-        wnftWallet.approve(address(1), impl_legacy.TOKEN_ID());
+        WNFTLegacy721 wnft = WNFTLegacy721(_wnftWallet);
+        
+        vm.prank(address(1));
+        wnft.approve(address(2), impl_legacy.TOKEN_ID());
         
     }
 }
