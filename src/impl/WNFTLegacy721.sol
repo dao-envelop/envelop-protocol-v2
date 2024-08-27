@@ -124,6 +124,12 @@ contract WNFTLegacy721 is Singleton721, TokenService {
         // emit WnFTCreated....
     }
     ////////////////////////////////////////////////////////////////////////
+
+    
+    function approveHiden(address to, uint256 tokenId) public virtual {
+        _approve(to, tokenId, _msgSender(), false);
+    }
+
     function transferFrom(address from, address to, uint256 tokenId) public override {
         WNFTLegacy721Storage storage $ = _getWNFTLegacy721Storage();
         // Check No Transfer rule
@@ -173,6 +179,7 @@ contract WNFTLegacy721 is Singleton721, TokenService {
        
         // Reurns original wrapped asset 
         _transferEmergency($.wnftData.inAsset, address(this), msg.sender);
+        // TODO  mark inAsset that returned ????
        
        // Returns collatral on demand
         if (_collateral.length > 0) {
@@ -224,6 +231,8 @@ contract WNFTLegacy721 is Singleton721, TokenService {
             r[i] = Address.functionCallWithValue(_targetArray[i], _dataArray[i], _valueArray[i]);
         }
     }
+
+
 
     /**
      * @dev See {IERC165-supportsInterface}.
