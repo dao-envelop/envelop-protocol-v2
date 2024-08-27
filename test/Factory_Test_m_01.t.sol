@@ -37,7 +37,7 @@ contract Factory_Test_m_01 is Test {
         ET.WNFT memory wnftcheck;
         bytes memory initCallData = abi.encodeWithSignature(
             impl_legacy.INITIAL_SIGN_STR(),
-            address(1), "LegacyWNFTNAME", "LWNFT", "https://api.envelop.is" ,
+            address(this), "LegacyWNFTNAME", "LWNFT", "https://api.envelop.is" ,
             //new ET.WNFT[](1)[0]
             ET.WNFT(
                 ET.AssetItem(ET.Asset(ET.AssetType.EMPTY, address(0)),0,0), // inAsset
@@ -61,8 +61,14 @@ contract Factory_Test_m_01 is Test {
         //     (address, string, string, string)
         // );
 
-        address created = factory.creatWNFT(address(impl_legacy), initCallData);
+        address payable  created = payable(factory.creatWNFT(address(impl_legacy), initCallData));
         assertNotEq(created, address(impl_legacy));
+
+        WNFTLegacy721 wnft = WNFTLegacy721(created);
+        wnft.ownerOf(1);
+        //vm.prank(address(1));
+        //wnft.transferFrom(address(this), address(1), impl_legacy.TOKEN_ID());
+        wnft.approve(address(2), impl_legacy.TOKEN_ID());
         
     }
 }

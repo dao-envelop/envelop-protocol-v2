@@ -32,6 +32,10 @@ contract GetStorageSlot is Script {
         console2.log("openzeppelin.storage.ERC721 \n %s \n", vm.toString(
             keccak256(abi.encode(uint256(keccak256("openzeppelin.storage.ERC721")) - 1)) & ~bytes32(uint256(0xff))
         ));
+        
+        console2.log("openzeppelin.storage.Singleton721 \n %s \n", vm.toString(
+            keccak256(abi.encode(uint256(keccak256("openzeppelin.storage.Singleton721")) - 1)) & ~bytes32(uint256(0xff))
+        ));
 
     }
     

@@ -70,8 +70,10 @@ contract Factory_Test_a_01 is Test {
         
         WNFTLegacy721 wnft = WNFTLegacy721(_wnftWallet);
         
+        wnft.ownerOf(1);
         vm.prank(address(1));
-        wnft.approve(address(2), impl_legacy.TOKEN_ID());
+        wnft.transferFrom(address(1), address(this), impl_legacy.TOKEN_ID());
+        //wnft.approve(address(2), impl_legacy.TOKEN_ID());
         
     }
 }

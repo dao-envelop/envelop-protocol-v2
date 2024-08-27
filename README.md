@@ -17,6 +17,11 @@ https://docs.envelop.is/tech/smart-contracts/deployment-addresses
 Coming soon
 
 ## Dev 
+```shell
+$ # Script for geting hash for staroge addresses
+$ forge script script/GetStorageSlot.s.sol:GetStorageSlot
+```
+
 
 **Foundry**  is main framework for Envelop Protocol V2
 

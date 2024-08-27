@@ -4,7 +4,7 @@
 
 pragma solidity ^0.8.20;
 
-import {ERC721Upgradeable} from "@Uopenzeppelin/contracts/token/ERC721/ERC721Upgradeable.sol";
+import "@Uopenzeppelin/contracts/token/ERC721/ERC721Upgradeable.sol";
 
 /// @title EIP-721 Metadata Update Extension
 interface IERC4906 {
@@ -24,17 +24,32 @@ interface IERC4906 {
  * @dev Implementation of Envelop V2 Singleton NFT
  */
 abstract contract Singleton721 is ERC721Upgradeable, IERC4906 {
-    //using Strings for uint256;
-    //using Strings for uint160;
+    using Strings for uint256;
+    using Strings for uint160;
     
     // Interface ID as defined in ERC-4906. This does not correspond 
     // to a traditional interface ID as ERC-4906 only
     // defines events and does not include any external function.
     bytes4 private constant ERC4906_INTERFACE_ID = bytes4(0x49064906);
     uint256 public constant TOKEN_ID = 1;
-    string private constant DEFAULT_BASE_URI = "https://api.envelop.is/metadata/";
+    string private constant DEFAULT_BASE_URI = "https://api.envelop.is/v2meta/";
     
+      //string public constant INITIAL_SIGN_STR = "initialize(address,string,string,string)";
     
+   
+    struct Singleton721Storage {
+        string customBaseURL;
+    }
+
+    // keccak256(abi.encode(uint256(keccak256("envelop.storage.Singleton721")) - 1)) & ~bytes32(uint256(0xff))
+    bytes32 private constant Singleton721StorageLocation = 0xbdcdd84fd67773ac64bbe05336a88ca03e25175d9b4a6f280761928862a7ed00;
+
+    function _getSingleton721Storage() private pure returns (Singleton721Storage storage $) {
+        assembly {
+            $.slot := Singleton721StorageLocation
+        }
+    }
+
     
     /**
      * @dev Initializes the contract by setting a `name` and a `symbol` to the token collection.
@@ -45,17 +60,7 @@ abstract contract Singleton721 is ERC721Upgradeable, IERC4906 {
         address _creator,
         string memory _tokenUrl
     ) internal onlyInitializing {
-        // if (bytes(_tokenUrl).length == 0) {
-        //     _tokenUrl = string(
-        //     abi.encodePacked(
-        //         DEFAULT_BASE_URI,
-        //         block.chainid.toString(),
-        //         "/",
-        //         uint160(address(this)).toHexString(),
-        //             "/"
-        //         )
-        //     );
-        // }
+        
         __ERC721_init_unchained(name_, symbol_);
         __Singleton721_init_unchained( _creator, _tokenUrl);
     }
@@ -65,7 +70,46 @@ abstract contract Singleton721 is ERC721Upgradeable, IERC4906 {
         string memory _tokenUrl
     ) internal onlyInitializing {
         _mint(_creator,TOKEN_ID);
+        if (bytes(_tokenUrl).length == 0) {
+             Singleton721Storage storage $ = _getSingleton721Storage();
+            $.customBaseURL = _tokenUrl;
+        }
         emit MetadataUpdate(TOKEN_ID);
+    }
+
+    /**
+     * @dev Base URI for computing {tokenURI}. If set, the resulting URI for each
+     * token will be the concatenation of the `baseURI` and the `tokenId`. Empty
+     * by default, can be overridden in child contracts.
+     */
+    function _baseURI() internal view override virtual returns (string memory) {
+        Singleton721Storage storage $ = _getSingleton721Storage();
+        if (bytes($.customBaseURL).length == 0) {
+            return string(
+                abi.encodePacked(
+                    DEFAULT_BASE_URI,
+                    block.chainid.toString(),
+                    "/",
+                    uint160(address(this)).toHexString(),
+                    "/"
+                )
+            );
+
+        } else {
+            return string(
+                abi.encodePacked(
+                    $.customBaseURL,
+                    block.chainid.toString(),
+                    "/",
+                    uint160(address(this)).toHexString(),
+                    "/"
+                )
+            );
+
+
+        }
+
+
     }
 
     /**
