@@ -241,12 +241,22 @@ contract WNFTLegacy721 is Singleton721, TokenService {
 
     function tokenURI(uint256 tokenId) public view  override returns (string memory uri_) {
         WNFTLegacy721Storage storage $ = _getWNFTLegacy721Storage();
-        // TODO   check  that still own inAsset ???
-        // method from TokenService
-        uri_ = _getURI($.wnftData.inAsset);
-        if (bytes(uri_).length == 0) {
-            uri_ = super.tokenURI(tokenId);    
+        uri_ = super.tokenURI(tokenId);
+
+        // V2 wnft RULE for override inAsset URL
+        if (_checkRule(0x0100, $.wnftData.rules)) {    
+            return uri_;
+        } 
+        if ($.wnftData.inAsset.asset.assetType == ET.AssetType.ERC721 
+            || $.wnftData.inAsset.asset.assetType == ET.AssetType.ERC721
+            )
+        {
+            if (_ownerOf($.wnftData.inAsset) == address(this)) {
+                // method from TokenService
+                uri_ = _getURI($.wnftData.inAsset);
+            }
         }
+        
     }
 
     // 0x00 - TimeLock
@@ -279,8 +289,8 @@ contract WNFTLegacy721 is Singleton721, TokenService {
     //  |    |    |    |    |    |   |   |   |   +-reserved_core  
     //  |    |    |    |    |    |   |   |   +-reserved_core
     //  |    |    |    |    |    |   |   |
-    //  |    |    |    |    |    |   |   |
-    //  +----+----+----+----+----+---+---+
+    //  |    |    |    |    |    |   |   + - V2. always wnft URL|
+    //  +----+----+----+----+----+---+ 
     //      for use in extendings
     /**
      * @dev Use for check rules above.
