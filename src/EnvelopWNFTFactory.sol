@@ -21,5 +21,26 @@ contract EnvelopWNFTFactory {
     	    Address.functionCallWithValue(wnft, _initCallData, msg.value);
         }
     }
+
+    function creatWNFT(address _implementation, bytes memory _initCallData, bytes2 _salt) 
+        public 
+        payable 
+        returns(address wnft) 
+    {
+        // TODO Checks of implementation, caller and calldata(?)
+        wnft = Clones.cloneDeterministic(_implementation, _salt);
+
+        // Initialize wNFT
+        if (_initCallData.length > 0) {
+            Address.functionCallWithValue(wnft, _initCallData, msg.value);
+        }
+    }
+
+    function predictDeterministicAddress(
+        address implementation,
+        bytes32 salt
+    ) public view returns (address) {
+        return predictDeterministicAddress(implementation, saft);
+    }
 	
 }
