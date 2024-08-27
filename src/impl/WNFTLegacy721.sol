@@ -51,7 +51,7 @@ contract WNFTLegacy721 is Singleton721, TokenService {
     }
 
     modifier onlyWnftOwner() {
-        _wnftOwner();
+        _wnftOwnerOrApproved(msg.sender);
         _;
     }
 
@@ -340,11 +340,12 @@ contract WNFTLegacy721 is Singleton721, TokenService {
 
     }
     
-    function  _wnftOwner() internal view virtual {
+    function  _wnftOwnerOrApproved(address _sender) internal view virtual {
         address currOwner = ownerOf(TOKEN_ID);
         require(
-            currOwner == msg.sender ||
-            isApprovedForAll(currOwner, msg.sender),
+            currOwner == _sender ||
+            isApprovedForAll(currOwner, _sender) ||
+            getApproved(TOKEN_ID) == _sender,
             "Only for wNFT owner"
         );
 
