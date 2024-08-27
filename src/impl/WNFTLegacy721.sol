@@ -145,7 +145,7 @@ contract WNFTLegacy721 is Singleton721, TokenService {
         ifUnlocked()
         onlyWnftOwner() 
     {
-        _isAbleForRemove(_collateral);
+        _isAbleForRemove(_collateral, msg.sender);
 
         // transfer method from TokenService
         _transferSafe(_collateral, address(this), _to);
@@ -159,7 +159,7 @@ contract WNFTLegacy721 is Singleton721, TokenService {
         onlyWnftOwner()
     {
             for (uint256 i = 0; i < _collateral.length; ++ i) {
-                _isAbleForRemove(_collateral[i]);
+                _isAbleForRemove(_collateral[i], msg.sender);
                 // transfer method from TokenService
                 _transferSafe(_collateral[i], address(this), _to);    
             } 
@@ -231,6 +231,7 @@ contract WNFTLegacy721 is Singleton721, TokenService {
             r[i] = Address.functionCallWithValue(_targetArray[i], _dataArray[i], _valueArray[i]);
         }
     }
+
 
 
 
@@ -323,11 +324,12 @@ contract WNFTLegacy721 is Singleton721, TokenService {
         }
     }
 
-    function _isAbleForRemove(ET.AssetItem calldata _collateral) 
+    function _isAbleForRemove(ET.AssetItem calldata _collateral, address _sender) 
         internal
         virtual
         view
     {
+        _sender; //reserved for other implementations
         WNFTLegacy721Storage storage $ = _getWNFTLegacy721Storage();
         ET.AssetItem memory inA = $.wnftData.inAsset;
         uint256 currBalance;
@@ -344,9 +346,7 @@ contract WNFTLegacy721 is Singleton721, TokenService {
                 _collateral.tokenId != inA.tokenId,
                 "Can not remove original wrapped asset"
             );
-
         }
-
     }
     
     function  _wnftOwnerOrApproved(address _sender) internal view virtual {
