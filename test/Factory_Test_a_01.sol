@@ -29,7 +29,7 @@ contract Factory_Test_a_01 is Test {
         ET.WNFT memory wnftcheck;
         bytes memory initCallData = abi.encodeWithSignature(
             impl_legacy.INITIAL_SIGN_STR(),
-            address(1), // creator and owner 
+            address(this), // creator and owner 
             "LegacyWNFTNAME", 
             "LWNFT", 
             "https://api.envelop.is" ,
@@ -70,10 +70,15 @@ contract Factory_Test_a_01 is Test {
         
         WNFTLegacy721 wnft = WNFTLegacy721(_wnftWallet);
         
-        wnft.ownerOf(1);
-        vm.prank(address(1));
-        wnft.transferFrom(address(1), address(this), impl_legacy.TOKEN_ID());
+        vm.prank(address(this));
+        //console2.log('owner = ', wnft.ownerOf(impl_legacy.TOKEN_ID()));
         //wnft.approve(address(2), impl_legacy.TOKEN_ID());
-        
+        wnft.setApprovalForAll(address(2), true);
+
+        vm.prank(address(2));
+        ET.AssetItem memory collateral = ET.AssetItem(ET.Asset(ET.AssetType.NATIVE, address(0)),0,sendEtherAmount);
+        wnft.removeCollateral(collateral, address(2));
+        assertEq(address(2).balance, sendEtherAmount);
+        assertEq(address(_wnftWallet).balance, 0);
     }
 }

@@ -94,7 +94,6 @@ abstract contract Singleton721 is ERC721Upgradeable, IERC4906 {
                     "/"
                 )
             );
-
         } else {
             return string(
                 abi.encodePacked(
@@ -105,8 +104,6 @@ abstract contract Singleton721 is ERC721Upgradeable, IERC4906 {
                     "/"
                 )
             );
-
-
         }
 
 
