@@ -5,42 +5,65 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-contract EnvelopWNFTFactory {
+contract EnvelopWNFTFactory is  Ownable{
     
+    mapping(address wrapper => bool isTrusted) public trustedWrappers;
+
+    event EnvelopV2Deployment(address indexed proxy, address indexed implementation);
+
+    constructor ()
+        Ownable(msg.sender)
+    {
+
+    }
+
+    modifier onlyTrusted() { 
+        require (trustedWrappers[msg.sender], "Only for Envelop Authorized"); 
+        _; 
+    }
+    
+
     function creatWNFT(address _implementation, bytes memory _initCallData) 
         public 
         payable 
+        onlyTrusted
         returns(address wnft) 
     {
-    	// TODO Checks of implementation, caller and calldata(?)
     	wnft = Clones.clone(_implementation);
 
     	// Initialize wNFT
     	if (_initCallData.length > 0) {
     	    Address.functionCallWithValue(wnft, _initCallData, msg.value);
         }
+        emit EnvelopV2Deployment(wnft, _implementation);
     }
 
     function creatWNFT(address _implementation, bytes memory _initCallData, bytes2 _salt) 
         public 
         payable 
+        onlyTrusted
         returns(address wnft) 
     {
-        // TODO Checks of implementation, caller and calldata(?)
         wnft = Clones.cloneDeterministic(_implementation, _salt);
 
         // Initialize wNFT
         if (_initCallData.length > 0) {
             Address.functionCallWithValue(wnft, _initCallData, msg.value);
         }
+        emit EnvelopV2Deployment(wnft, _implementation);
     }
 
     function predictDeterministicAddress(
         address implementation,
         bytes32 salt
     ) public view returns (address) {
-        return predictDeterministicAddress(implementation, saft);
+        return predictDeterministicAddress(implementation, salt);
+    }
+
+    function setWrapperStatus(address _wrapper, bool _status) external onlyOwner {
+        trustedWrappers[_wrapper] = _status;
     }
 	
 }
