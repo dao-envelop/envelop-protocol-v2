@@ -30,6 +30,7 @@ contract Factory_Test_a_02 is Test {
         erc20 = new MockERC20('Mock ERC20', 'ERC20');
         factory = new EnvelopWNFTFactory();
         impl_legacy = new WNFTLegacy721();
+        factory.setWrapperStatus(address(this), true); // set wrapper
     }
     
     function test_create_legacy() public {

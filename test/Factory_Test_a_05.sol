@@ -12,8 +12,8 @@ import "../src/impl/WNFTLegacy721.sol";
 //import "../src/impl/Singleton721.sol";
 //import {ET} from "../src/utils/LibET.sol";
 
-// transfer wnft to other address, old owner tries to remove collateral - wait revert
-contract Factory_Test_a_03 is Test {
+// call executeEncodedTx
+contract Factory_Test_a_05 is Test {
     
     event Log(string message);
 
@@ -34,6 +34,8 @@ contract Factory_Test_a_03 is Test {
     }
     
     function test_create_legacy() public {
+        ET.Lock[] memory locks = new ET.Lock[](1);
+        locks[0] = ET.Lock(0x00, block.timestamp + 10000);
         bytes memory initCallData = abi.encodeWithSignature(
             impl_legacy.INITIAL_SIGN_STR(),
             address(this), // creator and owner 
@@ -46,27 +48,33 @@ contract Factory_Test_a_03 is Test {
                 new ET.AssetItem[](0),   // collateral
                 address(0), //unWrapDestination 
                 new ET.Fee[](0), // fees
-                new ET.Lock[](0), // locks
+                locks, // locks
                 new ET.Royalty[](0), // royalties
                 0xffff   //bytes2
             ) 
-        );  
+        );    
 
         address payable _wnftWallet = payable(factory.creatWNFT(address(impl_legacy), initCallData));
         assertNotEq(_wnftWallet, address(impl_legacy));
 
         // send erc20 to wnft wallet
         erc20.transfer(_wnftWallet, sendERC20Amount);
-        assertEq(erc20.balanceOf(address(_wnftWallet)), sendERC20Amount);
         
         WNFTLegacy721 wnft = WNFTLegacy721(_wnftWallet);
         
-        wnft.transferFrom(address(this), address(2), impl_legacy.TOKEN_ID());
-        assertEq(wnft.ownerOf(impl_legacy.TOKEN_ID()), address(2));
+        bytes memory _data = abi.encodeWithSignature(
+            "transfer(address,uint256)",
+            address(11), sendERC20Amount / 2
+        );
 
-        // try to withdraw erc20 by old owner - revert
-        ET.AssetItem memory collateral = ET.AssetItem(ET.Asset(ET.AssetType.ERC20, address(erc20)),0,sendERC20Amount / 2);
-        vm.expectRevert('Only for wNFT owner');
-        wnft.removeCollateral(collateral, address(2));
+        // now time lock
+        vm.expectRevert('TimeLock error');
+        wnft.executeEncodedTx(address(erc20), 0, _data);
+        
+        // time lock has finished
+        vm.warp(block.timestamp + 10001);
+        wnft.executeEncodedTx(address(erc20), 0, _data);
+        assertEq(erc20.balanceOf(address(11)), sendERC20Amount / 2);
+        assertEq(erc20.balanceOf(address(_wnftWallet)), sendERC20Amount / 2);
     }
 }
