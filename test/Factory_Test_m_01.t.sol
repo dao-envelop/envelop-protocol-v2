@@ -34,7 +34,7 @@ contract Factory_Test_m_01 is Test {
     }
 
     function test_create_legacy() public {
-        ET.WNFT memory wnftcheck;
+        //ET.WNFT memory wnftcheck;
         bytes memory initCallData = abi.encodeWithSignature(
             impl_legacy.INITIAL_SIGN_STR(),
             address(this), "LegacyWNFTNAME", "LWNFT", "https://api.envelop.is" ,
