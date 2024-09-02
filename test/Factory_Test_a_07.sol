@@ -12,8 +12,8 @@ import "../src/impl/WNFTLegacy721.sol";
 //import "../src/impl/Singleton721.sol";
 //import {ET} from "../src/utils/LibET.sol";
 
-// call executeEncodedTx
-contract Factory_Test_a_05 is Test {
+// make approve
+contract Factory_Test_a_07 is Test {
     
     event Log(string message);
 
@@ -62,23 +62,12 @@ contract Factory_Test_a_05 is Test {
         
         WNFTLegacy721 wnft = WNFTLegacy721(_wnftWallet);
         
-        bytes memory _data = abi.encodeWithSignature(
-            "transfer(address,uint256)",
-            address(11), sendERC20Amount / 2
-        );
+        /*wnft.approveHiden(address(1), impl_legacy.TOKEN_ID());*/
+        // assertEq() проверить тут сам апрув - дан ли
 
-        // now time lock
-        vm.expectRevert('TimeLock error');
-        wnft.executeEncodedTx(address(erc20), 0, _data);
-        
-        // time lock has finished
-        vm.warp(block.timestamp + 10001);
-        vm.prank(address(1));
-        vm.expectRevert('Only for wNFT owner');
-        wnft.executeEncodedTx(address(erc20), 0, _data);
-
-        wnft.executeEncodedTx(address(erc20), 0, _data);
-        assertEq(erc20.balanceOf(address(11)), sendERC20Amount / 2);
-        assertEq(erc20.balanceOf(address(_wnftWallet)), sendERC20Amount / 2);
+        vm.prank(address(2));
+        wnft.approveHiden(address(10), impl_legacy.TOKEN_ID());
+        // проверить тут тоже апрув - он кому дан по итогу
+        console2.log(wnft.getApproved(impl_legacy.TOKEN_ID()));
     }
 }

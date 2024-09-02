@@ -12,8 +12,8 @@ import "../src/impl/WNFTLegacy721.sol";
 //import "../src/impl/Singleton721.sol";
 //import {ET} from "../src/utils/LibET.sol";
 
-// call executeEncodedTx
-contract Factory_Test_a_05 is Test {
+// call executeEncodedTxBatch
+contract Factory_Test_a_06 is Test {
     
     event Log(string message);
 
@@ -67,18 +67,30 @@ contract Factory_Test_a_05 is Test {
             address(11), sendERC20Amount / 2
         );
 
+        address[] memory targets = new address[](2);
+        targets[0] = address(erc20);
+        targets[1] = address(erc20);
+
+        uint256[] memory values = new uint256[](2);
+        values[0] = 0;
+        values[1] = 0;
+
+        bytes[] memory datas = new bytes[](2);
+        datas[0] = _data;
+        datas[1] = _data;
+
         // now time lock
         vm.expectRevert('TimeLock error');
-        wnft.executeEncodedTx(address(erc20), 0, _data);
+        wnft.executeEncodedTxBatch(targets, values, datas);
         
         // time lock has finished
         vm.warp(block.timestamp + 10001);
         vm.prank(address(1));
         vm.expectRevert('Only for wNFT owner');
-        wnft.executeEncodedTx(address(erc20), 0, _data);
+        wnft.executeEncodedTxBatch(targets, values, datas);
 
-        wnft.executeEncodedTx(address(erc20), 0, _data);
-        assertEq(erc20.balanceOf(address(11)), sendERC20Amount / 2);
-        assertEq(erc20.balanceOf(address(_wnftWallet)), sendERC20Amount / 2);
+        wnft.executeEncodedTxBatch(targets, values, datas);
+        assertEq(erc20.balanceOf(address(11)), sendERC20Amount);
+        assertEq(erc20.balanceOf(address(_wnftWallet)), 0);
     }
 }

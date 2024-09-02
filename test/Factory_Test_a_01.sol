@@ -61,7 +61,6 @@ contract Factory_Test_a_01 is Test {
         
         WNFTLegacy721 wnft = WNFTLegacy721(_wnftWallet);
         
-        vm.prank(address(this));
         wnft.setApprovalForAll(address(2), true);
 
         vm.prank(address(2));
