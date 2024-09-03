@@ -9,11 +9,12 @@ import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import "./Singleton721.sol";
 import "../utils/LibET.sol";
 import "../utils/TokenService.sol";
+import "../interfaces/IEnvelopV2wNFT.sol";
 
 /**
  * @dev Implementation of WNFT that partial compatible with Envelop V1
  */
-contract WNFTLegacy721 is Singleton721, TokenService {
+contract WNFTLegacy721 is Singleton721, TokenService, IEnvelopV2wNFT {
     string public constant INITIAL_SIGN_STR = 
         "initialize(address,string,string,string,"
           "("
@@ -26,6 +27,7 @@ contract WNFTLegacy721 is Singleton721, TokenService {
             "bytes2"
           ")"
         ")";
+    uint256 public constant ORACLE_TYPE = 2001;
     //string public constant INITIAL_SIGN_STR = "initialize(address,string,string,string)";
     
    
@@ -36,13 +38,26 @@ contract WNFTLegacy721 is Singleton721, TokenService {
     error InsufficientCollateral(ET.AssetItem declare, uint256 fact);
     error WnftRuleViolation(bytes2 rule);
 
-    event EtherTransfer(uint256 value);
+    event EtherTransfer(address sender, uint256 value);
+    
+    // We Use wnft Create event from V1 for seamless integration
+    // with Envelop Oracle grabbers. Because this wNFT have same 
+    // properties with V1 wNFT
+    event WrappedV1(
+        address indexed inAssetAddress,
+        address indexed outAssetAddress, 
+        uint256 indexed inAssetTokenId, 
+        uint256 outTokenId,
+        address wnftFirstOwner,
+        uint256 nativeCollateralAmount,
+        bytes2  rules
+    );
 
      /**
      * @dev The contract should be able to receive Eth.
      */
     receive() external payable virtual {
-        emit EtherTransfer(msg.value);
+        emit EtherTransfer(msg.sender, msg.value);
     }
 
     modifier ifUnlocked() {
@@ -58,6 +73,10 @@ contract WNFTLegacy721 is Singleton721, TokenService {
     // keccak256(abi.encode(uint256(keccak256("envelop.storage.WNFTLegacy721")) - 1)) & ~bytes32(uint256(0xff))
     bytes32 private constant WNFTLegacy721StorageLocation = 0xb25b7d902932741f4867febf64c52dbc3980210eefc4a36bf4280ce48f34a100;
 
+    constructor() {
+      _disableInitializers();
+      emit EnvelopV2OracleType(ORACLE_TYPE, this.name());
+    }
     function initialize(
         address _creator,
         string memory name_,
@@ -92,11 +111,12 @@ contract WNFTLegacy721 is Singleton721, TokenService {
         ET.WNFT memory _wnftData
     ) internal onlyInitializing {
         __Singleton721_init(name_, symbol_, _creator, _tokenUrl);
-        __WNFTLegacy721_init_unchained(_wnftData);
+        __WNFTLegacy721_init_unchained(_wnftData, _creator);
     }
 
     function __WNFTLegacy721_init_unchained(
-        ET.WNFT memory _wnftData
+        ET.WNFT memory _wnftData,
+        address _creator
     ) internal onlyInitializing {
         WNFTLegacy721Storage storage $ = _getWNFTLegacy721Storage();
         $.wnftData.inAsset = _wnftData.inAsset;
@@ -121,7 +141,16 @@ contract WNFTLegacy721 is Singleton721, TokenService {
             // asset that user want to wrap must be transfered to wNFT adddress 
             _isValidCollateralRecord(_wnftData.inAsset);
         }
-        // emit WnFTCreated....
+        
+        emit WrappedV1(
+            _wnftData.inAsset.asset.contractAddress,
+            address(this),
+            _wnftData.inAsset.tokenId,
+            TOKEN_ID,
+            _creator,
+            msg.value, //  TODO  Batch??
+            _wnftData.rules
+        );
     }
     ////////////////////////////////////////////////////////////////////////
 

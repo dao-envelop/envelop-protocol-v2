@@ -6,12 +6,17 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import "./interfaces/IEnvelopV2wNFT.sol";
 
 contract EnvelopWNFTFactory is  Ownable{
     
     mapping(address wrapper => bool isTrusted) public trustedWrappers;
 
-    event EnvelopV2Deployment(address indexed proxy, address indexed implementation);
+    event EnvelopV2Deployment(
+        address indexed proxy, 
+        address indexed implementation,
+        uint256 envelopOracleType
+    );
 
     constructor ()
         Ownable(msg.sender)
@@ -37,7 +42,12 @@ contract EnvelopWNFTFactory is  Ownable{
     	if (_initCallData.length > 0) {
     	    Address.functionCallWithValue(wnft, _initCallData, msg.value);
         }
-        emit EnvelopV2Deployment(wnft, _implementation);
+        
+        emit EnvelopV2Deployment(
+            wnft, 
+            _implementation,
+            IEnvelopV2wNFT(_implementation).ORACLE_TYPE()
+        );
     }
 
     function creatWNFT(address _implementation, bytes memory _initCallData, bytes2 _salt) 
@@ -52,7 +62,12 @@ contract EnvelopWNFTFactory is  Ownable{
         if (_initCallData.length > 0) {
             Address.functionCallWithValue(wnft, _initCallData, msg.value);
         }
-        emit EnvelopV2Deployment(wnft, _implementation);
+
+        emit EnvelopV2Deployment(
+            wnft, 
+            _implementation,
+            IEnvelopV2wNFT(_implementation).ORACLE_TYPE()
+        );
     }
 
     function predictDeterministicAddress(
