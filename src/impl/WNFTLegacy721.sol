@@ -4,8 +4,8 @@
 
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
-import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
+import "@Uopenzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
+import "@Uopenzeppelin/contracts/token/ERC1155/utils/ERC1155HolderUpgradeable.sol";
 import "./Singleton721.sol";
 import "../utils/LibET.sol";
 import "../utils/TokenService.sol";
@@ -14,7 +14,13 @@ import "../interfaces/IEnvelopV2wNFT.sol";
 /**
  * @dev Implementation of WNFT that partial compatible with Envelop V1
  */
-contract WNFTLegacy721 is Singleton721, TokenService, IEnvelopV2wNFT {
+contract WNFTLegacy721 is 
+    Singleton721, 
+    TokenService, 
+    IEnvelopV2wNFT,
+    ERC721HolderUpgradeable, 
+    ERC1155HolderUpgradeable 
+{
     string public constant INITIAL_SIGN_STR = 
         "initialize(address,string,string,string,"
           "("
@@ -75,7 +81,7 @@ contract WNFTLegacy721 is Singleton721, TokenService, IEnvelopV2wNFT {
 
     constructor() {
       _disableInitializers();
-      emit EnvelopV2OracleType(ORACLE_TYPE, this.name());
+      emit EnvelopV2OracleType(ORACLE_TYPE, type(WNFTLegacy721).name);
     }
     function initialize(
         address _creator,
@@ -265,14 +271,19 @@ contract WNFTLegacy721 is Singleton721, TokenService, IEnvelopV2wNFT {
     }
 
 
-
-
     /**
      * @dev See {IERC165-supportsInterface}.
      */
-    function supportsInterface(bytes4 interfaceId) public view virtual  override returns (bool) {
-        // TODO  add current contract interface
-        return super.supportsInterface(interfaceId);
+    function supportsInterface(bytes4 interfaceId) 
+        public 
+        view 
+        virtual  
+        override(ERC721Upgradeable, ERC1155HolderUpgradeable) 
+        //override
+        returns (bool) 
+    {
+        //TODO  add current contract interface
+       return interfaceId == type(IEnvelopV2wNFT).interfaceId || super.supportsInterface(interfaceId);
     }
 
     function wnftInfo(uint256 tokenId) external view returns (ET.WNFT memory) {
