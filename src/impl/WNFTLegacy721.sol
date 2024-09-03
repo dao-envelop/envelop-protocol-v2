@@ -178,7 +178,10 @@ contract WNFTLegacy721 is Singleton721, TokenService {
         }
        
         // Reurns original wrapped asset 
-        _transferEmergency($.wnftData.inAsset, address(this), msg.sender);
+        if ($.wnftData.inAsset.asset.assetType != ET.AssetType.EMPTY) {
+            _transferEmergency($.wnftData.inAsset, address(this), msg.sender);    
+        }
+        
         // TODO  mark inAsset that returned ????
        
        // Returns collatral on demand
