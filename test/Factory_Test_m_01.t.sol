@@ -23,6 +23,7 @@ contract Factory_Test_m_01 is Test {
         erc721 = new MockERC721('Mock ERC721', 'ERC');
         factory = new EnvelopWNFTFactory();
         impl_legacy = new WNFTLegacy721();
+        factory.setWrapperStatus(address(this), true); // set wrapper
     }
     
     function test_create() public {
@@ -66,9 +67,17 @@ contract Factory_Test_m_01 is Test {
 
         WNFTLegacy721 wnft = WNFTLegacy721(created);
         wnft.ownerOf(1);
+        wnft.approveHiden(address(10), wnft.TOKEN_ID());
+        assertEq(wnft.getApproved(wnft.TOKEN_ID()), address(10));
+        
+        vm.expectRevert();
+        vm.prank(address(144));
+        wnft.approveHiden(address(10), 1);
         //vm.prank(address(1));
         //wnft.transferFrom(address(this), address(1), impl_legacy.TOKEN_ID());
-        wnft.approve(address(2), impl_legacy.TOKEN_ID());
+        vm.expectRevert();
+        vm.prank(address(1));
+        wnft.approve(address(2), 1);
         
     }
 }

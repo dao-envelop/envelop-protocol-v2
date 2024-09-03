@@ -61,6 +61,7 @@ contract Factory_Test_a_07 is Test {
         erc20.transfer(_wnftWallet, sendERC20Amount);
         
         WNFTLegacy721 wnft = WNFTLegacy721(_wnftWallet);
+        console2.log("Owner of wnft: %s", wnft.ownerOf(wnft.TOKEN_ID()));
         
         /*wnft.approveHiden(address(1), impl_legacy.TOKEN_ID());*/
         // assertEq() проверить тут сам апрув - дан ли
