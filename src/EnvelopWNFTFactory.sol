@@ -80,5 +80,4 @@ contract EnvelopWNFTFactory is  Ownable{
     function setWrapperStatus(address _wrapper, bool _status) external onlyOwner {
         trustedWrappers[_wrapper] = _status;
     }
-	
 }

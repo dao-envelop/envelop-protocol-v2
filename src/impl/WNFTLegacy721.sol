@@ -34,7 +34,24 @@ contract WNFTLegacy721 is
           ")"
         ")";
     uint256 public constant ORACLE_TYPE = 2001;
-    bytes2 public constant SUPPORTED_RULES = 0x0105;
+    bytes2 public constant SUPPORTED_RULES = 0x0105; // Bin 0000000100000101; Dec 261
+        // #### Envelop ProtocolV1 Rules !!! NOT All support in this implementation V2
+    // 15   14   13   12   11   10   9   8   7   6   5   4   3   2   1   0  <= Bit number(dec)
+    // ------------------------------------------------------------------------------------  
+    //  1    1    1    1    1    1   1   1   1   1   1   1   1   1   1   1
+    //  |    |    |    |    |    |   |   |   |   |   |   |   |   |   |   |
+    //  |    |    |    |    |    |   |   |   |   |   |   |   |   |   |   +-No_Unwrap
+    //  |    |    |    |    |    |   |   |   |   |   |   |   |   |   +-No_Wrap (NOT SUPPORTED)
+    //  |    |    |    |    |    |   |   |   |   |   |   |   |   +-No_Transfer
+    //  |    |    |    |    |    |   |   |   |   |   |   |   +-No_Collateral (NOT SUPPORTED)
+    //  |    |    |    |    |    |   |   |   |   |   |   +-reserved_core
+    //  |    |    |    |    |    |   |   |   |   |   +-reserved_core
+    //  |    |    |    |    |    |   |   |   |   +-reserved_core  
+    //  |    |    |    |    |    |   |   |   +-reserved_core
+    //  |    |    |    |    |    |   |   |
+    //  |    |    |    |    |    |   |   + - V2. always wnft URL|
+    //  +----+----+----+----+----+---+ 
+    //      for use in extendings
     
    
     struct WNFTLegacy721Storage {
@@ -58,7 +75,7 @@ contract WNFTLegacy721 is
         address txSender
     );
     
-    // We Use wnft Create event from V1 for seamless integration
+    // We Use wnft Create and Burn events from V1 for seamless integration
     // with Envelop Oracle grabbers. Because this wNFT have same 
     // properties with V1 wNFT
     event WrappedV1(
@@ -69,6 +86,22 @@ contract WNFTLegacy721 is
         address wnftFirstOwner,
         uint256 nativeCollateralAmount,
         bytes2  rules
+    );
+
+     event UnWrappedV1(
+        address indexed wrappedAddress,
+        address indexed originalAddress,
+        uint256 indexed wrappedId, 
+        uint256 originalTokenId, 
+        address beneficiary, 
+        uint256 nativeCollateralAmount,
+        bytes2  rules 
+    );
+
+     event EnvelopRulesChanged(
+        address indexed wrappedAddress,
+        uint256 indexed wrappedId,
+        bytes2 newRules
     );
 
      /**
@@ -391,23 +424,7 @@ contract WNFTLegacy721 is
         }
     }
     
-    // #### Envelop ProtocolV1 Rules !!! NOT All support in this implementation V2
-    // 15   14   13   12   11   10   9   8   7   6   5   4   3   2   1   0  <= Bit number(dec)
-    // ------------------------------------------------------------------------------------  
-    //  1    1    1    1    1    1   1   1   1   1   1   1   1   1   1   1
-    //  |    |    |    |    |    |   |   |   |   |   |   |   |   |   |   |
-    //  |    |    |    |    |    |   |   |   |   |   |   |   |   |   |   +-No_Unwrap
-    //  |    |    |    |    |    |   |   |   |   |   |   |   |   |   +-No_Wrap (NOT SUPPORTED)
-    //  |    |    |    |    |    |   |   |   |   |   |   |   |   +-No_Transfer
-    //  |    |    |    |    |    |   |   |   |   |   |   |   +-No_Collateral (NOT SUPPORTED)
-    //  |    |    |    |    |    |   |   |   |   |   |   +-reserved_core
-    //  |    |    |    |    |    |   |   |   |   |   +-reserved_core
-    //  |    |    |    |    |    |   |   |   |   +-reserved_core  
-    //  |    |    |    |    |    |   |   |   +-reserved_core
-    //  |    |    |    |    |    |   |   |
-    //  |    |    |    |    |    |   |   + - V2. always wnft URL|
-    //  +----+----+----+----+----+---+ 
-    //      for use in extendings
+
     /**
      * @dev Use for check rules above.
      */
@@ -415,10 +432,11 @@ contract WNFTLegacy721 is
         return _rule == (_rule & _wNFTrules);
     }
 
-    function _isValidRules(bytes2 _rules) internal pure virtual returns (bool) {
+    function _isValidRules(bytes2 _rules) internal pure virtual returns (bool ok) {
         if (!_checkRule(_rules, SUPPORTED_RULES)) {
             revert RuleSetNotSupported(_rules ^ SUPPORTED_RULES); // XOR
         }
+        ok = true;
 
     }
 

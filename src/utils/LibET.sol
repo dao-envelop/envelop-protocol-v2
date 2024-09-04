@@ -21,6 +21,11 @@ library ET {
         uint256 amount;
     }
 
+    struct NFTItem {
+        address contractAddress;
+        uint256 tokenId;   
+    }
+
     struct Price {
         address payToken;
         uint256 payAmount;
