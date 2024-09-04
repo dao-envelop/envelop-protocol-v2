@@ -51,7 +51,7 @@ contract Factory_Test_a_08 is Test {
                 new ET.Fee[](0), // fees
                 new ET.Lock[](0), // locks
                 new ET.Royalty[](0), // royalties
-                0xffff   //bytes2
+                0x0105   //bytes2
             ) 
         );    
 

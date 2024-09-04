@@ -6,6 +6,8 @@ interface IEnvelopV2wNFT {
 
 	event EnvelopV2OracleType(uint256 indexed oracleType, string contractName);
 
-	function ORACLE_TYPE() external view returns(uint256); 
+	function INITIAL_SIGN_STR() external view returns(string memory);
+	function ORACLE_TYPE() external view returns(uint256);
+	function SUPPORTED_RULES() external pure returns(bytes2); 
 
 }

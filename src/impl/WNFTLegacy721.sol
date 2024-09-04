@@ -34,7 +34,7 @@ contract WNFTLegacy721 is
           ")"
         ")";
     uint256 public constant ORACLE_TYPE = 2001;
-    //string public constant INITIAL_SIGN_STR = "initialize(address,string,string,string)";
+    bytes2 public constant SUPPORTED_RULES = 0x0105;
     
    
     struct WNFTLegacy721Storage {
@@ -43,6 +43,7 @@ contract WNFTLegacy721 is
 
     error InsufficientCollateral(ET.AssetItem declare, uint256 fact);
     error WnftRuleViolation(bytes2 rule);
+    error RuleSetNotSupported(bytes2 unsupportedRules);
 
     event EtherReceived(
         uint256 indexed balance, 
@@ -148,27 +149,32 @@ contract WNFTLegacy721 is
         WNFTLegacy721Storage storage $ = _getWNFTLegacy721Storage();
         $.wnftData.inAsset = _wnftData.inAsset;
         $.wnftData.unWrapDestination = _wnftData.unWrapDestination;
-        $.wnftData.rules = _wnftData.rules;
+        if (_wnftData.rules != 0x0000) {
+            _isValidRules(_wnftData.rules);
+            $.wnftData.rules = _wnftData.rules;
+        }
+        
         if (_wnftData.locks.length > 0) {
-            // TODO Check locks and put to storage
             for (uint256 i = 0; i < _wnftData.locks.length; ++ i) {
                 _isValidLockRecord(_wnftData.locks[i]);
                 $.wnftData.locks.push(_wnftData.locks[i]);
             }
         }
+
         if (_wnftData.collateral.length > 0) {
             // TODO Check collateral Balance
-            // !!!! Dont save collateral info!!!
+            // !!!! Dont save collateral info!!!!!! Because we will not store this data
+            // in V2 protocol version
              for (uint256 i = 0; i < _wnftData.collateral.length; ++ i) {
                 _isValidCollateralRecord(_wnftData.collateral[i]);
-                $.wnftData.collateral.push(_wnftData.collateral[i]);
             }
         }
+
         if (_wnftData.inAsset.asset.assetType != ET.AssetType.EMPTY) {
             // asset that user want to wrap must be transfered to wNFT adddress 
             _isValidCollateralRecord(_wnftData.inAsset);
         }
-        
+
         emit WrappedV1(
             _wnftData.inAsset.asset.contractAddress,
             address(this),
@@ -275,6 +281,7 @@ contract WNFTLegacy721 is
         } else {
             r = Address.functionCallWithValue(_target, _data, _value);
         }
+        //_checkInAssetSafety();
     }
 
     /**
@@ -302,8 +309,8 @@ contract WNFTLegacy721 is
             } else {
                 r[i] = Address.functionCallWithValue(_targetArray[i], _dataArray[i], _valueArray[i]);
             }
-            
         }
+        _checkInAssetSafety();
     }
     ////////////////////////////////////////////////////////////////////////////
     /////                    GETTERS                                       /////
@@ -355,7 +362,8 @@ contract WNFTLegacy721 is
     ////////////////////////////////////////////////////////////////
 
     function _fixEtherChanges(uint256 _balanceBefore, uint256 _balanceAfter) 
-        internal 
+        internal
+        virtual 
     {
         if (_balanceBefore != _balanceAfter) {
             emit EtherBalanceChanged(
@@ -389,9 +397,9 @@ contract WNFTLegacy721 is
     //  1    1    1    1    1    1   1   1   1   1   1   1   1   1   1   1
     //  |    |    |    |    |    |   |   |   |   |   |   |   |   |   |   |
     //  |    |    |    |    |    |   |   |   |   |   |   |   |   |   |   +-No_Unwrap
-    //  |    |    |    |    |    |   |   |   |   |   |   |   |   |   +-No_Wrap 
+    //  |    |    |    |    |    |   |   |   |   |   |   |   |   |   +-No_Wrap (NOT SUPPORTED)
     //  |    |    |    |    |    |   |   |   |   |   |   |   |   +-No_Transfer
-    //  |    |    |    |    |    |   |   |   |   |   |   |   +-No_Collateral
+    //  |    |    |    |    |    |   |   |   |   |   |   |   +-No_Collateral (NOT SUPPORTED)
     //  |    |    |    |    |    |   |   |   |   |   |   +-reserved_core
     //  |    |    |    |    |    |   |   |   |   |   +-reserved_core
     //  |    |    |    |    |    |   |   |   |   +-reserved_core  
@@ -403,8 +411,15 @@ contract WNFTLegacy721 is
     /**
      * @dev Use for check rules above.
      */
-    function _checkRule(bytes2 _rule, bytes2 _wNFTrules) internal pure virtual returns (bool) {
+    function _checkRule(bytes2 _rule, bytes2 _wNFTrules) internal pure returns (bool) {
         return _rule == (_rule & _wNFTrules);
+    }
+
+    function _isValidRules(bytes2 _rules) internal pure virtual returns (bool) {
+        if (!_checkRule(_rules, SUPPORTED_RULES)) {
+            revert RuleSetNotSupported(_rules ^ SUPPORTED_RULES); // XOR
+        }
+
     }
 
     function _isValidLockRecord(ET.Lock memory _lockRec) internal virtual view {
@@ -428,21 +443,17 @@ contract WNFTLegacy721 is
         view
     {
         _sender; //reserved for other implementations
+        _collateral; //reserved for other implementations
+        _checkInAssetSafety();
+    }
+
+    function _checkInAssetSafety() internal view {
         WNFTLegacy721Storage storage $ = _getWNFTLegacy721Storage();
         ET.AssetItem memory inA = $.wnftData.inAsset;
-        uint256 currBalance;
-        if (_collateral.asset.assetType == ET.AssetType.NATIVE ||
-            _collateral.asset.assetType == ET.AssetType.ERC20  ||
-            _collateral.asset.assetType == ET.AssetType.ERC1155
-        ) {
-            currBalance = _balanceOf(_collateral ,address(this));
-            require(currBalance - _collateral.amount >= inA.amount,
-                "Not sufficient balance of original wrapped asset"); 
-        }  else if (_collateral.asset.assetType == ET.AssetType.ERC721) {
-            require(
-                _collateral.asset.contractAddress != inA.asset.contractAddress &&
-                _collateral.tokenId != inA.tokenId,
-                "Can not remove original wrapped asset"
+        if (inA.asset.assetType != ET.AssetType.EMPTY) {
+            uint256 currBalance = _balanceOf(inA ,address(this));
+            require(currBalance >= inA.amount,
+                "Not sufficient balance of original wrapped asset"
             );
         }
     }
