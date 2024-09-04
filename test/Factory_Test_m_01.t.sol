@@ -13,6 +13,7 @@ import "../src/impl/WNFTLegacy721.sol";
 
 
 contract Factory_Test_m_01 is Test {
+    address public constant addr4 = 0x6F9aaAaD96180b3D6c71Fbbae2C1c5d5193A64EC;
     uint256 public sendEtherAmount = 1e18;
     MockERC721 public erc721;
     EnvelopWNFTFactory public factory;
@@ -78,6 +79,42 @@ contract Factory_Test_m_01 is Test {
         vm.expectRevert();
         vm.prank(address(1));
         wnft.approve(address(2), 1);
-        
+    }
+
+    function test_get_ether() public {
+         bytes memory initCallData = abi.encodeWithSignature(
+            impl_legacy.INITIAL_SIGN_STR(),
+            address(this), "LegacyWNFTNAME", "LWNFT", "https://api.envelop.is" ,
+            //new ET.WNFT[](1)[0]
+            ET.WNFT(
+                ET.AssetItem(ET.Asset(ET.AssetType.EMPTY, address(0)),0,0), // inAsset
+                new ET.AssetItem[](0),   // collateral
+                address(this), //unWrapDestination 
+                new ET.Fee[](0), // fees
+                new ET.Lock[](0), // locks
+                new ET.Royalty[](0), // royalties
+                0xffff   //bytes2
+            ) 
+        );  
+        // console2.log(string(initCallData));
+        // (
+        //     address a, 
+        //     string memory n1, 
+        //     string memory n2, 
+        //     string memory n3 //,  
+        //     //ET.WNFT memory k
+        // ) =  abi.decode(
+        //     initCallData,
+        //     (address, string, string, string)
+        // );
+
+        address payable  created = payable(factory.creatWNFT(address(impl_legacy), initCallData));
+        assertNotEq(created, address(impl_legacy));
+        WNFTLegacy721 wnft = WNFTLegacy721(created);
+        address payable  wnft_address = payable(address(wnft));
+        wnft_address.transfer(sendEtherAmount);
+        assertEq(wnft_address.balance, sendEtherAmount);
+        wnft.executeEncodedTx(addr4, sendEtherAmount/2, "");
+
     }
 }

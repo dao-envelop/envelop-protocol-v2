@@ -44,7 +44,18 @@ contract WNFTLegacy721 is
     error InsufficientCollateral(ET.AssetItem declare, uint256 fact);
     error WnftRuleViolation(bytes2 rule);
 
-    event EtherTransfer(address sender, uint256 value);
+    event EtherReceived(
+        uint256 indexed balance, 
+        uint256 indexed txValue, 
+        address indexed txSender
+    );
+
+    event EtherBalanceChanged(
+        uint256 indexed balanceBefore, 
+        uint256 indexed balanceAfter, 
+        uint256 indexed txValue, 
+        address txSender
+    );
     
     // We Use wnft Create event from V1 for seamless integration
     // with Envelop Oracle grabbers. Because this wNFT have same 
@@ -63,7 +74,11 @@ contract WNFTLegacy721 is
      * @dev The contract should be able to receive Eth.
      */
     receive() external payable virtual {
-        emit EtherTransfer(msg.sender, msg.value);
+        emit EtherReceived(
+            address(this).balance, 
+            msg.value,
+            msg.sender
+        );
     }
 
     modifier ifUnlocked() {
@@ -74,6 +89,12 @@ contract WNFTLegacy721 is
     modifier onlyWnftOwner() {
         _wnftOwnerOrApproved(msg.sender);
         _;
+    }
+
+    modifier fixEtherBalance() {
+        uint256 bb = address(this).balance;
+        _;
+        _fixEtherChanges(bb, address(this).balance);
     }
 
     // keccak256(abi.encode(uint256(keccak256("envelop.storage.WNFTLegacy721")) - 1)) & ~bytes32(uint256(0xff))
@@ -90,7 +111,7 @@ contract WNFTLegacy721 is
         string memory _tokenUrl,
         ET.WNFT memory _wnftData
         //ET.AssetItem memory _wnftData
-    ) public initializer
+    ) public initializer fixEtherBalance()
     {
         
         __WNFTLegacy721_init(name_, symbol_, _creator, _tokenUrl, _wnftData);
@@ -171,6 +192,7 @@ contract WNFTLegacy721 is
         if (!_checkRule(0x0004, $.wnftData.rules)) {
             revert WnftRuleViolation(0x0004);
         }
+        // TODO  deny self address transfer ?????
         super.transferFrom(from, to, tokenId);
     }
 
@@ -178,7 +200,8 @@ contract WNFTLegacy721 is
         public 
         virtual
         ifUnlocked()
-        onlyWnftOwner() 
+        onlyWnftOwner()
+        fixEtherBalance
     {
         _isAbleForRemove(_collateral, msg.sender);
 
@@ -192,6 +215,7 @@ contract WNFTLegacy721 is
         virtual 
         ifUnlocked()
         onlyWnftOwner()
+        fixEtherBalance
     {
             for (uint256 i = 0; i < _collateral.length; ++ i) {
                 _isAbleForRemove(_collateral[i], msg.sender);
@@ -205,6 +229,7 @@ contract WNFTLegacy721 is
         virtual
         ifUnlocked()
         onlyWnftOwner()
+        fixEtherBalance
     {
         WNFTLegacy721Storage storage $ = _getWNFTLegacy721Storage();
         // Check No Unwrap rule
@@ -242,9 +267,14 @@ contract WNFTLegacy721 is
         external 
         ifUnlocked()
         onlyWnftOwner()
+        fixEtherBalance
         returns (bytes memory r) 
     {
-        r = Address.functionCallWithValue(_target, _data, _value);
+        if (keccak256(_data) == keccak256(bytes(""))) {
+            Address.sendValue(payable(_target), _value);
+        } else {
+            r = Address.functionCallWithValue(_target, _data, _value);
+        }
     }
 
     /**
@@ -261,15 +291,23 @@ contract WNFTLegacy721 is
         external 
         ifUnlocked()
         onlyWnftOwner() 
+        fixEtherBalance
         returns (bytes[] memory r) 
     {
     
         r = new bytes[](_dataArray.length);
         for (uint256 i = 0; i < _dataArray.length; ++ i){
-            r[i] = Address.functionCallWithValue(_targetArray[i], _dataArray[i], _valueArray[i]);
+            if (keccak256( _dataArray[i]) == keccak256(bytes(""))) {
+                Address.sendValue(payable(_targetArray[i]), _valueArray[i]);
+            } else {
+                r[i] = Address.functionCallWithValue(_targetArray[i], _dataArray[i], _valueArray[i]);
+            }
+            
         }
     }
-
+    ////////////////////////////////////////////////////////////////////////////
+    /////                    GETTERS                                       /////
+    ////////////////////////////////////////////////////////////////////////////
 
     /**
      * @dev See {IERC165-supportsInterface}.
@@ -310,6 +348,23 @@ contract WNFTLegacy721 is
             }
         }
         
+    }
+    ////////////////////////////////////////////////////////////////
+    //    ******************* internals ***********************   //
+    //    ******************* internals ***********************   //
+    ////////////////////////////////////////////////////////////////
+
+    function _fixEtherChanges(uint256 _balanceBefore, uint256 _balanceAfter) 
+        internal 
+    {
+        if (_balanceBefore != _balanceAfter) {
+            emit EtherBalanceChanged(
+               _balanceBefore, 
+               _balanceAfter, 
+               msg.value, 
+               msg.sender
+            );
+        }
     }
 
     // 0x00 - TimeLock
