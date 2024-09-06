@@ -72,7 +72,7 @@ contract Factory_Test_a_08 is Test {
         erc1155.mint(address(1), tokenId, amount);
         vm.prank(address(1));
         erc1155.safeTransferFrom(address(1), _wnftWallet, tokenId, amount, '');
-        /*(bool sent, bytes memory data) = _wnftWallet.call{value: sendEtherAmount}("");
+        (bool sent, bytes memory data) = _wnftWallet.call{value: sendEtherAmount}("");
         // suppress solc warnings 
         sent;
         data;
@@ -96,10 +96,10 @@ contract Factory_Test_a_08 is Test {
         wnft.removeCollateral(collateral, address(2));
         assertEq(erc721.ownerOf(tokenId), address(2));
 
-        /*vm.prank(address(10));
+        vm.prank(address(10));
         collateral = ET.AssetItem(ET.Asset(ET.AssetType.ERC1155, address(erc1155)),tokenId, amount / 2);
-        wnft.removeCollateral(collateral, address(this));
-        assertEq(erc1155.balanceOf(address(this), tokenId), amount / 2);
-        assertEq(erc1155.balanceOf( _wnftWallet, tokenId), amount / 2);*/
+        wnft.removeCollateral(collateral, address(1));
+        assertEq(erc1155.balanceOf(address(1), tokenId), amount / 2);
+        assertEq(erc1155.balanceOf( _wnftWallet, tokenId), amount / 2);
     }
 }

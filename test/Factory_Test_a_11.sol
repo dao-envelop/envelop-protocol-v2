@@ -12,13 +12,14 @@ import "../src/impl/WNFTLegacy721.sol";
 //import "../src/impl/Singleton721.sol";
 //import {ET} from "../src/utils/LibET.sol";
 
-// make approve
-contract Factory_Test_a_07 is Test {
+// try to withdraw original nft - erc721
+contract Factory_Test_a_11 is Test {
     
-    error ERC721InvalidApprover(address approver);
+    event Log(string message);
 
     uint256 public sendEtherAmount = 1e18;
     uint256 public sendERC20Amount = 3e18;
+    uint256 timelock = 10000;
     MockERC721 public erc721;
     MockERC20 public erc20;
     EnvelopWNFTFactory public factory;
@@ -34,8 +35,8 @@ contract Factory_Test_a_07 is Test {
     }
     
     function test_create_legacy() public {
-        ET.Lock[] memory locks = new ET.Lock[](1);
-        locks[0] = ET.Lock(0x00, block.timestamp + 10000);
+        uint256 tokenId = 0;
+        ET.AssetItem memory original_nft = ET.AssetItem(ET.Asset(ET.AssetType.ERC721, address(erc721)),tokenId,0);
         bytes memory initCallData = abi.encodeWithSignature(
             impl_legacy.INITIAL_SIGN_STR(),
             address(this), // creator and owner 
@@ -44,37 +45,29 @@ contract Factory_Test_a_07 is Test {
             "https://api.envelop.is" ,
             //new ET.WNFT[](1)[0]
             ET.WNFT(
-                ET.AssetItem(ET.Asset(ET.AssetType.EMPTY, address(0)),0,0), // inAsset
+                original_nft, // inAsset
                 new ET.AssetItem[](0),   // collateral
-                address(0), //unWrapDestination 
+                address(1), //unWrapDestination 
                 new ET.Fee[](0), // fees
-                locks, // locks
+                new ET.Lock[](0), // locks
                 new ET.Royalty[](0), // royalties
-                0x0105   //bytes2
+                0x0000   //bytes2
             ) 
-        );    
+        );  
 
         address payable _wnftWallet = payable(factory.creatWNFT(address(impl_legacy), initCallData));
-        assertNotEq(_wnftWallet, address(impl_legacy));
-
-        // send erc20 to wnft wallet
-        erc20.transfer(_wnftWallet, sendERC20Amount);
-        
-        WNFTLegacy721 wnft = WNFTLegacy721(_wnftWallet);
-        console2.log("Owner of wnft: %s", wnft.ownerOf(wnft.TOKEN_ID()));
+        //transfer original NFT to wnft storage
+        erc721.transferFrom(address(this), _wnftWallet, tokenId);
                 
-        uint256 tokenId = impl_legacy.TOKEN_ID();
-        vm.prank(address(2)); // by non-owner
-        vm.expectRevert(
-            abi.encodeWithSelector(ERC721InvalidApprover.selector, address(2))
-        );
-        wnft.approveHiden(address(10), tokenId);
-        
-        wnft.approveHiden(address(1), tokenId);
-        assertEq(wnft.getApproved(tokenId), address(1));
+        WNFTLegacy721 wnft = WNFTLegacy721(_wnftWallet);
 
-        // transfer and check approve
-        wnft.transferFrom(address(this), address(2), tokenId);
-        assertEq(wnft.getApproved(tokenId), address(0));
+        // try to withdraw original NFT
+        wnft.removeCollateral(original_nft, address(1));
+        //wnft.removeCollateral(original_nft, address(1));
+        console2.log(erc721.ownerOf(tokenId));
+
+        /*assertEq(address(this).balance, balanceBefore + sendEtherAmount / 2);
+        assertEq(_wnftWallet.balance, 0);
+        assertEq(erc20.balanceOf(_wnftWallet), 0);*/
     }
 }

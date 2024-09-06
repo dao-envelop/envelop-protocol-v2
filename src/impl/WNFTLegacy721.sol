@@ -242,10 +242,11 @@ contract WNFTLegacy721 is
         onlyWnftOwner()
         fixEtherBalance
     {
-        _isAbleForRemove(_collateral, msg.sender);
-
+        
         // transfer method from TokenService
         _transferSafe(_collateral, address(this), _to);
+
+        _isAbleForRemove(_collateral, msg.sender);
         
     }
 
