@@ -64,7 +64,7 @@ contract Factory_Test_a_11 is Test {
         // try to withdraw original NFT
         wnft.removeCollateral(original_nft, address(1));
         //wnft.removeCollateral(original_nft, address(1));
-        console2.log(erc721.ownerOf(tokenId));
+        //console2.log(erc721.ownerOf(tokenId));
 
         /*assertEq(address(this).balance, balanceBefore + sendEtherAmount / 2);
         assertEq(_wnftWallet.balance, 0);
