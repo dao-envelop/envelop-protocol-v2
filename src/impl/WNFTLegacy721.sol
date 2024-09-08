@@ -273,7 +273,7 @@ contract WNFTLegacy721 is
     {
         WNFTLegacy721Storage storage $ = _getWNFTLegacy721Storage();
         // Check No Unwrap rule
-        if (!_checkRule(0x0001, $.wnftData.rules)) {
+        if (_checkRule(0x0001, $.wnftData.rules)) {
             revert WnftRuleViolation(0x0001);
         }
        
@@ -429,8 +429,8 @@ contract WNFTLegacy721 is
     /**
      * @dev Use for check rules above.
      */
-    function _checkRule(bytes2 _rule, bytes2 _wNFTrules) internal pure returns (bool) {
-        return _rule == (_rule & _wNFTrules);
+    function _checkRule(bytes2 _rule, bytes2 _wNFTrules) internal pure returns (bool isSet) {
+        isSet =_rule == (_rule & _wNFTrules);
     }
 
     function _isValidRules(bytes2 _rules) internal pure virtual returns (bool ok) {

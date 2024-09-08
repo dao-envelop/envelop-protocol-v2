@@ -50,7 +50,7 @@ contract EnvelopWNFTFactory is  Ownable{
         );
     }
 
-    function creatWNFT(address _implementation, bytes memory _initCallData, bytes2 _salt) 
+    function creatWNFT(address _implementation, bytes memory _initCallData, bytes32 _salt) 
         public 
         payable 
         onlyTrusted

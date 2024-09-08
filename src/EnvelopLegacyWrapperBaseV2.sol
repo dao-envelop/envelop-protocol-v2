@@ -9,9 +9,11 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import "./utils/LibET.sol";
 import "./utils/TokenService.sol";
 import "./interfaces/IEnvelopWNFTFactory.sol";
+import "./interfaces/IEnvelopV2wNFT.sol";
 
 
-contract EnvelopWrapperBaseV2 is Ownable, TokenService {
+
+contract EnvelopLegacyWrapperBaseV2 is Ownable, TokenService {
 
     // For back compatibility with Envelop web app
     struct INData {
@@ -27,7 +29,7 @@ contract EnvelopWrapperBaseV2 is Ownable, TokenService {
 
     IEnvelopWNFTFactory public immutable factory;
     
-    // Map from wrapping asset type to wnft contract address and last minted id
+    // Map from wrapping asset type to wnft(implementaion) contract address and last minted id
     // Actualy `lastWNFTId` meaning now is just minted wnft count (like nonce)
     // For back compatibility with Envelop web app
     mapping(ET.AssetType => ET.NFTItem) public lastWNFTId;  
@@ -51,10 +53,12 @@ contract EnvelopWrapperBaseV2 is Ownable, TokenService {
         payable 
         returns (ET.AssetItem memory wnft)
     {
+        ET.NFTItem memory implementation = lastWNFTId[_inData.outType];
+
         // Calculate new wnftAddress
         address wnftAddress = factory.predictDeterministicAddress(
-            lastWNFTId[_inData.outType].contractAddress, // implementation address
-            keccak256(abi.encode(lastWNFTId[_inData.outType]))
+            implementation.contractAddress, // implementation address
+            keccak256(abi.encode(implementation))
         );
 
         // trainsfer inAsset and colateral
@@ -74,15 +78,44 @@ contract EnvelopWrapperBaseV2 is Ownable, TokenService {
 
         _addCollateral(wnftAddress, 1, _collateral);
         // Encode init string
+        bytes memory initCallData = abi.encodeWithSignature(
+
+            IEnvelopV2wNFT(implementation.contractAddress).INITIAL_SIGN_STR(),
+            _wrappFor, 
+            "LegacyWNFTNAME", "LWNFT", "https://api.envelop.is" , //TODO  ???
+            ET.WNFT(
+                _inData.inAsset, // inAsset
+                _collateral,   // collateral
+                address(0), //unWrapDestination  TODO !!!Check implementation
+                _inData.fees, // fees
+                _inData.locks, // locks
+                _inData.royalties, // royalties
+                _inData.rules   //bytes2
+            ) 
+        );
 
         // create wnft
+        address payable proxy = payable(
+            factory.creatWNFT(
+                implementation.contractAddress,
+                initCallData,
+                keccak256(abi.encode(implementation))
+            )
+        );
+
+        assert(proxy == wnftAddress);
 
         // icrement nonce
         lastWNFTId[_inData.outType].tokenId ++;
         
+        // construct answer
+        bytes memory _answerFromProxy = Address.functionStaticCall(
+                proxy,
+                abi.encodeWithSignature("TOKEN_ID()")
+        );
         return ET.AssetItem(
             ET.Asset(_inData.outType, wnftAddress),
-            1,  //!!!!!  TODO get from proxy TOKEN_ID
+            uint256(bytes32(_answerFromProxy)),
             _inData.outBalance  //Check for  721
         );
     }
