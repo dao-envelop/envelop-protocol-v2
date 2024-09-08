@@ -245,7 +245,7 @@ contract WNFTLegacy721 is
         //_isAbleForRemove(_collateral, msg.sender);
 
         // transfer method from TokenService
-        _transferSafe(_collateral, address(this), _to);
+        _transfer(_collateral, address(this), _to);
         _isAbleForRemove(_collateral, msg.sender);
         
     }
@@ -258,10 +258,11 @@ contract WNFTLegacy721 is
         fixEtherBalance
     {
             for (uint256 i = 0; i < _collateral.length; ++ i) {
-                _isAbleForRemove(_collateral[i], msg.sender);
                 // transfer method from TokenService
-                _transferSafe(_collateral[i], address(this), _to);    
-            } 
+                _transfer(_collateral[i], address(this), _to);
+                _isAbleForRemove(_collateral[i], msg.sender);    
+            }
+
     }
 
     function unWrap(ET.AssetItem[] calldata _collateral) 
@@ -470,14 +471,11 @@ contract WNFTLegacy721 is
         WNFTLegacy721Storage storage $ = _getWNFTLegacy721Storage();
         ET.AssetItem memory inA = $.wnftData.inAsset;
         if (inA.asset.assetType != ET.AssetType.EMPTY) {
-            uint256 currBalance = _balanceOf(inA ,address(this));
-            /*require(currBalance >= inA.amount,
-                "Not sufficient balance of original wrapped asset"
-            );*/
             if (inA.asset.assetType == ET.AssetType.ERC721) {
-                require(currBalance > inA.amount,
+                require(_ownerOf(inA) == address(this),
                 "Not sufficient balance of original wrapped asset");
             } else {
+                uint256 currBalance = _balanceOf(inA ,address(this));
                 require(currBalance >= inA.amount,
                 "Not sufficient balance of original wrapped asset");
             }
