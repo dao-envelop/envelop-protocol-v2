@@ -455,6 +455,17 @@ contract WNFTLegacy721 is
         if (b < _collateralRecord.amount) {
             revert InsufficientCollateral(_collateralRecord, b);
         }
+
+        if (_collateralRecord.asset.assetType == ET.AssetType.ERC721) {
+            if (_ownerOf(_collateralRecord) != address(this)){
+                revert InsufficientCollateral(_collateralRecord, 0);
+            }
+        } else {
+            uint256 currBalance = _balanceOf(_collateralRecord ,address(this));
+            if (b < _collateralRecord.amount) {
+                revert InsufficientCollateral(_collateralRecord, currBalance);
+            }
+        }
     }
 
     function _isAbleForRemove(ET.AssetItem calldata _collateral, address _sender) 
@@ -471,14 +482,15 @@ contract WNFTLegacy721 is
         WNFTLegacy721Storage storage $ = _getWNFTLegacy721Storage();
         ET.AssetItem memory inA = $.wnftData.inAsset;
         if (inA.asset.assetType != ET.AssetType.EMPTY) {
-            if (inA.asset.assetType == ET.AssetType.ERC721) {
-                require(_ownerOf(inA) == address(this),
-                "Not sufficient balance of original wrapped asset");
-            } else {
-                uint256 currBalance = _balanceOf(inA ,address(this));
-                require(currBalance >= inA.amount,
-                "Not sufficient balance of original wrapped asset");
-            }
+            _isValidCollateralRecord(inA);
+            // if (inA.asset.assetType == ET.AssetType.ERC721) {
+            //     require(_ownerOf(inA) == address(this),
+            //     "Not sufficient balance of original wrapped asset");
+            // } else {
+            //     uint256 currBalance = _balanceOf(inA ,address(this));
+            //     require(currBalance >= inA.amount,
+            //     "Not sufficient balance of original wrapped asset");
+            // }
         }
     }
     
