@@ -316,7 +316,7 @@ contract WNFTLegacy721 is
         } else {
             r = Address.functionCallWithValue(_target, _data, _value);
         }
-        //_checkInAssetSafety();
+        _checkInAssetSafety();
     }
 
     /**
