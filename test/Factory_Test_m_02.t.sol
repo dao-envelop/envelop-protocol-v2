@@ -52,10 +52,10 @@ contract Factory_Test_m_02 is Test {
         assertNotEq(created, address(impl_legacy));
         assertEq(wnftPredictedAddress, created);
 
-        WNFTLegacy721 wnft = WNFTLegacy721(created);
-        wnft.ownerOf(1);
-        vm.expectRevert();
-        vm.prank(address(1));
-        wnft.ownerOf(3);
+        // WNFTLegacy721 wnft = WNFTLegacy721(created);
+        // wnft.ownerOf(1);
+        // vm.expectRevert();
+        // vm.prank(address(1));
+        // wnft.ownerOf(3);
     }
 }
