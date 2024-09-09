@@ -88,7 +88,7 @@ contract WNFTLegacy721 is
         bytes2  rules
     );
 
-     event UnWrappedV1(
+    event UnWrappedV1(
         address indexed wrappedAddress,
         address indexed originalAddress,
         uint256 indexed wrappedId, 
@@ -280,7 +280,10 @@ contract WNFTLegacy721 is
        
         // Reurns original wrapped asset 
         if ($.wnftData.inAsset.asset.assetType != ET.AssetType.EMPTY) {
-            _transferEmergency($.wnftData.inAsset, address(this), msg.sender);    
+            _transferEmergency($.wnftData.inAsset, address(this), msg.sender); 
+            // Mark original asset as removed
+            $.wnftData.inAsset.asset.assetType = ET.AssetType.EMPTY;
+
         }
         
         // TODO  mark inAsset that returned ????
@@ -292,6 +295,15 @@ contract WNFTLegacy721 is
             } 
         }
         delete $.wnftData;
+        emit UnWrappedV1(
+            address(this),                            // wrappedAddress,
+            $.wnftData.inAsset.asset.contractAddress, // originalAddress,
+            TOKEN_ID,                                 // wrappedId, 
+            $.wnftData.inAsset.tokenId,               // originalTokenId, 
+            msg.sender,                               // beneficiary, 
+            0,                                        // NOT SUPPORTED IN THIS IMPLEMENTATION, use  
+            $.wnftData.rules                          // rules 
+        );
     }
 
      /**
@@ -399,6 +411,7 @@ contract WNFTLegacy721 is
     function _fixEtherChanges(uint256 _balanceBefore, uint256 _balanceAfter) 
         internal
         virtual 
+        //returns (uint256 absDiff)
     {
         if (_balanceBefore != _balanceAfter) {
             emit EtherBalanceChanged(
@@ -408,6 +421,7 @@ contract WNFTLegacy721 is
                msg.sender
             );
         }
+        //absDiff =  _balanceBefore >= _balanceAfter ?  _balanceBefore  - _balanceAfter : _balanceAfter - _balanceBefore;
     }
 
     // 0x00 - TimeLock

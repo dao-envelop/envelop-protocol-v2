@@ -74,7 +74,7 @@ contract EnvelopWNFTFactory is  Ownable{
         address implementation,
         bytes32 salt
     ) public view returns (address) {
-        return predictDeterministicAddress(implementation, salt);
+        return Clones.predictDeterministicAddress(implementation, salt);
     }
 
     function setWrapperStatus(address _wrapper, bool _status) external onlyOwner {
