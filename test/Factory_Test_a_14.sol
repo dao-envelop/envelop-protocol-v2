@@ -12,8 +12,8 @@ import "../src/impl/WNFTLegacy721.sol";
 //import "../src/impl/Singleton721.sol";
 //import {ET} from "../src/utils/LibET.sol";
 
-// check no transfer rule 
-contract Factory_Test_a_13 is Test {
+// check no unwrap rule 
+contract Factory_Test_a_14 is Test {
     
     error ERC721InvalidApprover(address approver);
 
@@ -48,7 +48,7 @@ contract Factory_Test_a_13 is Test {
                 new ET.Fee[](0), // fees
                 new ET.Lock[](0), // locks
                 new ET.Royalty[](0), // royalties
-                0x0004   //bytes2 // no transfer
+                0x0001   //bytes2 // no unwrap
             ) 
         );    
 
@@ -59,9 +59,10 @@ contract Factory_Test_a_13 is Test {
         WNFTLegacy721 wnft = WNFTLegacy721(_wnftWallet);
                 
         uint256 tokenId = impl_legacy.TOKEN_ID();
+        ET.AssetItem[] memory assets = new ET.AssetItem[](0);
         vm.expectRevert(
-            abi.encodeWithSelector(WNFTLegacy721.WnftRuleViolation.selector, bytes2(0x0004))
+            abi.encodeWithSelector(WNFTLegacy721.WnftRuleViolation.selector, bytes2(0x0001))
         );
-        wnft.transferFrom(address(this), address(1), tokenId);
+        wnft.unWrap(assets);
     }
 }
