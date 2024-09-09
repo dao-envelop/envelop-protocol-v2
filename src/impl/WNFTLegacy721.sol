@@ -228,7 +228,7 @@ contract WNFTLegacy721 is
     function transferFrom(address from, address to, uint256 tokenId) public override {
         WNFTLegacy721Storage storage $ = _getWNFTLegacy721Storage();
         // Check No Transfer rule
-        if (!_checkRule(0x0004, $.wnftData.rules)) {
+        if (_checkRule(0x0004, $.wnftData.rules)) {
             revert WnftRuleViolation(0x0004);
         }
         // TODO  deny self address transfer ?????
