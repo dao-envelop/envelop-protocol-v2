@@ -27,9 +27,14 @@ contract Factory_Test_m_02 is Test {
         wrapper = new EnvelopLegacyWrapperBaseV2(address(factory));
         factory.setWrapperStatus(address(this), true); // set wrapper
         factory.setWrapperStatus(address(wrapper), true); // set wrapper
+        wrapper.setWNFTId(
+            ET.AssetType.ERC721, 
+            address(impl_legacy), 
+            impl_legacy.TOKEN_ID()
+        );
     }
 
-    function test_create_legacy() public {
+    function test_create_legacy_factory() public {
         //ET.WNFT memory wnftcheck;
         bytes memory initCallData = abi.encodeWithSignature(
             impl_legacy.INITIAL_SIGN_STR(),
@@ -52,10 +57,28 @@ contract Factory_Test_m_02 is Test {
         assertNotEq(created, address(impl_legacy));
         assertEq(wnftPredictedAddress, created);
 
-        // WNFTLegacy721 wnft = WNFTLegacy721(created);
-        // wnft.ownerOf(1);
-        // vm.expectRevert();
-        // vm.prank(address(1));
-        // wnft.ownerOf(3);
+    }
+
+    function test_create_legacy_wrapper() public {
+        //ET.WNFT memory wnftcheck;
+
+        EnvelopLegacyWrapperBaseV2.INData memory ind = EnvelopLegacyWrapperBaseV2.INData(
+            ET.AssetItem(ET.Asset(ET.AssetType.EMPTY, address(0)),0,0), // inAsset
+            address(this), //unWrapDestination (unused)
+            new ET.Fee[](0), // fees
+            new ET.Lock[](0), // locks
+            new ET.Royalty[](0), // royalties
+            ET.AssetType.ERC721,
+            0, // outbalance
+            0x0105   //bytes2
+        ); 
+        ET.AssetItem[] memory _coll = new ET.AssetItem[](0); 
+        address wnftPredictedAddress = factory.predictDeterministicAddress(
+            address(impl_legacy), // implementation address
+            keccak256(abi.encode(nonce))
+        );
+        ET.AssetItem  memory created = wrapper.wrap(ind, _coll, address(22));
+        assertNotEq(created.asset.contractAddress, address(impl_legacy));
+        //assertEq(wnftPredictedAddress, created.asset.contractAddress);
     }
 }
