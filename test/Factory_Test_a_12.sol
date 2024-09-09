@@ -7,13 +7,14 @@ import "forge-std/console.sol";
 
 import {EnvelopWNFTFactory} from "../src/EnvelopWNFTFactory.sol";
 import {MockERC721} from "../src/mock/MockERC721.sol";
+import {MockERC1155} from "../src/mock/MockERC1155.sol";
 import {MockERC20} from "../src/mock/MockERC20.sol";
 import "../src/impl/WNFTLegacy721.sol";
 //import "../src/impl/Singleton721.sol";
 //import {ET} from "../src/utils/LibET.sol";
 
-// unwrapDestination is not zero -> unwrap
-contract Factory_Test_a_10 is Test {
+// try to withdraw original nft - erc721
+contract Factory_Test_a_12 is Test {
     
     event Log(string message);
 
@@ -21,6 +22,7 @@ contract Factory_Test_a_10 is Test {
     uint256 public sendERC20Amount = 3e18;
     uint256 timelock = 10000;
     MockERC721 public erc721;
+    MockERC1155 public erc1155;
     MockERC20 public erc20;
     EnvelopWNFTFactory public factory;
     WNFTLegacy721 public impl_legacy;
@@ -28,6 +30,7 @@ contract Factory_Test_a_10 is Test {
     receive() external payable virtual {}
     function setUp() public {
         erc721 = new MockERC721('Mock ERC721', 'ERC721');
+        erc1155 = new MockERC1155('api.envelop.is');
         erc20 = new MockERC20('Mock ERC20', 'ERC20');
         factory = new EnvelopWNFTFactory();
         impl_legacy = new WNFTLegacy721();
@@ -35,7 +38,9 @@ contract Factory_Test_a_10 is Test {
     }
     
     function test_create_legacy() public {
-        
+        uint256 tokenId = 0;
+        uint256 amount = 6;    
+        ET.AssetItem memory original_nft = ET.AssetItem(ET.Asset(ET.AssetType.ERC1155, address(erc1155)),tokenId,amount);
         bytes memory initCallData = abi.encodeWithSignature(
             impl_legacy.INITIAL_SIGN_STR(),
             address(this), // creator and owner 
@@ -44,41 +49,32 @@ contract Factory_Test_a_10 is Test {
             "https://api.envelop.is" ,
             //new ET.WNFT[](1)[0]
             ET.WNFT(
-                ET.AssetItem(ET.Asset(ET.AssetType.EMPTY, address(0)),0,0), // inAsset
+                original_nft, // inAsset
                 new ET.AssetItem[](0),   // collateral
                 address(1), //unWrapDestination 
                 new ET.Fee[](0), // fees
                 new ET.Lock[](0), // locks
                 new ET.Royalty[](0), // royalties
-                0x0105   //bytes2
+                0x0000   //bytes2
             ) 
         );  
 
+        
         address payable _wnftWallet = payable(factory.creatWNFT(address(impl_legacy), initCallData));
+        //mint original NFT to wnft storage
+        //erc1155.mint(_wnftWallet, tokenId, amount);
         
-        // send collateral to wnft wallet
-        erc20.transfer(_wnftWallet, sendERC20Amount);
-        (bool sent, bytes memory data) = _wnftWallet.call{value: sendEtherAmount}("");
-        // suppress solc warnings 
-        sent;
-        data;
         
-        WNFTLegacy721 wnft = WNFTLegacy721(_wnftWallet);
+                
+        //WNFTLegacy721 wnft = WNFTLegacy721(_wnftWallet);
 
-        // try to withdraw erc20 in time lock period
-        ET.AssetItem memory collateral = ET.AssetItem(ET.Asset(ET.AssetType.ERC20, address(erc20)),0,sendERC20Amount);
-        ET.AssetItem[] memory collaterals = new ET.AssetItem[](2);
-        collaterals[0] = collateral;
-        collateral = ET.AssetItem(ET.Asset(ET.AssetType.NATIVE, address(0)),0,sendEtherAmount);
-        collaterals[1] = collateral;
-        uint256 balanceBeforEth = address(this).balance;
-        uint256 balanceBeforERC20 = erc20.balanceOf(address(this));
-        wnft.unWrap(collaterals);
+        // try to withdraw original NFT
+        //wnft.removeCollateral(original_nft, address(1));
+        //wnft.removeCollateral(original_nft, address(1));
+        //console2.log(erc721.ownerOf(tokenId));
 
-        //unwrapDestinition hs not gotten anything
-        assertEq(address(this).balance, balanceBeforEth + sendEtherAmount);
+        /*assertEq(address(this).balance, balanceBefore + sendEtherAmount / 2);
         assertEq(_wnftWallet.balance, 0);
-        assertEq(erc20.balanceOf(_wnftWallet), 0);
-        assertEq(erc20.balanceOf(address(this)), balanceBeforERC20 + sendERC20Amount);
+        assertEq(erc20.balanceOf(_wnftWallet), 0);*/
     }
 }

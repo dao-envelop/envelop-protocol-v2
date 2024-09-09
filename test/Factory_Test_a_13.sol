@@ -12,14 +12,13 @@ import "../src/impl/WNFTLegacy721.sol";
 //import "../src/impl/Singleton721.sol";
 //import {ET} from "../src/utils/LibET.sol";
 
-// unwrapDestination is not zero -> unwrap
-contract Factory_Test_a_10 is Test {
+// make approve
+contract Factory_Test_a_13 is Test {
     
-    event Log(string message);
+    error ERC721InvalidApprover(address approver);
 
     uint256 public sendEtherAmount = 1e18;
     uint256 public sendERC20Amount = 3e18;
-    uint256 timelock = 10000;
     MockERC721 public erc721;
     MockERC20 public erc20;
     EnvelopWNFTFactory public factory;
@@ -35,7 +34,6 @@ contract Factory_Test_a_10 is Test {
     }
     
     function test_create_legacy() public {
-        
         bytes memory initCallData = abi.encodeWithSignature(
             impl_legacy.INITIAL_SIGN_STR(),
             address(this), // creator and owner 
@@ -46,39 +44,21 @@ contract Factory_Test_a_10 is Test {
             ET.WNFT(
                 ET.AssetItem(ET.Asset(ET.AssetType.EMPTY, address(0)),0,0), // inAsset
                 new ET.AssetItem[](0),   // collateral
-                address(1), //unWrapDestination 
+                address(0), //unWrapDestination 
                 new ET.Fee[](0), // fees
                 new ET.Lock[](0), // locks
                 new ET.Royalty[](0), // royalties
-                0x0105   //bytes2
+                0x0004   //bytes2 // no transfer
             ) 
-        );  
+        );    
 
         address payable _wnftWallet = payable(factory.creatWNFT(address(impl_legacy), initCallData));
-        
-        // send collateral to wnft wallet
-        erc20.transfer(_wnftWallet, sendERC20Amount);
-        (bool sent, bytes memory data) = _wnftWallet.call{value: sendEtherAmount}("");
-        // suppress solc warnings 
-        sent;
-        data;
+        assertNotEq(_wnftWallet, address(impl_legacy));
+
         
         WNFTLegacy721 wnft = WNFTLegacy721(_wnftWallet);
-
-        // try to withdraw erc20 in time lock period
-        ET.AssetItem memory collateral = ET.AssetItem(ET.Asset(ET.AssetType.ERC20, address(erc20)),0,sendERC20Amount);
-        ET.AssetItem[] memory collaterals = new ET.AssetItem[](2);
-        collaterals[0] = collateral;
-        collateral = ET.AssetItem(ET.Asset(ET.AssetType.NATIVE, address(0)),0,sendEtherAmount);
-        collaterals[1] = collateral;
-        uint256 balanceBeforEth = address(this).balance;
-        uint256 balanceBeforERC20 = erc20.balanceOf(address(this));
-        wnft.unWrap(collaterals);
-
-        //unwrapDestinition hs not gotten anything
-        assertEq(address(this).balance, balanceBeforEth + sendEtherAmount);
-        assertEq(_wnftWallet.balance, 0);
-        assertEq(erc20.balanceOf(_wnftWallet), 0);
-        assertEq(erc20.balanceOf(address(this)), balanceBeforERC20 + sendERC20Amount);
+                
+        uint256 tokenId = impl_legacy.TOKEN_ID();
+        wnft.transferFrom(address(this), address(1), tokenId);
     }
 }
