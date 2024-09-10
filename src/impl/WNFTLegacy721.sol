@@ -392,6 +392,7 @@ contract WNFTLegacy721 is
         if (_checkRule(0x0100, $.wnftData.rules)) {    
             return uri_;
         } 
+        // TODO check!!!
         if ($.wnftData.inAsset.asset.assetType == ET.AssetType.ERC721 
             || $.wnftData.inAsset.asset.assetType == ET.AssetType.ERC721
             )
@@ -465,10 +466,10 @@ contract WNFTLegacy721 is
         virtual
         view 
     {
-        uint256 b = _balanceOf(_collateralRecord, address(this));
-        if (b < _collateralRecord.amount) {
-            revert InsufficientCollateral(_collateralRecord, b);
-        }
+        // uint256 b = _balanceOf(_collateralRecord, address(this));
+        // if (b < _collateralRecord.amount) {
+        //     revert InsufficientCollateral(_collateralRecord, b);
+        // }
 
         if (_collateralRecord.asset.assetType == ET.AssetType.ERC721) {
             if (_ownerOf(_collateralRecord) != address(this)){
@@ -476,7 +477,7 @@ contract WNFTLegacy721 is
             }
         } else {
             uint256 currBalance = _balanceOf(_collateralRecord ,address(this));
-            if (b < _collateralRecord.amount) {
+            if (currBalance < _collateralRecord.amount) {
                 revert InsufficientCollateral(_collateralRecord, currBalance);
             }
         }
