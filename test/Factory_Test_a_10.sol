@@ -50,7 +50,7 @@ contract Factory_Test_a_10 is Test {
                 new ET.Fee[](0), // fees
                 new ET.Lock[](0), // locks
                 new ET.Royalty[](0), // royalties
-                0x0105   //bytes2
+                0x0000   //bytes2
             ) 
         );  
 
@@ -75,7 +75,7 @@ contract Factory_Test_a_10 is Test {
         uint256 balanceBeforERC20 = erc20.balanceOf(address(this));
         wnft.unWrap(collaterals);
 
-        //unwrapDestinition hs not gotten anything
+        //unwrapDestinition has not gotten anything
         assertEq(address(this).balance, balanceBeforEth + sendEtherAmount);
         assertEq(_wnftWallet.balance, 0);
         assertEq(erc20.balanceOf(_wnftWallet), 0);
