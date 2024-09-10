@@ -477,7 +477,7 @@ contract WNFTLegacy721 is
             }
         } else {
             uint256 currBalance = _balanceOf(_collateralRecord ,address(this));
-            if (b < _collateralRecord.amount) {
+            if (currBalance < _collateralRecord.amount) {
                 revert InsufficientCollateral(_collateralRecord, currBalance);
             }
         }
