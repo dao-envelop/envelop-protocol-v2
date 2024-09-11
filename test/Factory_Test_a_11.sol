@@ -65,8 +65,8 @@ contract Factory_Test_a_11 is Test {
         );
 
         
-
         address payable _wnftWallet = payable(wnftAsset.asset.contractAddress);
+        assertEq(erc721.ownerOf(tokenId), _wnftWallet);
         //transfer original NFT to wnft storage
         
                 
@@ -77,11 +77,42 @@ contract Factory_Test_a_11 is Test {
             abi.encodeWithSelector(WNFTLegacy721.InsufficientCollateral.selector, original_nft, 0)
         );
         wnft.removeCollateral(original_nft, address(1));
-        //wnft.removeCollateral(original_nft, address(1));
-        //console2.log(erc721.ownerOf(tokenId));
 
-        /*assertEq(address(this).balance, balanceBefore + sendEtherAmount / 2);
-        assertEq(_wnftWallet.balance, 0);
-        assertEq(erc20.balanceOf(_wnftWallet), 0);*/
+        // try to removeCollateralBatch original nft - revert
+        ET.AssetItem[] memory assets = new ET.AssetItem[](1);
+        assets[0] = original_nft;
+        vm.expectRevert(
+            abi.encodeWithSelector(WNFTLegacy721.InsufficientCollateral.selector, original_nft, 0)
+        );
+        wnft.removeCollateralBatch(assets, address(1));
+
+        // try to executeEncodedTx original nft - revert
+        bytes memory _data = abi.encodeWithSignature(
+            "transferFrom(address,address,uint256)",
+            _wnftWallet, address(11), tokenId
+        );
+
+        vm.expectRevert(
+            abi.encodeWithSelector(WNFTLegacy721.InsufficientCollateral.selector, original_nft, 0)
+        );
+        wnft.executeEncodedTx(address(erc721), 0, _data);
+
+        // try to executeEncodedTx original nft - revert
+        address[] memory targets = new address[](1);
+        bytes[] memory dataArray = new bytes[](1);
+        uint256[] memory values = new uint256[](1);
+
+        targets[0] = address(erc721);
+        dataArray[0] = _data;
+        values[0] = 0;
+
+        vm.expectRevert(
+            abi.encodeWithSelector(WNFTLegacy721.InsufficientCollateral.selector, original_nft, 0)
+        );
+        wnft.executeEncodedTxBatch(targets, values, dataArray);
+
+        // try to unwrap with original nft inside
+        wnft.unWrap(new ET.AssetItem[](0));
+        assertEq(erc721.ownerOf(tokenId), address(this));
     }
 }
