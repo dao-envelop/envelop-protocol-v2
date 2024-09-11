@@ -138,6 +138,7 @@ contract WNFTLegacy721 is
       _disableInitializers();
       emit EnvelopV2OracleType(ORACLE_TYPE, type(WNFTLegacy721).name);
     }
+    
     function initialize(
         address _creator,
         string memory name_,
@@ -366,11 +367,12 @@ contract WNFTLegacy721 is
     /**
      * @dev See {IERC165-supportsInterface}.
      */
+     // TODO  TESTS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
     function supportsInterface(bytes4 interfaceId) 
         public 
         view 
         virtual  
-        override(ERC721Upgradeable, ERC1155HolderUpgradeable) 
+        override(ERC721Upgradeable, ERC1155HolderUpgradeable, IERC165) 
         //override
         returns (bool) 
     {
