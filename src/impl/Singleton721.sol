@@ -70,7 +70,7 @@ abstract contract Singleton721 is ERC721Upgradeable, IERC4906 {
         string memory _tokenUrl
     ) internal onlyInitializing {
         _mint(_creator,TOKEN_ID);
-        if (bytes(_tokenUrl).length == 0) {
+        if (bytes(_tokenUrl).length != 0) {
              Singleton721Storage storage $ = _getSingleton721Storage();
             $.customBaseURL = _tokenUrl;
         }

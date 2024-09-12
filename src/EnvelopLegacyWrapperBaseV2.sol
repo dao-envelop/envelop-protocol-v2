@@ -27,6 +27,16 @@ contract EnvelopLegacyWrapperBaseV2 is Ownable, TokenService {
         bytes2 rules;
     }
 
+    // Just against stack too deep
+    struct NFTMetaDataPacked{
+        address receiver;
+        uint256 batchSize;
+        string name;
+        string symbol;
+        string baseurl;
+
+    }
+
     IEnvelopWNFTFactory public immutable factory;
     
     // Map from wrapping asset type to wnft(implementaion) contract address and last minted id
@@ -44,6 +54,7 @@ contract EnvelopLegacyWrapperBaseV2 is Ownable, TokenService {
         factory = IEnvelopWNFTFactory(_factoryAddress); 
     }
 
+    
     function wrap(
         INData calldata _inData, 
         ET.AssetItem[] calldata _collateral, 
@@ -51,6 +62,181 @@ contract EnvelopLegacyWrapperBaseV2 is Ownable, TokenService {
     ) 
         external 
         payable 
+        returns (ET.AssetItem memory wnft)
+    {
+        return _wrap(_inData, _collateral, 
+            NFTMetaDataPacked(
+                _wrappFor,
+                1,
+                "LegacyEnvelopWNFTV2", 
+                "LEWV2", 
+                ""
+            )
+        );
+    }
+
+    function wrapBatch(
+        INData[] calldata _inDataS, 
+        ET.AssetItem[] calldata _collateralERC20, 
+        address[] calldata _receivers
+    )
+        external
+        payable
+    {
+         require(
+            _inDataS.length == _receivers.length, 
+            "Array params must have equal length"
+        );
+        for (uint256 i = 0; i < _inDataS.length; i++) {
+            _wrap(_inDataS[i], _collateralERC20, 
+            NFTMetaDataPacked(
+                _receivers[i], 
+                _inDataS.length,
+                "LegacyEnvelopWNFTV2", 
+                "LEWV2", 
+                ""
+            )
+        );
+
+        }
+
+    }
+
+    
+
+    function wrapWithCustomMetaData(
+        INData calldata _inData, 
+        ET.AssetItem[] calldata _collateral, 
+        address _wrappFor,
+        string memory name_,
+        string memory symbol_,
+        string memory _baseurl
+    )  
+        public 
+        payable  
+        returns (ET.AssetItem memory wnft) 
+    {
+        return _wrap(_inData, _collateral,  
+            NFTMetaDataPacked(_wrappFor, 1, name_, symbol_, _baseurl)
+        );
+
+    }
+
+    function wrapWithCustomMetaDataBatch(
+        INData[] calldata _inDataS, 
+        ET.AssetItem[] calldata _collateralERC20, 
+        address[] calldata _receivers,
+        string memory name_,
+        string memory symbol_,
+        string memory _baseurl
+    )
+        external
+        payable
+    {
+         require(
+            _inDataS.length == _receivers.length, 
+            "Array params must have equal length"
+        );
+        for (uint256 i = 0; i < _inDataS.length; i++) {
+            _wrap(_inDataS[i], _collateralERC20, 
+                NFTMetaDataPacked(
+                    _receivers[i], 
+                    _inDataS.length,
+                    name_, 
+                    symbol_, 
+                    _baseurl
+                )
+            );
+        }
+
+    }
+
+    function addCollateralBatch(
+        address[] calldata _wNFTAddress, 
+        uint256[] calldata _wNFTTokenId, 
+        ET.AssetItem[] calldata _collateralERC20
+    ) public payable {
+        require(_wNFTAddress.length == _wNFTTokenId.length, "Array params must have equal length");
+        require(_collateralERC20.length > 0 || msg.value > 0, "Collateral not found");
+
+         // cycle for wNFTs that need to be topup with collateral
+        for (uint256 i = 0; i < _wNFTAddress.length; i ++){
+            // Check  that support EnvelopV2 interface
+            if ( _supportsERC165InterfaceUnchecked(
+                    _wNFTAddress[i], 
+                    type(IEnvelopV2wNFT).interfaceId
+                ))
+            {
+
+            }
+            _addCollateral(_wNFTAddress[i], _wNFTAddress.length, _collateralERC20);
+            
+            // Native Change return  - 1 wei return ?
+            uint256 valuePerWNFT = msg.value / _wNFTAddress.length;
+            if (valuePerWNFT * _wNFTAddress.length < msg.value ){
+                address payable s = payable(msg.sender);
+                s.transfer(msg.value - valuePerWNFT * _wNFTAddress.length);
+            }
+
+        }
+    }
+
+    
+    //  LOW LEVEL passthrough to factory methods  - NOT SUPPORTED in THIS IMPLEMENTATION
+    // function creatWNFT(address _implementation, bytes memory _initCallData) 
+    //     external 
+    //     payable 
+    //     returns(address wnft)
+    // {
+    //     // create wnft
+    //      wnft = payable(
+    //         factory.creatWNFT(
+    //             _implementation,
+    //             _initCallData
+    //         )
+    //     );
+
+    // }
+
+
+    // function creatWNFT(address _implementation, bytes memory _initCallData, bytes32 _salt) 
+    //     external 
+    //     payable 
+    //     returns(address wnft)
+    // {
+    //     // create wnft
+    //     wnft = payable(
+    //         factory.creatWNFT(
+    //             _implementation,
+    //             _initCallData,
+    //             _salt
+    //         )
+    //     );
+        
+    // }
+
+    /////////////////////////////////////////////////////////////////////
+    //                    Admin functions                              //
+    /////////////////////////////////////////////////////////////////////
+    function setWNFTId(
+        ET.AssetType  _assetOutType, 
+        address _wnftContract, 
+        uint256 _tokenId
+    ) external onlyOwner {
+        require(_wnftContract != address(0), "No zero address");
+        lastWNFTId[_assetOutType] = ET.NFTItem(_wnftContract, _tokenId);
+        wnftTypes[_wnftContract] =  _assetOutType;
+    }
+    //////////////////////////////////////////////////////////////////////
+
+    function _wrap(
+        INData calldata _inData, 
+        ET.AssetItem[] calldata _collateral, 
+        //address _wrappFor,
+        NFTMetaDataPacked memory _meta
+        //uint256 _wNFTBatchSize
+    ) 
+        internal 
         returns (ET.AssetItem memory wnft)
     {
         ET.NFTItem memory implementation = lastWNFTId[_inData.outType];
@@ -76,13 +262,14 @@ contract EnvelopLegacyWrapperBaseV2 is Ownable, TokenService {
             );
         }
 
-        _addCollateral(wnftAddress, 1, _collateral);
+        // We can interact with
+        _addCollateral(wnftAddress, _meta.batchSize, _collateral);
         // Encode init string
-        bytes memory initCallData = abi.encodeWithSignature(
-
+        bytes memory initCallData;
+        initCallData = abi.encodeWithSignature(
             IEnvelopV2wNFT(implementation.contractAddress).INITIAL_SIGN_STR(),
-            _wrappFor, 
-            "LegacyWNFTNAME", "LWNFT", "https://api.envelop.is" , //TODO  ???
+            _meta.receiver, 
+            _meta.name, _meta.symbol, _meta.baseurl , 
             ET.WNFT(
                 _inData.inAsset, // inAsset
                 _collateral,   // collateral
@@ -119,18 +306,6 @@ contract EnvelopLegacyWrapperBaseV2 is Ownable, TokenService {
             _inData.outBalance  //Check for  721
         );
     }
-     /////////////////////////////////////////////////////////////////////
-    //                    Admin functions                              //
-    /////////////////////////////////////////////////////////////////////
-    function setWNFTId(
-        ET.AssetType  _assetOutType, 
-        address _wnftContract, 
-        uint256 _tokenId
-    ) external onlyOwner {
-        require(_wnftContract != address(0), "No zero address");
-        lastWNFTId[_assetOutType] = ET.NFTItem(_wnftContract, _tokenId);
-        wnftTypes[_wnftContract] =  _assetOutType;
-    }
 
     function _mustTransfered(ET.AssetItem calldata _assetForTransfer) 
         internal 
@@ -148,15 +323,14 @@ contract EnvelopLegacyWrapperBaseV2 is Ownable, TokenService {
 
     function _addCollateral(
         address _wNFTAddress, 
-        uint256 _wNFTTokenId, 
+        uint256 _wNFTCount, 
         ET.AssetItem[] calldata _collateral
     ) internal virtual 
     {
-        _wNFTTokenId;
         // Process Native Colleteral
         // Fee ??
         if (msg.value > 0) {
-            Address.sendValue(payable(_wNFTAddress), msg.value);
+            Address.sendValue(payable(_wNFTAddress), msg.value / _wNFTCount);
         }
        
         // Process Token Colleteral
@@ -172,6 +346,39 @@ contract EnvelopLegacyWrapperBaseV2 is Ownable, TokenService {
                 );
             }
         }
+    }
+
+     /**
+     *         FROM OpenZeppelin
+     * @notice Query if a contract implements an interface, does not check ERC165 support
+     * @param account The address of the contract to query for support of an interface
+     * @param interfaceId The interface identifier, as specified in ERC-165
+     * @return true if the contract at account indicates support of the interface with
+     * identifier interfaceId, false otherwise
+     * @dev Assumes that account contains a contract that supports ERC165, otherwise
+     * the behavior of this method is undefined. This precondition can be checked
+     * with {supportsERC165}.
+     *
+     * Some precompiled contracts will falsely indicate support for a given interface, so caution
+     * should be exercised when using this function.
+     *
+     * Interface identification is specified in ERC-165.
+     */
+    function _supportsERC165InterfaceUnchecked(address account, bytes4 interfaceId) internal view returns (bool) {
+        // prepare call
+        bytes memory encodedParams = abi.encodeCall(IERC165.supportsInterface, (interfaceId));
+
+        // perform static call
+        bool success;
+        uint256 returnSize;
+        uint256 returnValue;
+        assembly {
+            success := staticcall(30000, account, add(encodedParams, 0x20), mload(encodedParams), 0x00, 0x20)
+            returnSize := returndatasize()
+            returnValue := mload(0x00)
+        }
+
+        return success && returnSize >= 0x20 && returnValue > 0;
     }
 
 
