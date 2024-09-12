@@ -272,7 +272,6 @@ contract EnvelopLegacyWrapperBaseV2 is Ownable, TokenService {
             );
         }
 
-        // We can interact with
         _addCollateral(wnftAddress, _collateral);
         // Encode init string
         bytes memory initCallData;
@@ -300,6 +299,8 @@ contract EnvelopLegacyWrapperBaseV2 is Ownable, TokenService {
             )
         );
 
+        // must add native ONLY AFTER PROXY CREATED, becouse there is an event
+        // fallback function for Envelop Oracle
         _addCollateralNative(proxy, _meta.batchSize);
 
         assert(proxy == wnftAddress);
