@@ -61,7 +61,6 @@ contract Factory_Test_m_02 is Test {
 
     function test_create_legacy_wrapper() public {
         //ET.WNFT memory wnftcheck;
-
         EnvelopLegacyWrapperBaseV2.INData memory ind = EnvelopLegacyWrapperBaseV2.INData(
             ET.AssetItem(ET.Asset(ET.AssetType.EMPTY, address(0)),0,0), // inAsset
             address(this), //unWrapDestination (unused)
@@ -73,12 +72,45 @@ contract Factory_Test_m_02 is Test {
             0x0105   //bytes2
         ); 
         ET.AssetItem[] memory _coll = new ET.AssetItem[](0); 
+        
+        ET.NFTItem memory nonce2  = wrapper.saltBase(ET.AssetType.ERC721);
         address wnftPredictedAddress = factory.predictDeterministicAddress(
             address(impl_legacy), // implementation address
-            keccak256(abi.encode(nonce))
+            keccak256(abi.encode(nonce2))
         );
         ET.AssetItem  memory created = wrapper.wrap(ind, _coll, address(22));
         assertNotEq(created.asset.contractAddress, address(impl_legacy));
-        //assertEq(wnftPredictedAddress, created.asset.contractAddress);
+        assertEq(wnftPredictedAddress, created.asset.contractAddress);
+    }
+
+    function test_create_2_legacy_wrapper() public {
+        //ET.WNFT memory wnftcheck;
+        EnvelopLegacyWrapperBaseV2.INData memory ind = EnvelopLegacyWrapperBaseV2.INData(
+            ET.AssetItem(ET.Asset(ET.AssetType.EMPTY, address(0)),0,0), // inAsset
+            address(this), //unWrapDestination (unused)
+            new ET.Fee[](0), // fees
+            new ET.Lock[](0), // locks
+            new ET.Royalty[](0), // royalties
+            ET.AssetType.ERC721,
+            0, // outbalance
+            0x0105   //bytes2
+        ); 
+        ET.AssetItem[] memory _coll = new ET.AssetItem[](0); 
+        
+        ET.NFTItem memory nonce2  = wrapper.saltBase(ET.AssetType.ERC721);
+        address wnftPredictedAddress = factory.predictDeterministicAddress(
+            address(impl_legacy), // implementation address
+            keccak256(abi.encode(nonce2))
+        );
+        ET.AssetItem  memory created = wrapper.wrap(ind, _coll, address(22));
+        assertNotEq(created.asset.contractAddress, address(impl_legacy));
+        assertEq(wnftPredictedAddress, created.asset.contractAddress);
+
+        created = wrapper.wrap{value: sendEtherAmount}(ind, _coll, address(22));
+        assertEq(created.asset.contractAddress.balance, sendEtherAmount);
+
+        //Address.sendValue(payable(created.asset.contractAddress), 77777777);
+
+       
     }
 }

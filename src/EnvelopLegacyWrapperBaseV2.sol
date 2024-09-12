@@ -167,17 +167,15 @@ contract EnvelopLegacyWrapperBaseV2 is Ownable, TokenService {
                     type(IEnvelopV2wNFT).interfaceId
                 ))
             {
-
+                _addCollateral(_wNFTAddress[i],  _collateralERC20);
+                _addCollateralNative(_wNFTAddress[i], _wNFTAddress.length);
             }
-            _addCollateral(_wNFTAddress[i], _wNFTAddress.length, _collateralERC20);
-            
-            // Native Change return  - 1 wei return ?
-            uint256 valuePerWNFT = msg.value / _wNFTAddress.length;
-            if (valuePerWNFT * _wNFTAddress.length < msg.value ){
-                address payable s = payable(msg.sender);
-                s.transfer(msg.value - valuePerWNFT * _wNFTAddress.length);
-            }
-
+        }
+        // Native Change return  - 1 wei return ?
+        uint256 valuePerWNFT = msg.value / _wNFTAddress.length;
+        if (valuePerWNFT * _wNFTAddress.length < msg.value ){
+            address payable s = payable(msg.sender);
+            s.transfer(msg.value - valuePerWNFT * _wNFTAddress.length);
         }
     }
 
@@ -222,12 +220,24 @@ contract EnvelopLegacyWrapperBaseV2 is Ownable, TokenService {
         ET.AssetType  _assetOutType, 
         address _wnftContract, 
         uint256 _tokenId
-    ) external onlyOwner {
+    ) 
+        external 
+        onlyOwner 
+    {
         require(_wnftContract != address(0), "No zero address");
         lastWNFTId[_assetOutType] = ET.NFTItem(_wnftContract, _tokenId);
         wnftTypes[_wnftContract] =  _assetOutType;
     }
     //////////////////////////////////////////////////////////////////////
+
+    function saltBase(ET.AssetType _wnftType) 
+        public 
+        view 
+        returns(ET.NFTItem memory nextItem)
+
+    {
+        nextItem = lastWNFTId[_wnftType];
+    }
 
     function _wrap(
         INData calldata _inData, 
@@ -263,7 +273,7 @@ contract EnvelopLegacyWrapperBaseV2 is Ownable, TokenService {
         }
 
         // We can interact with
-        _addCollateral(wnftAddress, _meta.batchSize, _collateral);
+        _addCollateral(wnftAddress, _collateral);
         // Encode init string
         bytes memory initCallData;
         initCallData = abi.encodeWithSignature(
@@ -289,6 +299,8 @@ contract EnvelopLegacyWrapperBaseV2 is Ownable, TokenService {
                 keccak256(abi.encode(implementation))
             )
         );
+
+        _addCollateralNative(proxy, _meta.batchSize);
 
         assert(proxy == wnftAddress);
 
@@ -323,16 +335,9 @@ contract EnvelopLegacyWrapperBaseV2 is Ownable, TokenService {
 
     function _addCollateral(
         address _wNFTAddress, 
-        uint256 _wNFTCount, 
         ET.AssetItem[] calldata _collateral
     ) internal virtual 
     {
-        // Process Native Colleteral
-        // Fee ??
-        if (msg.value > 0) {
-            Address.sendValue(payable(_wNFTAddress), msg.value / _wNFTCount);
-        }
-       
         // Process Token Colleteral
         for (uint256 i = 0; i <_collateral.length; i ++) {
             if (_collateral[i].asset.assetType != ET.AssetType.NATIVE) {
@@ -345,6 +350,14 @@ contract EnvelopLegacyWrapperBaseV2 is Ownable, TokenService {
                     "Suspicious asset for wrap"
                 );
             }
+        }
+    }
+
+    function _addCollateralNative(address _wNFTAddress, uint256 _batchSize) 
+        internal 
+    {
+        if (msg.value > 0) {
+            Address.sendValue(payable(_wNFTAddress), msg.value / _batchSize);
         }
     }
 
