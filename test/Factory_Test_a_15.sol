@@ -7,15 +7,15 @@ import "forge-std/console.sol";
 
 import {EnvelopWNFTFactory} from "../src/EnvelopWNFTFactory.sol";
 import {MockERC721} from "../src/mock/MockERC721.sol";
-import {MockERC1155} from "../src/mock/MockERC1155.sol";
 import {MockERC20} from "../src/mock/MockERC20.sol";
 import "../src/impl/WNFTLegacy721.sol";
 import "../src/EnvelopLegacyWrapperBaseV2.sol";
 //import "../src/impl/Singleton721.sol";
 //import {ET} from "../src/utils/LibET.sol";
 
-// try to withdraw original nft - erc1155
-contract Factory_Test_a_12 is Test {
+// try to withdraw original nft - erc721
+// when same NFT in collateral (same nft smart contract)
+contract Factory_Test_a_15 is Test {
     
     event Log(string message);
 
@@ -23,7 +23,6 @@ contract Factory_Test_a_12 is Test {
     uint256 public sendERC20Amount = 3e18;
     uint256 timelock = 10000;
     MockERC721 public erc721;
-    MockERC1155 public erc1155;
     MockERC20 public erc20;
     EnvelopWNFTFactory public factory;
     WNFTLegacy721 public impl_legacy;
@@ -32,7 +31,6 @@ contract Factory_Test_a_12 is Test {
     receive() external payable virtual {}
     function setUp() public {
         erc721 = new MockERC721('Mock ERC721', 'ERC721');
-        erc1155 = new MockERC1155('api.envelop.is');
         erc20 = new MockERC20('Mock ERC20', 'ERC20');
         factory = new EnvelopWNFTFactory();
         wrapper = new EnvelopLegacyWrapperBaseV2(address(factory));
@@ -44,14 +42,10 @@ contract Factory_Test_a_12 is Test {
             impl_legacy.TOKEN_ID()
         );
     }
-
+    
     function test_create_legacy() public {
         uint256 tokenId = 0;
-        uint256 amount = 6;    
-        vm.prank(address(1));
-        erc1155.mint(address(1), tokenId, amount);
-
-        ET.AssetItem memory original_nft = ET.AssetItem(ET.Asset(ET.AssetType.ERC1155, address(erc1155)),tokenId,amount);
+        ET.AssetItem memory original_nft = ET.AssetItem(ET.Asset(ET.AssetType.ERC721, address(erc721)),tokenId,0);
         EnvelopLegacyWrapperBaseV2.INData memory inData = EnvelopLegacyWrapperBaseV2.INData(
                 original_nft, // inAsset
                 address(1), //unWrapDestination
@@ -63,25 +57,27 @@ contract Factory_Test_a_12 is Test {
                 0x0000   //bytes2
         ); 
         
-        vm.startPrank(address(1));
-        erc1155.setApprovalForAll(address(wrapper),true);
-
+        erc721.approve(address(wrapper),tokenId);
 
         ET.AssetItem memory wnftAsset = wrapper.wrap(
             inData,
             new ET.AssetItem[](0),   // collateral
-            address(1)
+            address(this)
         );
-        vm.stopPrank();
 
         
         address payable _wnftWallet = payable(wnftAsset.asset.contractAddress);
-        assertEq(erc1155.balanceOf(_wnftWallet,tokenId), amount);
-
-        WNFTLegacy721 wnft = WNFTLegacy721(_wnftWallet);
+        assertEq(erc721.ownerOf(tokenId), _wnftWallet);
+        //transfer original NFT to wnft storage
         
-        // try to withdraw original NFT ERC1155 - revert
-        vm.prank(address(1));
+                
+        WNFTLegacy721 wnft = WNFTLegacy721(_wnftWallet);
+
+        // add same nft to wnft wallet
+        erc721.mint(_wnftWallet, tokenId + 1); 
+        assertEq(erc721.ownerOf(tokenId + 1), _wnftWallet);
+
+        // try to withdraw original NFT ERC721 - revert
         vm.expectRevert(
             abi.encodeWithSelector(WNFTLegacy721.InsufficientCollateral.selector, original_nft, 0)
         );
@@ -90,7 +86,6 @@ contract Factory_Test_a_12 is Test {
         // try to removeCollateralBatch original nft - revert
         ET.AssetItem[] memory assets = new ET.AssetItem[](1);
         assets[0] = original_nft;
-        vm.prank(address(1));
         vm.expectRevert(
             abi.encodeWithSelector(WNFTLegacy721.InsufficientCollateral.selector, original_nft, 0)
         );
@@ -98,34 +93,34 @@ contract Factory_Test_a_12 is Test {
 
         // try to executeEncodedTx original nft - revert
         bytes memory _data = abi.encodeWithSignature(
-            "safeTransferFrom(address,address,uint256,uint256,bytes)",
-            _wnftWallet, address(11), tokenId, amount, bytes('')
+            "transferFrom(address,address,uint256)",
+            _wnftWallet, address(11), tokenId
         );
 
-        vm.prank(address(1));
         vm.expectRevert(
             abi.encodeWithSelector(WNFTLegacy721.InsufficientCollateral.selector, original_nft, 0)
         );
-        wnft.executeEncodedTx(address(erc1155), 0, _data);
+        wnft.executeEncodedTx(address(erc721), 0, _data);
 
         // try to executeEncodedTx original nft - revert
         address[] memory targets = new address[](1);
         bytes[] memory dataArray = new bytes[](1);
         uint256[] memory values = new uint256[](1);
 
-        targets[0] = address(erc1155);
+        targets[0] = address(erc721);
         dataArray[0] = _data;
         values[0] = 0;
 
-        vm.prank(address(1));
         vm.expectRevert(
             abi.encodeWithSelector(WNFTLegacy721.InsufficientCollateral.selector, original_nft, 0)
         );
         wnft.executeEncodedTxBatch(targets, values, dataArray);
 
-        // try to unwrap with original nft inside
-        vm.prank(address(1));
-        wnft.unWrap(new ET.AssetItem[](0));
-        assertEq(erc1155.balanceOf(address(1), tokenId), amount);
+        // try to unwrap with original nft inside and erc721 collateral
+        ET.AssetItem[] memory colAssets = new ET.AssetItem[](1);
+        colAssets[0] = ET.AssetItem(ET.Asset(ET.AssetType.ERC721, address(erc721)),tokenId + 1,0);
+        wnft.unWrap(colAssets);
+        assertEq(erc721.ownerOf(tokenId), address(this));
+        assertEq(erc721.ownerOf(tokenId + 1), address(this));
     }
 }

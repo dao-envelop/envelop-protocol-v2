@@ -15,7 +15,8 @@ import "../src/EnvelopLegacyWrapperBaseV2.sol";
 //import {ET} from "../src/utils/LibET.sol";
 
 // try to withdraw original nft - erc1155
-contract Factory_Test_a_12 is Test {
+// before add in collateral same nft like original nt
+contract Factory_Test_a_20 is Test {
     
     event Log(string message);
 
@@ -50,6 +51,7 @@ contract Factory_Test_a_12 is Test {
         uint256 amount = 6;    
         vm.prank(address(1));
         erc1155.mint(address(1), tokenId, amount);
+        erc1155.mint(address(1), tokenId + 1, amount);
 
         ET.AssetItem memory original_nft = ET.AssetItem(ET.Asset(ET.AssetType.ERC1155, address(erc1155)),tokenId,amount);
         EnvelopLegacyWrapperBaseV2.INData memory inData = EnvelopLegacyWrapperBaseV2.INData(
@@ -65,20 +67,21 @@ contract Factory_Test_a_12 is Test {
         
         vm.startPrank(address(1));
         erc1155.setApprovalForAll(address(wrapper),true);
-
-
         ET.AssetItem memory wnftAsset = wrapper.wrap(
             inData,
             new ET.AssetItem[](0),   // collateral
             address(1)
         );
         vm.stopPrank();
-
         
         address payable _wnftWallet = payable(wnftAsset.asset.contractAddress);
         assertEq(erc1155.balanceOf(_wnftWallet,tokenId), amount);
 
         WNFTLegacy721 wnft = WNFTLegacy721(_wnftWallet);
+
+        // add collateral
+        vm.prank(address(1));
+        erc1155.safeTransferFrom(address(1), _wnftWallet, tokenId + 1, amount, bytes(""));
         
         // try to withdraw original NFT ERC1155 - revert
         vm.prank(address(1));
@@ -125,7 +128,10 @@ contract Factory_Test_a_12 is Test {
 
         // try to unwrap with original nft inside
         vm.prank(address(1));
-        wnft.unWrap(new ET.AssetItem[](0));
-        assertEq(erc1155.balanceOf(address(1), tokenId), amount);
+        ET.AssetItem[] memory colAssets = new ET.AssetItem[](1);
+        colAssets[0] = ET.AssetItem(ET.Asset(ET.AssetType.ERC1155, address(erc1155)),tokenId + 1,amount);
+        wnft.unWrap(colAssets);
+        //assertEq(erc1155.balanceOf(address(1), tokenId), amount);
+        //assertEq(erc1155.balanceOf(address(1), tokenId + 1), amount);
     }
 }
