@@ -157,4 +157,43 @@ contract Factory_Test_a_20 is Test  {
         );
         assertEq(wnft.tokenURI(impl_legacy.TOKEN_ID()), url);
     }
+
+    // no rules
+    // special baseUrl
+    function test_tokenUri_3() public {
+        ET.AssetItem memory original_nft = ET.AssetItem(ET.Asset(ET.AssetType.EMPTY, address(0)),0,0);
+        EnvelopLegacyWrapperBaseV2.INData memory inData = EnvelopLegacyWrapperBaseV2.INData(
+                original_nft, // inAsset
+                address(1), //unWrapDestination
+                new ET.Fee[](0), // fees 
+                new ET.Lock[](0), // locks
+                new ET.Royalty[](0), // royalties
+                ET.AssetType.ERC721,
+                uint256(0),        
+                0x0000   //bytes2
+        ); 
+        
+        ET.AssetItem memory wnftAsset = wrapper.wrapWithCustomMetaData(
+            inData,
+            new ET.AssetItem[](0),   // collateral
+            address(1),
+            "ENV",
+            "EN",
+            "https://api.envelop.is"
+        );
+        address payable _wnftWallet = payable(wnftAsset.asset.contractAddress);
+        WNFTLegacy721 wnft = WNFTLegacy721(_wnftWallet);
+        string memory url = string(
+            abi.encodePacked(
+                "https://api.envelop.is",
+                vm.toString(block.chainid),
+                "/",
+                uint160(wnftAsset.asset.contractAddress).toHexString(),
+                //vm.toString(wnftAsset.asset.contractAddress),
+                "/",
+                vm.toString(impl_legacy.TOKEN_ID())
+            )
+        );
+        assertEq(wnft.tokenURI(impl_legacy.TOKEN_ID()), url);
+    }
 }
