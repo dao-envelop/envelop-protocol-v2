@@ -138,7 +138,7 @@ contract WNFTLegacy721 is
       _disableInitializers();
       emit EnvelopV2OracleType(ORACLE_TYPE, type(WNFTLegacy721).name);
     }
-    
+
     function initialize(
         address _creator,
         string memory name_,
@@ -477,6 +477,14 @@ contract WNFTLegacy721 is
             if (_ownerOf(_collateralRecord) != address(this)){
                 revert InsufficientCollateral(_collateralRecord, 0);
             }
+        } else if (_collateralRecord.asset.assetType == ET.AssetType.NATIVE) {
+            // DO nothing  because all msg,value from transaction will transfered to
+            // after wNFT creation for  emit appropriate event
+            
+            // if (_collateralRecord.amount > msg.value){
+            //     revert InsufficientCollateral(_collateralRecord, msg.value);
+            // }
+            
         } else {
             uint256 currBalance = _balanceOf(_collateralRecord ,address(this));
             if (currBalance < _collateralRecord.amount) {
