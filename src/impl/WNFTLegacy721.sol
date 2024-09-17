@@ -394,15 +394,20 @@ contract WNFTLegacy721 is
         if (_checkRule(0x0100, $.wnftData.rules)) {    
             return uri_;
         } 
-        // TODO check!!!
         if ($.wnftData.inAsset.asset.assetType == ET.AssetType.ERC721 
-            || $.wnftData.inAsset.asset.assetType == ET.AssetType.ERC1155
+            
             )
         {
             if (_ownerOf($.wnftData.inAsset) == address(this)) {
                 // method from TokenService
                 uri_ = _getURI($.wnftData.inAsset);
             }
+        } else if ($.wnftData.inAsset.asset.assetType == ET.AssetType.ERC1155){
+            if (_balanceOf($.wnftData.inAsset, address(this)) > 0 ) {
+                // method from TokenService
+                uri_ = _getURI($.wnftData.inAsset);
+            }
+
         }
         
     }
