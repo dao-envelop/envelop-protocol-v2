@@ -396,7 +396,7 @@ contract WNFTLegacy721 is
         } 
         // TODO check!!!
         if ($.wnftData.inAsset.asset.assetType == ET.AssetType.ERC721 
-            || $.wnftData.inAsset.asset.assetType == ET.AssetType.ERC721
+            || $.wnftData.inAsset.asset.assetType == ET.AssetType.ERC1155
             )
         {
             if (_ownerOf($.wnftData.inAsset) == address(this)) {
