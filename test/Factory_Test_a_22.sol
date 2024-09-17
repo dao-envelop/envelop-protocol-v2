@@ -81,9 +81,11 @@ contract Factory_Test_a_22 is Test  {
 
     // use rules
     // no special baseUrl
-    /*function test_tokenUri_1() public {
+    function test_tokenUri_1() public {
         uint256 tokenId = 0;
-        ET.AssetItem memory original_nft = ET.AssetItem(ET.Asset(ET.AssetType.ERC721, address(erc721)),tokenId,0);
+        uint256 amount = 6;
+        erc1155.mint(address(1),tokenId, amount);
+        ET.AssetItem memory original_nft = ET.AssetItem(ET.Asset(ET.AssetType.ERC1155, address(erc1155)),tokenId,amount);
         EnvelopLegacyWrapperBaseV2.INData memory inData = EnvelopLegacyWrapperBaseV2.INData(
                 original_nft, // inAsset
                 address(1), //unWrapDestination
@@ -95,12 +97,15 @@ contract Factory_Test_a_22 is Test  {
                 0x0100   //bytes2
         ); 
         
-        erc721.setApprovalForAll(address(wrapper), true);
+        vm.startPrank(address(1));
+        erc1155.setApprovalForAll(address(wrapper), true);
         ET.AssetItem memory wnftAsset = wrapper.wrap(
             inData,
             new ET.AssetItem[](0),   // collateral
             address(1)
         );
+        vm.stopPrank();
+
         address payable _wnftWallet = payable(wnftAsset.asset.contractAddress);
         WNFTLegacy721 wnft = WNFTLegacy721(_wnftWallet);
         string memory url = string(
@@ -121,7 +126,9 @@ contract Factory_Test_a_22 is Test  {
     // special baseUrl
     function test_tokenUri_2() public {
         uint256 tokenId = 0;
-        ET.AssetItem memory original_nft = ET.AssetItem(ET.Asset(ET.AssetType.ERC721, address(erc721)),tokenId,0);
+        uint256 amount = 6;
+        erc1155.mint(address(1),tokenId, amount);
+        ET.AssetItem memory original_nft = ET.AssetItem(ET.Asset(ET.AssetType.ERC1155, address(erc1155)),tokenId,amount);
         EnvelopLegacyWrapperBaseV2.INData memory inData = EnvelopLegacyWrapperBaseV2.INData(
                 original_nft, // inAsset
                 address(1), //unWrapDestination
@@ -133,7 +140,8 @@ contract Factory_Test_a_22 is Test  {
                 0x0100   //bytes2
         ); 
         
-        erc721.setApprovalForAll(address(wrapper), true);
+        vm.startPrank(address(1));
+        erc1155.setApprovalForAll(address(wrapper), true);
         ET.AssetItem memory wnftAsset = wrapper.wrapWithCustomMetaData(
             inData,
             new ET.AssetItem[](0),   // collateral
@@ -142,6 +150,8 @@ contract Factory_Test_a_22 is Test  {
             "EN",
             "https://api.envelop.is"
         );
+        vm.stopPrank();
+
         address payable _wnftWallet = payable(wnftAsset.asset.contractAddress);
         WNFTLegacy721 wnft = WNFTLegacy721(_wnftWallet);
         string memory url = string(
@@ -162,7 +172,9 @@ contract Factory_Test_a_22 is Test  {
     // special baseUrl
     function test_tokenUri_3() public {
         uint256 tokenId = 0;
-        ET.AssetItem memory original_nft = ET.AssetItem(ET.Asset(ET.AssetType.ERC721, address(erc721)),tokenId,0);
+        uint256 amount = 6;
+        erc1155.mint(address(1),tokenId, amount);
+        ET.AssetItem memory original_nft = ET.AssetItem(ET.Asset(ET.AssetType.ERC1155, address(erc1155)),tokenId,amount);
         EnvelopLegacyWrapperBaseV2.INData memory inData = EnvelopLegacyWrapperBaseV2.INData(
                 original_nft, // inAsset
                 address(1), //unWrapDestination
@@ -174,7 +186,8 @@ contract Factory_Test_a_22 is Test  {
                 0x0000   //bytes2
         ); 
         
-        erc721.setApprovalForAll(address(wrapper), true);
+        vm.startPrank(address(1));
+        erc1155.setApprovalForAll(address(wrapper), true);
         ET.AssetItem memory wnftAsset = wrapper.wrapWithCustomMetaData(
             inData,
             new ET.AssetItem[](0),   // collateral
@@ -185,7 +198,7 @@ contract Factory_Test_a_22 is Test  {
         );
         address payable _wnftWallet = payable(wnftAsset.asset.contractAddress);
         WNFTLegacy721 wnft = WNFTLegacy721(_wnftWallet);
-        string memory url = erc721.tokenURI(tokenId);
+        string memory url = erc1155.uri(tokenId);
         assertEq(wnft.tokenURI(impl_legacy.TOKEN_ID()), url);
-    }*/
+    }
 }
