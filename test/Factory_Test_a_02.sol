@@ -13,6 +13,7 @@ import "../src/impl/WNFTLegacy721.sol";
 //import {ET} from "../src/utils/LibET.sol";
 
 // transfer wnft to other address, new owner tries to remove collateral
+// check approve after transfer
 contract Factory_Test_a_02 is Test {
     
     event Log(string message);
@@ -60,8 +61,15 @@ contract Factory_Test_a_02 is Test {
         assertEq(erc20.balanceOf(address(_wnftWallet)), sendERC20Amount);
         
         WNFTLegacy721 wnft = WNFTLegacy721(_wnftWallet);
+
+        wnft.approve(address(1), impl_legacy.TOKEN_ID());
         
         wnft.transferFrom(address(this), address(2), impl_legacy.TOKEN_ID());
+        assertEq(wnft.getApproved(impl_legacy.TOKEN_ID()), address(0));
+        uint256 tokenId = impl_legacy.TOKEN_ID();
+        vm.prank(address(1));
+        vm.expectRevert();
+        wnft.transferFrom(address(this), address(3), tokenId);
         assertEq(wnft.ownerOf(impl_legacy.TOKEN_ID()), address(2));
 
         vm.prank(address(2));
