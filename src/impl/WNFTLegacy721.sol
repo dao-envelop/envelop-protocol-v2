@@ -196,7 +196,6 @@ contract WNFTLegacy721 is
         }
 
         if (_wnftData.collateral.length > 0) {
-            // TODO Check collateral Balance
             // !!!! Dont save collateral info!!!!!! Because we will not store this data
             // in V2 protocol version
              for (uint256 i = 0; i < _wnftData.collateral.length; ++ i) {
@@ -394,15 +393,14 @@ contract WNFTLegacy721 is
         if (_checkRule(0x0100, $.wnftData.rules)) {    
             return uri_;
         } 
-        if ($.wnftData.inAsset.asset.assetType == ET.AssetType.ERC721 
-            
-            )
+        if ($.wnftData.inAsset.asset.assetType == ET.AssetType.ERC721)
         {
             if (_ownerOf($.wnftData.inAsset) == address(this)) {
                 // method from TokenService
                 uri_ = _getURI($.wnftData.inAsset);
             }
-        } else if ($.wnftData.inAsset.asset.assetType == ET.AssetType.ERC1155){
+        } else if ($.wnftData.inAsset.asset.assetType == ET.AssetType.ERC1155)
+        {
             if (_balanceOf($.wnftData.inAsset, address(this)) > 0 ) {
                 // method from TokenService
                 uri_ = _getURI($.wnftData.inAsset);

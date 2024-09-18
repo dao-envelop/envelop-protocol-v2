@@ -10,6 +10,5 @@ out/
 # Docs
 docs/
 logdo.md
-
 # Dotenv file
 .env
