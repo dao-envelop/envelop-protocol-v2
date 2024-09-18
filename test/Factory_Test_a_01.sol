@@ -83,4 +83,29 @@ contract Factory_Test_a_01 is Test {
         assertEq(address(2).balance, sendEtherAmount);
         assertEq(_wnftWallet.balance,0);
     }
+
+    // unsupported rules
+    function test_checkRules() public {
+        bytes memory initCallData = abi.encodeWithSignature(
+            impl_legacy.INITIAL_SIGN_STR(),
+            address(this), // creator and owner 
+            "LegacyWNFTNAME", 
+            "LWNFT", 
+            "https://api.envelop.is" ,
+            //new ET.WNFT[](1)[0]
+            ET.WNFT(
+                ET.AssetItem(ET.Asset(ET.AssetType.EMPTY, address(0)),0,0), // inAsset
+                new ET.AssetItem[](0),   // collateral
+                address(this), //unWrapDestination 
+                new ET.Fee[](0), // fees
+                new ET.Lock[](0), // locks
+                new ET.Royalty[](0), // royalties
+                0x0002   //bytes2
+            ) 
+        );  
+
+        bytes2 rule = 0x0002;
+        vm.expectRevert();
+        address payable _wnftWallet = payable(factory.creatWNFT(address(impl_legacy), initCallData));
+    }
 }
