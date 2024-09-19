@@ -13,6 +13,7 @@ import "../src/impl/WNFTLegacy721.sol";
 
 // spender of wnft withdraw eth from collateral
 // check eth events
+// try to unWrap - user is not owner and does not have allowance - revert
 contract Factory_Test_a_01 is Test {
     
     event Log(string message);
@@ -49,8 +50,13 @@ contract Factory_Test_a_01 is Test {
             ) 
         );  
 
+        vm.prank(address(100));
+        vm.expectRevert("Only for Envelop Authorized");
         address payable _wnftWallet = payable(factory.creatWNFT(address(impl_legacy), initCallData));
+
+        _wnftWallet = payable(factory.creatWNFT(address(impl_legacy), initCallData));
         assertNotEq(_wnftWallet, address(impl_legacy));
+        console2.log(_wnftWallet);
 
         // send eth to wnft wallet
         vm.prank(address(this));
@@ -82,6 +88,11 @@ contract Factory_Test_a_01 is Test {
         wnft.executeEncodedTx(address(2), sendEtherAmount / 2, data); 
         assertEq(address(2).balance, sendEtherAmount);
         assertEq(_wnftWallet.balance,0);
+
+        ET.AssetItem[] memory collaterals = new ET.AssetItem[](0);
+        vm.prank(address(100));
+        vm.expectRevert("Only for wNFT owner");
+        wnft.unWrap(collaterals);
     }
 
     // unsupported rules
