@@ -82,13 +82,15 @@ contract EnvelopLegacyWrapperBaseV2 is Ownable, TokenService {
     )
         external
         payable
+        returns (ET.AssetItem[] memory wnfts)
     {
          require(
             _inDataS.length == _receivers.length, 
             "Array params must have equal length"
         );
+        wnfts = new  ET.AssetItem[](_inDataS.length);
         for (uint256 i = 0; i < _inDataS.length; i++) {
-            _wrap(_inDataS[i], _collateralERC20, 
+            wnfts[i] = _wrap(_inDataS[i], _collateralERC20, 
             NFTMetaDataPacked(
                 _receivers[i], 
                 _inDataS.length,
@@ -132,13 +134,16 @@ contract EnvelopLegacyWrapperBaseV2 is Ownable, TokenService {
     )
         external
         payable
+        //returns (ET.AssetItem[] memory wnfts)
     {
          require(
             _inDataS.length == _receivers.length, 
             "Array params must have equal length"
         );
+        //wnfts = new  ET.AssetItem[](_inDataS.length); 
+
         for (uint256 i = 0; i < _inDataS.length; i++) {
-            _wrap(_inDataS[i], _collateralERC20, 
+             _wrap(_inDataS[i], _collateralERC20, 
                 NFTMetaDataPacked(
                     _receivers[i], 
                     _inDataS.length,
