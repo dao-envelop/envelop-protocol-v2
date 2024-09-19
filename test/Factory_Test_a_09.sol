@@ -96,6 +96,16 @@ contract Factory_Test_a_09 is Test {
         collateral = ET.AssetItem(ET.Asset(ET.AssetType.NATIVE, address(0)),0,sendEtherAmount / 2);
         collaterals1[0] = collateral;
         uint256 balanceBefore = address(this).balance;
+        vm.expectEmit();
+        emit WNFTLegacy721.UnWrappedV1(
+            _wnftWallet,                            // wrappedAddress,
+            address(0), // originalAddress,
+            impl_legacy.TOKEN_ID(),                                 // wrappedId, 
+            0,               // originalTokenId, 
+            address(this),                               // beneficiary, 
+            0,                                        // NOT SUPPORTED IN THIS IMPLEMENTATION, use  
+            bytes2("")                          // rules 
+        );
         wnft.unWrap(collaterals1);
 
         assertEq(address(this).balance, balanceBefore + sendEtherAmount / 2);
