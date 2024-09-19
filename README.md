@@ -23,7 +23,7 @@ $ forge script script/GetStorageSlot.s.sol:GetStorageSlot
 ```
 
 
-**Foundry**  is main framework for Envelop Protocol V2
+**Foundry**  is main framework for Envelop Protocol V2 
 
 ### First build
 ```shell

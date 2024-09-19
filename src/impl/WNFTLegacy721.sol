@@ -456,7 +456,7 @@ contract WNFTLegacy721 is
 
     function _isValidRules(bytes2 _rules) internal pure virtual returns (bool ok) {
         if (!_checkRule(_rules, SUPPORTED_RULES)) {
-            revert RuleSetNotSupported(_rules ^ SUPPORTED_RULES); // XOR
+            revert RuleSetNotSupported(_rules & SUPPORTED_RULES ^ _rules); //  return 1 in UNsupported digits
         }
         ok = true;
 

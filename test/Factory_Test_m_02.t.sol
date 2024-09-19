@@ -54,6 +54,7 @@ contract Factory_Test_m_02 is Test {
             keccak256(abi.encode(nonce))
         );
         address payable  created = payable(factory.creatWNFT(address(impl_legacy), initCallData, keccak256(abi.encode(nonce))));
+        //created = payable(factory.creatWNFT(address(impl_legacy), initCallData, keccak256(abi.encode(nonce))));
         assertNotEq(created, address(impl_legacy));
         assertEq(wnftPredictedAddress, created);
 
