@@ -4,6 +4,7 @@ pragma solidity ^0.8.13;
 import {Test, console2} from "forge-std/Test.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import "forge-std/console.sol";
+import {VmSafe} from "forge-std/Vm.sol";
 
 import {EnvelopWNFTFactory} from "../src/EnvelopWNFTFactory.sol";
 import {MockERC721} from "../src/mock/MockERC721.sol";
@@ -15,9 +16,9 @@ import "../src/EnvelopLegacyWrapperBaseV2.sol";
 //import {ET} from "../src/utils/LibET.sol";
 
 // call wrapBatch
-contract LegacyWrapper_a_01 is Test {
+contract LegacyWrapper_a_02 is Test {
     
-    event Log(string message);
+    
 
     uint256 public sendEtherAmount = 1e18;
     uint256 public sendERC20Amount = 3e18;
@@ -69,39 +70,77 @@ contract LegacyWrapper_a_01 is Test {
         ET.AssetItem[] memory collateral = new ET.AssetItem[](1);
         collateral[0] = ET.AssetItem(ET.Asset(ET.AssetType.ERC20, address(erc20)),0,sendERC20Amount);
         
-
-
-        
-        /*(bool sent, bytes memory data) = address(1).call{value: sendEtherAmount}("");
-        // suppress solc warnings 
-        sent;
-        data;*/
-
-        
         erc20.approve(address(wrapper), sendERC20Amount * 2);
         vm.expectRevert('Array params must have equal length');
-        wrapper.wrapBatch(
+
+        wrapper.wrapWithCustomMetaDataBatch(
             inDataS,
             collateral,   // collateral
-            receivers
+            receivers,
+            "ENV",
+            "EN",
+            "https://api1.envelop.is"
         );
 
         address[] memory receivers1 = new address[](2);
         receivers1[0] = address(1);
         receivers1[1] = address(2);
 
-        ET.AssetItem[] memory wnfts = wrapper.wrapBatch{value: sendEtherAmount}(
+        /*ET.AssetItem[] memory wnfts = */
+        vm.recordLogs();
+        string memory baseURL = 'https://api1.envelop.is/';
+        wrapper.wrapWithCustomMetaDataBatch{value: sendEtherAmount}(
             inDataS,
             collateral,   // collateral
-            receivers1
+            receivers1,
+            "ENV",
+            "EN",
+            baseURL
         );
-        assertEq(wnfts[0].asset.contractAddress.balance, sendEtherAmount / 2);
-        assertEq(wnfts[1].asset.contractAddress.balance, sendEtherAmount / 2);
-        assertEq(erc20.balanceOf(wnfts[0].asset.contractAddress), sendERC20Amount);
-        assertEq(erc20.balanceOf(wnfts[1].asset.contractAddress), sendERC20Amount);
-        WNFTLegacy721 wnft0 = WNFTLegacy721(payable(wnfts[0].asset.contractAddress));
-        WNFTLegacy721 wnft1 = WNFTLegacy721(payable(wnfts[1].asset.contractAddress));
-        assertEq(wnft0.ownerOf(impl_legacy.TOKEN_ID()), address(1));
-        assertEq(wnft1.ownerOf(impl_legacy.TOKEN_ID()), address(2));
+        // Log[] memory entries = vm.getRecordedLogs();
+        
+        VmSafe.Log[] memory logs = vm.getRecordedLogs();
+        
+        address wnftAddress1 =  address(uint160(uint256(logs[3].topics[2])));
+        address wnftAddress2 = address(uint160(uint256(logs[10].topics[2])));
+
+        address payable wnftAddressP1 = payable(wnftAddress1);
+        address payable wnftAddressP2 = payable(wnftAddress2);
+
+        assertEq(wnftAddress1.balance, sendEtherAmount / 2);
+        assertEq(wnftAddress2.balance, sendEtherAmount / 2);
+        assertEq(erc20.balanceOf(wnftAddress1), sendERC20Amount);
+        assertEq(erc20.balanceOf(wnftAddress2), sendERC20Amount);
+        WNFTLegacy721 wnft1 = WNFTLegacy721(wnftAddressP1);
+        WNFTLegacy721 wnft2 = WNFTLegacy721(wnftAddressP2);
+        assertEq(wnft1.ownerOf(impl_legacy.TOKEN_ID()), address(1));
+        assertEq(wnft2.ownerOf(impl_legacy.TOKEN_ID()), address(2));
+
+        string memory url1 = string(
+            abi.encodePacked(
+                baseURL,
+                vm.toString(block.chainid),
+                "/",
+                vm.toString(wnftAddress1),
+                "/",
+                vm.toString(impl_legacy.TOKEN_ID())
+            )
+        );
+        
+        assertEq(vm.toUppercase(url1), vm.toUppercase(wnft1.tokenURI(impl_legacy.TOKEN_ID())));
+
+        string memory url2 = string(
+            abi.encodePacked(
+                baseURL,
+                vm.toString(block.chainid),
+                "/",
+                vm.toString(wnftAddress2),
+                "/",
+                vm.toString(impl_legacy.TOKEN_ID())
+            )
+        );
+        
+        assertEq(vm.toUppercase(url2), vm.toUppercase(wnft2.tokenURI(impl_legacy.TOKEN_ID())));
+        
     }
 }
