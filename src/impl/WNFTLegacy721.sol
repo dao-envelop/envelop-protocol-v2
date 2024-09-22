@@ -116,11 +116,6 @@ contract WNFTLegacy721 is
         _;
     }
 
-    // modifier fixEtherBalance() {
-    //     uint256 bb = address(this).balance;
-    //     _;
-    //     _fixEtherChanges(bb, address(this).balance);
-    // }
 
     // keccak256(abi.encode(uint256(keccak256("envelop.storage.WNFTLegacy721")) - 1)) & ~bytes32(uint256(0xff))
     bytes32 private constant WNFTLegacy721StorageLocation = 0xb25b7d902932741f4867febf64c52dbc3980210eefc4a36bf4280ce48f34a100;
@@ -334,14 +329,6 @@ contract WNFTLegacy721 is
         returns (bytes[] memory r) 
     {
     
-        // r = new bytes[](_dataArray.length);
-        // for (uint256 i = 0; i < _dataArray.length; ++ i){
-        //     if (keccak256( _dataArray[i]) == keccak256(bytes(""))) {
-        //         Address.sendValue(payable(_targetArray[i]), _valueArray[i]);
-        //     } else {
-        //         r[i] = Address.functionCallWithValue(_targetArray[i], _dataArray[i], _valueArray[i]);
-        //     }
-        // }
         r = super._executeEncodedTxBatch(_targetArray, _valueArray, _dataArray);
         _checkInAssetSafety();
     }
@@ -399,22 +386,6 @@ contract WNFTLegacy721 is
     //    ******************* internals ***********************   //
     //    ******************* internals ***********************   //
     ////////////////////////////////////////////////////////////////
-
-    // function _fixEtherChanges(uint256 _balanceBefore, uint256 _balanceAfter) 
-    //     internal
-    //     virtual 
-    //     //returns (uint256 absDiff)
-    // {
-    //     if (_balanceBefore != _balanceAfter) {
-    //         emit EtherBalanceChanged(
-    //            _balanceBefore, 
-    //            _balanceAfter, 
-    //            msg.value, 
-    //            msg.sender
-    //         );
-    //     }
-    //     //absDiff =  _balanceBefore >= _balanceAfter ?  _balanceBefore  - _balanceAfter : _balanceAfter - _balanceBefore;
-    // }
 
     // 0x00 - TimeLock
     // 0x01 - TransferFeeLock   - UNSUPPORTED IN THIS IMPLEMENATION
