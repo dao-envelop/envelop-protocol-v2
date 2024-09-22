@@ -14,10 +14,8 @@ import "../src/EnvelopLegacyWrapperBaseV2.sol";
 //import "../src/impl/Singleton721.sol";
 //import {ET} from "../src/utils/LibET.sol";
 
-// msg.value for ether in collateral
-// collateral info has less eth than msg.value for tx
-// and unwrap
-contract Factory_Test_a_18 is Test {
+// call wrapBatch
+contract LegacyWrapper_a_01 is Test {
     
     event Log(string message);
 
@@ -49,6 +47,9 @@ contract Factory_Test_a_18 is Test {
     }
     
     function test_create_legacy() public {
+        
+        address[] memory receivers = new address[](1);
+        receivers[0] = address(1);
         ET.AssetItem memory original_nft = ET.AssetItem(ET.Asset(ET.AssetType.EMPTY, address(0)),0,0);
         EnvelopLegacyWrapperBaseV2.INData memory inData = EnvelopLegacyWrapperBaseV2.INData(
                 original_nft, // inAsset
@@ -59,48 +60,48 @@ contract Factory_Test_a_18 is Test {
                 ET.AssetType.ERC721,
                 uint256(0),        
                 0x0000   //bytes2
-        ); 
+        );
+
+        EnvelopLegacyWrapperBaseV2.INData[] memory inDataS = new  EnvelopLegacyWrapperBaseV2.INData[](2);
+        inDataS[0] = inData;
+        inDataS[1] = inData;
+
+        ET.AssetItem[] memory collateral = new ET.AssetItem[](1);
+        collateral[0] = ET.AssetItem(ET.Asset(ET.AssetType.ERC20, address(erc20)),0,sendERC20Amount);
         
-        (bool sent, bytes memory data) = address(1).call{value: sendEtherAmount}("");
+
+
+        
+        /*(bool sent, bytes memory data) = address(1).call{value: sendEtherAmount}("");
         // suppress solc warnings 
         sent;
-        data;
-
-        ET.NFTItem memory nextItem = wrapper.saltBase(ET.AssetType.ERC721);
-        bytes32 salt = keccak256(abi.encode(nextItem));
-        address calcWnftAddress = factory.predictDeterministicAddress(address(impl_legacy), salt);
-        vm.startPrank(address(1));
-
-        // try to unwrap with original nft inside and erc721 collateral
-        ET.AssetItem[] memory colAssets = new ET.AssetItem[](1);
-        colAssets[0] = ET.AssetItem(ET.Asset(ET.AssetType.NATIVE, address(0)),0,sendEtherAmount / 2);
-
-
-        vm.expectEmit();
-        emit EnvelopWNFTFactory.EnvelopV2Deployment(
-            calcWnftAddress, 
-            address(impl_legacy),
-            impl_legacy.ORACLE_TYPE()
-        );
-        
-        ET.AssetItem memory wnftAsset = wrapper.wrap{value: sendEtherAmount}(
-            inData,
-            colAssets,   // collateral
-            address(1)
-        );
-
-        vm.stopPrank();
-        address payable _wnftWallet = payable(wnftAsset.asset.contractAddress);
-        assertEq(_wnftWallet.balance, sendEtherAmount);
-        console2.log(_wnftWallet);
+        data;*/
 
         
-        WNFTLegacy721 wnft = WNFTLegacy721(_wnftWallet);
+        erc20.approve(address(wrapper), sendERC20Amount * 2);
+        vm.expectRevert('Array params must have equal length');
+        wrapper.wrapBatch(
+            inDataS,
+            collateral,   // collateral
+            receivers
+        );
 
-        vm.prank(address(1));
-        ET.AssetItem[] memory assets = new ET.AssetItem[](1);
-        assets[0] = ET.AssetItem(ET.Asset(ET.AssetType.NATIVE, address(0)),0,sendEtherAmount);
-        wnft.unWrap(assets);
-        assertEq(address(1).balance, sendEtherAmount);
+        address[] memory receivers1 = new address[](2);
+        receivers1[0] = address(1);
+        receivers1[1] = address(2);
+
+        ET.AssetItem[] memory wnfts = wrapper.wrapBatch{value: sendEtherAmount}(
+            inDataS,
+            collateral,   // collateral
+            receivers1
+        );
+        assertEq(wnfts[0].asset.contractAddress.balance, sendEtherAmount / 2);
+        assertEq(wnfts[1].asset.contractAddress.balance, sendEtherAmount / 2);
+        assertEq(erc20.balanceOf(wnfts[0].asset.contractAddress), sendERC20Amount);
+        assertEq(erc20.balanceOf(wnfts[1].asset.contractAddress), sendERC20Amount);
+        WNFTLegacy721 wnft0 = WNFTLegacy721(payable(wnfts[0].asset.contractAddress));
+        WNFTLegacy721 wnft1 = WNFTLegacy721(payable(wnfts[1].asset.contractAddress));
+        assertEq(wnft0.ownerOf(impl_legacy.TOKEN_ID()), address(1));
+        assertEq(wnft1.ownerOf(impl_legacy.TOKEN_ID()), address(2));
     }
 }

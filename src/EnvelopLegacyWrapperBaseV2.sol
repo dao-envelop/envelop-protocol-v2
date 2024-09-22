@@ -262,7 +262,7 @@ contract EnvelopLegacyWrapperBaseV2 is Ownable, TokenService {
             keccak256(abi.encode(implementation))
         );
 
-        // trainsfer inAsset and colateral
+        // trainsfer inAsset and collateral
         if ( _inData.inAsset.asset.assetType != ET.AssetType.NATIVE &&
              _inData.inAsset.asset.assetType != ET.AssetType.EMPTY
         ) 
