@@ -62,18 +62,7 @@ contract WNFTLegacy721 is
     error WnftRuleViolation(bytes2 rule);
     error RuleSetNotSupported(bytes2 unsupportedRules);
 
-    event EtherReceived(
-        uint256 indexed balance, 
-        uint256 indexed txValue, 
-        address indexed txSender
-    );
-
-    event EtherBalanceChanged(
-        uint256 indexed balanceBefore, 
-        uint256 indexed balanceAfter, 
-        uint256 indexed txValue, 
-        address txSender
-    );
+   
     
     // We Use wnft Create and Burn events from V1 for seamless integration
     // with Envelop Oracle grabbers. Because this wNFT have same 
