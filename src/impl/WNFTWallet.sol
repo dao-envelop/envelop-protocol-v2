@@ -2,9 +2,14 @@
 // Envelop V2, Wallet
 pragma solidity ^0.8.20;
 
+import "@Uopenzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
+import "@Uopenzeppelin/contracts/token/ERC1155/utils/ERC1155HolderUpgradeable.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
-abstract contract WNFTWallet {
+abstract contract WNFTWallet is 
+    ERC721HolderUpgradeable, 
+    ERC1155HolderUpgradeable 
+{
 
     event EtherBalanceChanged(
         uint256 indexed balanceBefore, 
@@ -19,7 +24,8 @@ abstract contract WNFTWallet {
         _fixEtherChanges(bb, address(this).balance);
     }
 
-     /**
+
+    /**
      * @dev Use this method for interact any dApps onchain
      * @param _target address of dApp smart contract
      * @param _value amount of native token in tx(msg.value)

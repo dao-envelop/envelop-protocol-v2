@@ -3,8 +3,8 @@
 
 pragma solidity ^0.8.20;
 
-import "@Uopenzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
-import "@Uopenzeppelin/contracts/token/ERC1155/utils/ERC1155HolderUpgradeable.sol";
+// import "@Uopenzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
+//import "@Uopenzeppelin/contracts/token/ERC1155/utils/ERC1155HolderUpgradeable.sol";
 import "./Singleton721.sol";
 import "../utils/LibET.sol";
 import "../utils/TokenService.sol";
@@ -18,9 +18,9 @@ contract WNFTLegacy721 is
     Singleton721, 
     TokenService, 
     WNFTWallet,
-    IEnvelopV2wNFT,
-    ERC721HolderUpgradeable, 
-    ERC1155HolderUpgradeable 
+    IEnvelopV2wNFT
+    // ERC721HolderUpgradeable, 
+    // ERC1155HolderUpgradeable 
 {
     string public constant INITIAL_SIGN_STR = 
         "initialize(address,string,string,string,"
