@@ -344,7 +344,6 @@ contract WNFTLegacy721 is
         view 
         virtual  
         override(ERC721Upgradeable, ERC1155HolderUpgradeable, IERC165) 
-        //override
         returns (bool) 
     {
         //TODO  add current contract interface
