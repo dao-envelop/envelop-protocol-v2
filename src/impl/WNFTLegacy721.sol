@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 // Envelop V2, wNFT implementation
-// Powered by OpenZeppelin Contracts 
 
 pragma solidity ^0.8.20;
 

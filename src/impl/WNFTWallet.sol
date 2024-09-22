@@ -70,7 +70,6 @@ abstract contract WNFTWallet {
     function _fixEtherChanges(uint256 _balanceBefore, uint256 _balanceAfter) 
         internal
         virtual 
-        //returns (uint256 absDiff)
     {
         if (_balanceBefore != _balanceAfter) {
             emit EtherBalanceChanged(
@@ -80,6 +79,5 @@ abstract contract WNFTWallet {
                msg.sender
             );
         }
-        //absDiff =  _balanceBefore >= _balanceAfter ?  _balanceBefore  - _balanceAfter : _balanceAfter - _balanceBefore;
     }
 }
