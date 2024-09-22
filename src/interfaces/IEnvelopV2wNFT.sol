@@ -12,13 +12,6 @@ interface IEnvelopV2wNFT is  IERC165{
         address indexed txSender
     );
 
-    event EtherBalanceChanged(
-        uint256 indexed balanceBefore, 
-        uint256 indexed balanceAfter, 
-        uint256 indexed txValue, 
-        address txSender
-    );
-    
 	function INITIAL_SIGN_STR() external view returns(string memory);
 	function ORACLE_TYPE() external view returns(uint256);
 	function SUPPORTED_RULES() external pure returns(bytes2); 
