@@ -14,6 +14,7 @@ import "../src/impl/WNFTLegacy721.sol";
 // spender of wnft withdraw eth from collateral
 // check eth events
 // try to unWrap - user is not owner and does not have allowance - revert
+// try to unWrap - user has allowance
 contract Factory_Test_a_01 is Test {
     
     event Log(string message);
@@ -32,6 +33,7 @@ contract Factory_Test_a_01 is Test {
     }
     
     function test_create_legacy() public {
+        bytes2 rule = 0x0100;
         bytes memory initCallData = abi.encodeWithSignature(
             impl_legacy.INITIAL_SIGN_STR(),
             address(this), // creator and owner 
@@ -46,7 +48,7 @@ contract Factory_Test_a_01 is Test {
                 new ET.Fee[](0), // fees
                 new ET.Lock[](0), // locks
                 new ET.Royalty[](0), // royalties
-                0x0105   //bytes2
+                rule   //bytes2
             ) 
         );  
 
@@ -56,7 +58,6 @@ contract Factory_Test_a_01 is Test {
 
         _wnftWallet = payable(factory.creatWNFT(address(impl_legacy), initCallData));
         assertNotEq(_wnftWallet, address(impl_legacy));
-        console2.log(_wnftWallet);
 
         // send eth to wnft wallet
         vm.prank(address(this));
@@ -69,6 +70,8 @@ contract Factory_Test_a_01 is Test {
         assertEq(address(_wnftWallet).balance, sendEtherAmount);
         
         WNFTLegacy721 wnft = WNFTLegacy721(_wnftWallet);
+        assertEq(wnft.wnftInfo(impl_legacy.TOKEN_ID()).unWrapDestination, address(this));
+        assertEq(wnft.wnftInfo(impl_legacy.TOKEN_ID()).rules, rule);
         
         wnft.setApprovalForAll(address(2), true);
 
@@ -93,10 +96,20 @@ contract Factory_Test_a_01 is Test {
         vm.prank(address(100));
         vm.expectRevert("Only for wNFT owner");
         wnft.unWrap(collaterals);
+
+        vm.prank(address(2));
+        wnft.unWrap(collaterals);
+
+        // check wnft info
+        assertEq(wnft.wnftInfo(impl_legacy.TOKEN_ID()).unWrapDestination, address(0));
+        assertEq(wnft.wnftInfo(impl_legacy.TOKEN_ID()).rules, bytes2(0x0000));
+
     }
 
     // unsupported rules
     function test_checkRules() public {
+        bytes2 rule = 0x0110;
+        bytes2 calcRule = 0x0010;
         bytes memory initCallData = abi.encodeWithSignature(
             impl_legacy.INITIAL_SIGN_STR(),
             address(this), // creator and owner 
@@ -111,12 +124,12 @@ contract Factory_Test_a_01 is Test {
                 new ET.Fee[](0), // fees
                 new ET.Lock[](0), // locks
                 new ET.Royalty[](0), // royalties
-                0x0002   //bytes2
+                rule   //bytes2
             ) 
         );  
-
-        bytes2 rule = 0x0002;
-        vm.expectRevert();
-        address payable _wnftWallet = payable(factory.creatWNFT(address(impl_legacy), initCallData));
+        vm.expectRevert(
+            abi.encodeWithSelector(WNFTLegacy721.RuleSetNotSupported.selector, calcRule)
+        );
+        factory.creatWNFT(address(impl_legacy), initCallData);
     }
 }
