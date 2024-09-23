@@ -8,6 +8,7 @@ import "forge-std/console.sol";
 import {EnvelopWNFTFactory} from "../src/EnvelopWNFTFactory.sol";
 import {MockERC721} from "../src/mock/MockERC721.sol";
 import "../src/impl/WNFTLegacy721.sol";
+import "../src/impl/WNFTWallet.sol";
 //import "../src/impl/Singleton721.sol";
 //import {ET} from "../src/utils/LibET.sol";
 
@@ -62,7 +63,7 @@ contract Factory_Test_a_01 is Test {
         // send eth to wnft wallet
         vm.prank(address(this));
         vm.expectEmit();
-        emit WNFTLegacy721.EtherReceived(sendEtherAmount, sendEtherAmount, address(this));
+        emit IEnvelopV2wNFT.EtherReceived(sendEtherAmount, sendEtherAmount, address(this));
         (bool sent, bytes memory data) = _wnftWallet.call{value: sendEtherAmount}("");
         // suppress solc warnings 
         sent;
@@ -79,7 +80,7 @@ contract Factory_Test_a_01 is Test {
         // try to withdraw eth from collateral
         ET.AssetItem memory collateral = ET.AssetItem(ET.Asset(ET.AssetType.NATIVE, address(0)),0,sendEtherAmount / 2);
         vm.expectEmit();
-        emit WNFTLegacy721.EtherBalanceChanged(sendEtherAmount, sendEtherAmount / 2, 0, address(2));
+        emit WNFTWallet.EtherBalanceChanged(sendEtherAmount, sendEtherAmount / 2, 0, address(2));
         wnft.removeCollateral(collateral, address(2));
         assertEq(address(2).balance, sendEtherAmount / 2);
         assertEq(address(_wnftWallet).balance, sendEtherAmount / 2);
@@ -87,7 +88,7 @@ contract Factory_Test_a_01 is Test {
         data = "";
         vm.prank(address(2));
         vm.expectEmit();
-        emit WNFTLegacy721.EtherBalanceChanged(sendEtherAmount / 2, 0, 0, address(2));
+        emit WNFTWallet.EtherBalanceChanged(sendEtherAmount / 2, 0, 0, address(2));
         wnft.executeEncodedTx(address(2), sendEtherAmount / 2, data); 
         assertEq(address(2).balance, sendEtherAmount);
         assertEq(_wnftWallet.balance,0);
