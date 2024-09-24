@@ -15,6 +15,8 @@ import "../src/EnvelopLegacyWrapperBaseV2.sol";
 //import {ET} from "../src/utils/LibET.sol";
 
 // call wrapBatch
+// call addCollateralBatch
+// check owner functions
 contract LegacyWrapper_a_01 is Test {
     
     event Log(string message);
@@ -44,6 +46,19 @@ contract LegacyWrapper_a_01 is Test {
             address(impl_legacy), 
             impl_legacy.TOKEN_ID()
         );
+
+        // check admin function
+        vm.prank(address(2));
+        vm.expectRevert();
+        factory.setWrapperStatus(address(wrapper), true); // set wrapper
+    
+        vm.prank(address(2));
+        vm.expectRevert();
+        wrapper.setWNFTId(
+            ET.AssetType.ERC721, 
+            address(impl_legacy), 
+            0
+        );
     }
     
     function test_create_legacy() public {
@@ -68,15 +83,6 @@ contract LegacyWrapper_a_01 is Test {
 
         ET.AssetItem[] memory collateral = new ET.AssetItem[](1);
         collateral[0] = ET.AssetItem(ET.Asset(ET.AssetType.ERC20, address(erc20)),0,sendERC20Amount);
-        
-
-
-        
-        /*(bool sent, bytes memory data) = address(1).call{value: sendEtherAmount}("");
-        // suppress solc warnings 
-        sent;
-        data;*/
-
         
         erc20.approve(address(wrapper), sendERC20Amount * 2);
         vm.expectRevert('Array params must have equal length');
@@ -103,5 +109,39 @@ contract LegacyWrapper_a_01 is Test {
         WNFTLegacy721 wnft1 = WNFTLegacy721(payable(wnfts[1].asset.contractAddress));
         assertEq(wnft0.ownerOf(impl_legacy.TOKEN_ID()), address(1));
         assertEq(wnft1.ownerOf(impl_legacy.TOKEN_ID()), address(2));
+
+        // try to add collateral
+        address[] memory receivers2 = new address[](2);
+        receivers2[0] = wnfts[0].asset.contractAddress;
+        receivers2[1] = wnfts[1].asset.contractAddress;
+
+        uint256[] memory tokenIDs = new uint256[](1);
+        tokenIDs[0] = impl_legacy.TOKEN_ID();
+        ET.AssetItem[] memory collateral2 = new ET.AssetItem[](0);
+
+        vm.expectRevert('Array params must have equal length');
+        wrapper.addCollateralBatch(receivers2, tokenIDs, collateral2);
+
+        uint256[] memory tokenIDs2 = new uint256[](2);
+        tokenIDs2[0] = impl_legacy.TOKEN_ID();
+        tokenIDs2[1] = impl_legacy.TOKEN_ID();
+
+        vm.expectRevert('Collateral not found');
+        wrapper.addCollateralBatch(receivers2, tokenIDs2, collateral2);
+
+
+        wrapper.addCollateralBatch{value: 1e18}(receivers2, tokenIDs2, collateral2);
+
+        erc20.approve(address(wrapper), sendERC20Amount * 2);
+
+        ET.AssetItem[] memory collateral3 = new ET.AssetItem[](1);
+        collateral3[0] = ET.AssetItem(ET.Asset(ET.AssetType.ERC20, address(erc20)),0,sendERC20Amount);
+
+        wrapper.addCollateralBatch(receivers2, tokenIDs2, collateral3);
+
+        assertEq(wnfts[0].asset.contractAddress.balance, sendEtherAmount / 2 + sendEtherAmount / 2);
+        assertEq(wnfts[1].asset.contractAddress.balance, sendEtherAmount / 2 + sendEtherAmount / 2);
+        assertEq(erc20.balanceOf(wnfts[0].asset.contractAddress), sendERC20Amount + sendERC20Amount);
+        assertEq(erc20.balanceOf(wnfts[1].asset.contractAddress), sendERC20Amount + sendERC20Amount);
     }
 }

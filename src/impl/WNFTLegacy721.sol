@@ -227,7 +227,7 @@ contract WNFTLegacy721 is
         onlyWnftOwner()
         fixEtherBalance
     {
-        //_isAbleForRemove(_collateral, msg.sender);
+        _isAbleForRemove(_collateral, msg.sender);
 
         // transfer method from TokenService
         _transfer(_collateral, address(this), _to);
@@ -263,7 +263,7 @@ contract WNFTLegacy721 is
             revert WnftRuleViolation(0x0001);
         }
        
-        // Reurns original wrapped asset 
+        // Returns original wrapped asset 
         if ($.wnftData.inAsset.asset.assetType != ET.AssetType.EMPTY) {
             _transferEmergency($.wnftData.inAsset, address(this), msg.sender); 
             // Mark original asset as removed
@@ -273,7 +273,7 @@ contract WNFTLegacy721 is
         
         // TODO  mark inAsset that returned ????
        
-       // Returns collatral on demand
+       // Returns collateral on demand
         if (_collateral.length > 0) {
             for (uint256 i = 0; i < _collateral.length; ++ i) {
                 _transferEmergency(_collateral[i], address(this), msg.sender);    
