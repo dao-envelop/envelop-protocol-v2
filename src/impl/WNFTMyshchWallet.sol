@@ -9,19 +9,21 @@ import "./Singleton721.sol";
 //import "../utils/LibET.sol";
 //import "../utils/TokenService.sol";
 import "../interfaces/IEnvelopV2wNFT.sol";
-import "./WNFTWallet.sol";
+import "../interfaces/IMyshchWalletwNFT.sol"; 
+import "./SmartWallet.sol";
 
 /**
  * @dev Implementation of WNFT that partial compatible with Envelop V1
  */
 contract WNFTMyshchWallet is 
     Singleton721, 
-    WNFTWallet,
-    IEnvelopV2wNFT
+    SmartWallet,
+    IEnvelopV2wNFT,
+    IMyshchWalletwNFT
     // ERC721HolderUpgradeable, 
     // ERC1155HolderUpgradeable 
 {
-    string public constant INITIAL_SIGN_STR ="";
+    string public constant INITIAL_SIGN_STR = "initialize(address,string,string,string)";
     uint256 public constant ORACLE_TYPE = 2002;
     bytes2 public constant SUPPORTED_RULES = 0x0000; // Bin 0000000100000101; Dec 261
         // #### Envelop ProtocolV1 Rules !!! NOT All support in this implementation V2
@@ -60,17 +62,7 @@ contract WNFTMyshchWallet is
     //     bytes2 newRules
     // );
 
-     /**
-     * @dev The contract should be able to receive Eth.
-     */
-    receive() external payable virtual {
-        emit EtherReceived(
-            address(this).balance, 
-            msg.value,
-            msg.sender
-        );
-    }
-
+    
     // modifier ifUnlocked() {
     //     _checkLocks();
     //     _;
@@ -124,7 +116,7 @@ contract WNFTMyshchWallet is
         //ET.WNFT memory _wnftData
     ) internal onlyInitializing {
         __Singleton721_init(name_, symbol_, _creator, _tokenUrl);
-        //__WNFTLegacy721_init_unchained(_wnftData, _creator);
+        //__WNFTMyshchWallet_init_unchained(_wnftData, _creator);
     }
 
     function __WNFTMyshchWallet_init_unchained(
@@ -199,6 +191,33 @@ contract WNFTMyshchWallet is
     
         r = super._executeEncodedTxBatch(_targetArray, _valueArray, _dataArray);
     }
+
+    function erc20TransferWithRefund(
+        address _target,
+        address _receiver,
+        uint256 _amount
+    )
+        external
+        onlyWnftOwner()  
+    {
+        uint256 gasBefore = gasleft();
+        bytes memory _data = abi.encodeWithSignature(
+            "transfer(address,uint256)",
+            _receiver, _amount
+        );
+        super._executeEncodedTx(_target, 0, _data);
+        IMyshchWalletwNFT(_receiver).getRefund(gasBefore);
+    }
+
+    function getRefund(uint256 _gasLeft) 
+        external
+    // Check allowance    
+    returns (uint256 send) 
+    {
+        send = (_gasLeft - gasleft());// * tx.gasprice;
+        Address.sendValue(payable(msg.sender), send); 
+    }
+
     ////////////////////////////////////////////////////////////////////////////
     /////                    GETTERS                                       /////
     ////////////////////////////////////////////////////////////////////////////

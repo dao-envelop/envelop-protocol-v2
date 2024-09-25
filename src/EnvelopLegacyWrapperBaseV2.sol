@@ -134,7 +134,7 @@ contract EnvelopLegacyWrapperBaseV2 is Ownable, TokenService {
     )
         external
         payable
-        //returns (ET.AssetItem[] memory wnfts)
+        //returns (ET.AssetItem[] memory wnfts) // stack too deep
     {
          require(
             _inDataS.length == _receivers.length, 
@@ -262,7 +262,7 @@ contract EnvelopLegacyWrapperBaseV2 is Ownable, TokenService {
             keccak256(abi.encode(implementation))
         );
 
-        // trainsfer inAsset and collateral
+        // trainsfer inAsset and colateral
         if ( _inData.inAsset.asset.assetType != ET.AssetType.NATIVE &&
              _inData.inAsset.asset.assetType != ET.AssetType.EMPTY
         ) 

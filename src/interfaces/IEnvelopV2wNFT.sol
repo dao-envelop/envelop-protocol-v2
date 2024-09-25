@@ -6,11 +6,7 @@ import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 interface IEnvelopV2wNFT is  IERC165{
 
 	event EnvelopV2OracleType(uint256 indexed oracleType, string contractName);
-    event EtherReceived(
-        uint256 indexed balance, 
-        uint256 indexed txValue, 
-        address indexed txSender
-    );
+   
 
 	function INITIAL_SIGN_STR() external view returns(string memory);
 	function ORACLE_TYPE() external view returns(uint256);

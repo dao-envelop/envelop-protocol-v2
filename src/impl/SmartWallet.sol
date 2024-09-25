@@ -6,7 +6,7 @@ import "@Uopenzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol"
 import "@Uopenzeppelin/contracts/token/ERC1155/utils/ERC1155HolderUpgradeable.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
-abstract contract WNFTWallet is 
+abstract contract SmartWallet is 
     ERC721HolderUpgradeable, 
     ERC1155HolderUpgradeable 
 {
@@ -17,11 +17,27 @@ abstract contract WNFTWallet is
         uint256 indexed txValue, 
         address txSender
     );
+    event EtherReceived(
+        uint256 indexed balance, 
+        uint256 indexed txValue, 
+        address indexed txSender
+    );
 
     modifier fixEtherBalance() {
         uint256 bb = address(this).balance;
         _;
         _fixEtherChanges(bb, address(this).balance);
+    }
+
+    /**
+     * @dev The contract should be able to receive Eth.
+     */
+    receive() external payable virtual {
+        emit EtherReceived(
+            address(this).balance, 
+            msg.value,
+            msg.sender
+        );
     }
 
 

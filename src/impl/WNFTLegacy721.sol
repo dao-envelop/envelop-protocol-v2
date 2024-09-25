@@ -9,7 +9,7 @@ import "./Singleton721.sol";
 import "../utils/LibET.sol";
 import "../utils/TokenService.sol";
 import "../interfaces/IEnvelopV2wNFT.sol";
-import "./WNFTWallet.sol";
+import "./SmartWallet.sol";
 
 /**
  * @dev Implementation of WNFT that partial compatible with Envelop V1
@@ -17,7 +17,7 @@ import "./WNFTWallet.sol";
 contract WNFTLegacy721 is 
     Singleton721, 
     TokenService, 
-    WNFTWallet,
+    SmartWallet,
     IEnvelopV2wNFT
     // ERC721HolderUpgradeable, 
     // ERC1155HolderUpgradeable 
@@ -94,16 +94,7 @@ contract WNFTLegacy721 is
         bytes2 newRules
     );
 
-     /**
-     * @dev The contract should be able to receive Eth.
-     */
-    receive() external payable virtual {
-        emit EtherReceived(
-            address(this).balance, 
-            msg.value,
-            msg.sender
-        );
-    }
+     
 
     modifier ifUnlocked() {
         _checkLocks();
