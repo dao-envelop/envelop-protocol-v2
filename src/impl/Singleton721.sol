@@ -44,6 +44,11 @@ abstract contract Singleton721 is ERC721Upgradeable, IERC4906 {
     // keccak256(abi.encode(uint256(keccak256("envelop.storage.Singleton721")) - 1)) & ~bytes32(uint256(0xff))
     bytes32 private constant Singleton721StorageLocation = 0xbdcdd84fd67773ac64bbe05336a88ca03e25175d9b4a6f280761928862a7ed00;
 
+    modifier onlyWnftOwner() {
+        _wnftOwnerOrApproved(msg.sender);
+        _;
+    }
+
     function _getSingleton721Storage() private pure returns (Singleton721Storage storage $) {
         assembly {
             $.slot := Singleton721StorageLocation
@@ -107,6 +112,17 @@ abstract contract Singleton721 is ERC721Upgradeable, IERC4906 {
         }
 
 
+    }
+
+
+    function  _wnftOwnerOrApproved(address _sender) internal view virtual {
+        address currOwner = ownerOf(TOKEN_ID);
+        require(
+            currOwner == _sender ||
+            isApprovedForAll(currOwner, _sender) ||
+            getApproved(TOKEN_ID) == _sender,
+            "Only for wNFT owner"
+        );
     }
 
     /**

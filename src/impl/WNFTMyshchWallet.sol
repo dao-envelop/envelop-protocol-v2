@@ -68,11 +68,6 @@ contract WNFTMyshchWallet is
     //     _;
     // }
 
-    modifier onlyWnftOwner() {
-        _wnftOwnerOrApproved(msg.sender);
-        _;
-    }
-
 
     // keccak256(abi.encode(uint256(keccak256("envelop.storage.WNFTLegacy721")) - 1)) & ~bytes32(uint256(0xff))
     //bytes32 private constant WNFTLegacy721StorageLocation = 0xb25b7d902932741f4867febf64c52dbc3980210eefc4a36bf4280ce48f34a100;
@@ -308,16 +303,5 @@ contract WNFTMyshchWallet is
 
     // }
 
-    
-    
-    function  _wnftOwnerOrApproved(address _sender) internal view virtual {
-        address currOwner = ownerOf(TOKEN_ID);
-        require(
-            currOwner == _sender ||
-            isApprovedForAll(currOwner, _sender) ||
-            getApproved(TOKEN_ID) == _sender,
-            "Only for wNFT owner"
-        );
-    }
 }
 

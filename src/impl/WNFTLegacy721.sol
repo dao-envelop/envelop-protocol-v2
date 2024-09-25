@@ -101,10 +101,6 @@ contract WNFTLegacy721 is
         _;
     }
 
-    modifier onlyWnftOwner() {
-        _wnftOwnerOrApproved(msg.sender);
-        _;
-    }
 
 
     // keccak256(abi.encode(uint256(keccak256("envelop.storage.WNFTLegacy721")) - 1)) & ~bytes32(uint256(0xff))
@@ -468,15 +464,5 @@ contract WNFTLegacy721 is
         }
     }
     
-    function  _wnftOwnerOrApproved(address _sender) internal view virtual {
-        address currOwner = ownerOf(TOKEN_ID);
-        require(
-            currOwner == _sender ||
-            isApprovedForAll(currOwner, _sender) ||
-            getApproved(TOKEN_ID) == _sender,
-            "Only for wNFT owner"
-        );
-
-    }
 }
 
