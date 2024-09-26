@@ -96,12 +96,21 @@ contract WNFTV2Envelop721 is
 
     
 
-
+    ///////////////////////////////////////////////////////
+    ///                 OZ  Storage pattern              //
+    ///////////////////////////////////////////////////////
 
     // keccak256(abi.encode(uint256(keccak256("envelop.storage.WNFTV2Envelop721")) - 1)) & ~bytes32(uint256(0xff))
     bytes32 private constant WNFTV2Envelop721StorageLocation = 0x058a45f5aef3b02ebbc5c42b328f21f7cf8b0c85eb30c8af8e306a9c50c48100;
+    function _getWNFTV2Envelop721Storage() private pure returns (WNFTV2Envelop721Storage storage $) {
+        assembly {
+            $.slot := WNFTV2Envelop721StorageLocation
+        }
+    }
+    ///////////////////////////////////////////////////////
 
     constructor(address _defaultFactory) {
+        require(_defaultFactory != address(0), "No Zero Factoties");
         FACTORY = _defaultFactory;    
         _disableInitializers();
         emit EnvelopV2OracleType(ORACLE_TYPE, type(WNFTV2Envelop721).name);
@@ -118,30 +127,23 @@ contract WNFTV2Envelop721 is
         );
     }
 
+    ////////////////////////////////////////////////////////////////////////
+    // OZ init functions layout                                           //
+    ////////////////////////////////////////////////////////////////////////    
     function initialize(
         InitParams calldata _init
-    ) public initializer fixEtherBalance()
+    ) public virtual initializer 
     {
         
         __WNFTV2Envelop721_init(_init);
     }
         
-    ////////////////////////////////////////////////////////////////////////
-    // OZ init functions layout                                           //
-    ////////////////////////////////////////////////////////////////////////    
-
-    function _getWNFTV2Envelop721Storage() private pure returns (WNFTV2Envelop721Storage storage $) {
-        assembly {
-            $.slot := WNFTV2Envelop721StorageLocation
-        }
-    }
-
     /**
      * @dev Initializes the contract by setting a `name` and a `symbol` to the token collection.
      */
     function __WNFTV2Envelop721_init(
           InitParams calldata _init
-    ) internal onlyInitializing {
+    ) internal onlyInitializing fixEtherBalance {
         __Singleton721_init(_init.nftName, _init.nftSymbol, _init.creator, _init.tokenUri);
         __WNFTLegacy721_init_unchained(_init);
     }
@@ -161,7 +163,6 @@ contract WNFTV2Envelop721 is
         emit EnvelopWrappedV2(_init.creator, TOKEN_ID, _init.hashedParams[0], "");
     }
     ////////////////////////////////////////////////////////////////////////
-
     
 
     function approveHiden(address to, uint256 tokenId) public virtual {

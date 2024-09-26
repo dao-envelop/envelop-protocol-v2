@@ -10,89 +10,31 @@ import "./Singleton721.sol";
 //import "../utils/TokenService.sol";
 import "../interfaces/IEnvelopV2wNFT.sol";
 import "../interfaces/IMyshchWalletwNFT.sol"; 
-import "./SmartWallet.sol";
+import "./WNFTV2Envelop721.sol";
 
 /**
  * @dev Implementation of WNFT that partial compatible with Envelop V1
  */
-contract WNFTMyshchWallet is 
-    Singleton721, 
-    SmartWallet,
-    IEnvelopV2wNFT,
-    IMyshchWalletwNFT
-    // ERC721HolderUpgradeable, 
-    // ERC1155HolderUpgradeable 
+contract WNFTMyshchWallet is WNFTV2Envelop721 
 {
-    string public constant INITIAL_SIGN_STR = "initialize(address,string,string,string)";
-    uint256 public constant ORACLE_TYPE = 2003;
-    bytes2 public constant SUPPORTED_RULES = 0x0000; // Bin 0000000100000101; Dec 261
-        // #### Envelop ProtocolV1 Rules !!! NOT All support in this implementation V2
-    // 15   14   13   12   11   10   9   8   7   6   5   4   3   2   1   0  <= Bit number(dec)
-    // ------------------------------------------------------------------------------------  
-    //  1    1    1    1    1    1   1   1   1   1   1   1   1   1   1   1
-    //  |    |    |    |    |    |   |   |   |   |   |   |   |   |   |   |
-    //  |    |    |    |    |    |   |   |   |   |   |   |   |   |   |   +-No_Unwrap
-    //  |    |    |    |    |    |   |   |   |   |   |   |   |   |   +-No_Wrap (NOT SUPPORTED)
-    //  |    |    |    |    |    |   |   |   |   |   |   |   |   +-No_Transfer
-    //  |    |    |    |    |    |   |   |   |   |   |   |   +-No_Collateral (NOT SUPPORTED)
-    //  |    |    |    |    |    |   |   |   |   |   |   +-reserved_core
-    //  |    |    |    |    |    |   |   |   |   |   +-reserved_core
-    //  |    |    |    |    |    |   |   |   |   +-reserved_core  
-    //  |    |    |    |    |    |   |   |   +-reserved_core
-    //  |    |    |    |    |    |   |   |
-    //  |    |    |    |    |    |   |   + - V2. always wnft URL|
-    //  +----+----+----+----+----+---+ 
-    //      for use in extendings
-    
-   
-    // struct WNFTLegacy721Storage {
-    //     ET.WNFT wnftData;
-    // }
 
-    // error InsufficientCollateral(ET.AssetItem declare, uint256 fact);
-    // error WnftRuleViolation(bytes2 rule);
-    // error RuleSetNotSupported(bytes2 unsupportedRules);
-
-   
-    
-    
-    //  event EnvelopRulesChanged(
-    //     address indexed wrappedAddress,
-    //     uint256 indexed wrappedId,
-    //     bytes2 newRules
-    // );
-
-    
-    // modifier ifUnlocked() {
-    //     _checkLocks();
-    //     _;
-    // }
-
-
-    // keccak256(abi.encode(uint256(keccak256("envelop.storage.WNFTLegacy721")) - 1)) & ~bytes32(uint256(0xff))
-    //bytes32 private constant WNFTLegacy721StorageLocation = 0xb25b7d902932741f4867febf64c52dbc3980210eefc4a36bf4280ce48f34a100;
-
-    constructor() {
-      _disableInitializers();
-      emit EnvelopV2OracleType(ORACLE_TYPE, type(WNFTMyshchWallet).name);
-    }
-
-    function initialize(
-        address _creator,
-        string memory name_,
-        string memory symbol_,
-        string memory _tokenUrl
-        //ET.WNFT memory _wnftData
-        //ET.AssetItem memory _wnftData
-    ) public initializer fixEtherBalance()
+    constructor(address _defaultFactory) 
+        WNFTV2Envelop721(_defaultFactory)
     {
-        
-        __WNFTMyshchWallet_init(name_, symbol_, _creator, _tokenUrl);
+      
     }
+
         
     ////////////////////////////////////////////////////////////////////////
     // OZ init functions layout                                           //
     ////////////////////////////////////////////////////////////////////////    
+    function initialize(
+        InitParams calldata _init
+    ) public virtual override initializer 
+    {
+        
+        __WNFTMyshchWallet_init(_init);
+    }
 
     // function _getWNFTLegacy721Storage() private pure returns (WNFTLegacy721Storage storage $) {
     //     assembly {
@@ -104,19 +46,14 @@ contract WNFTMyshchWallet is
      * @dev Initializes the contract by setting a `name` and a `symbol` to the token collection.
      */
     function __WNFTMyshchWallet_init(
-        string memory name_, 
-        string memory symbol_,
-        address _creator,
-        string memory _tokenUrl
-        //ET.WNFT memory _wnftData
+        InitParams calldata _init
     ) internal onlyInitializing {
-        __Singleton721_init(name_, symbol_, _creator, _tokenUrl);
-        //__WNFTMyshchWallet_init_unchained(_wnftData, _creator);
+         __WNFTV2Envelop721_init(_init);
+         __WNFTMyshchWallet_init_unchained(_init);
     }
 
     function __WNFTMyshchWallet_init_unchained(
-        //ET.WNFT memory _wnftData,
-        //address _creator
+        InitParams calldata _init
     ) internal onlyInitializing {
         
         // emit WrappedV1(
@@ -132,60 +69,6 @@ contract WNFTMyshchWallet is
     ////////////////////////////////////////////////////////////////////////
 
     
-    function approveHiden(address to, uint256 tokenId) public virtual {
-        _approve(to, tokenId, _msgSender(), false);
-    }
-
-    // function transferFrom(address from, address to, uint256 tokenId) public override {
-    //     WNFTLegacy721Storage storage $ = _getWNFTLegacy721Storage();
-    //     // Check No Transfer rule
-    //     if (_checkRule(0x0004, $.wnftData.rules)) {
-    //         revert WnftRuleViolation(0x0004);
-    //     }
-    //     // TODO  deny self address transfer ?????
-    //     super.transferFrom(from, to, tokenId);
-    // }
-
-   
-
-     /**
-     * @dev Use this method for interact any dApps onchain
-     * @param _target address of dApp smart contract
-     * @param _value amount of native token in tx(msg.value)
-     * @param _data ABI encoded transaction payload
-     */
-    function executeEncodedTx(
-        address _target,
-        uint256 _value,
-        bytes memory _data
-    ) 
-        external 
-        //ifUnlocked()
-        onlyWnftOwner()
-        returns (bytes memory r) 
-    {
-        r = super._executeEncodedTx(_target, _value, _data);
-    }
-
-    /**
-     * @dev Use this method for interact any dApps onchain, executing as one batch
-     * @param _targetArray addressed of dApp smart contract
-     * @param _valueArray amount of native token in every tx(msg.value)
-     * @param _dataArray ABI encoded transaction payloads
-     */
-    function executeEncodedTxBatch(
-        address[] calldata _targetArray,
-        uint256[] calldata _valueArray,
-        bytes[] memory _dataArray
-    ) 
-        external 
-        //ifUnlocked()
-        onlyWnftOwner() 
-        returns (bytes[] memory r) 
-    {
-    
-        r = super._executeEncodedTxBatch(_targetArray, _valueArray, _dataArray);
-    }
 
     function erc20TransferWithRefund(
         address _target,
@@ -219,18 +102,7 @@ contract WNFTMyshchWallet is
 
     /**
      * @dev See {IERC165-supportsInterface}.
-     */
-     // TODO  TESTS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
-    function supportsInterface(bytes4 interfaceId) 
-        public 
-        view 
-        virtual  
-        override(ERC721Upgradeable, ERC1155HolderUpgradeable, IERC165) 
-        returns (bool) 
-    {
-        //TODO  add current contract interface
-       return interfaceId == type(IEnvelopV2wNFT).interfaceId || super.supportsInterface(interfaceId);
-    }
+    
 
     // function wnftInfo(uint256 tokenId) external view returns (ET.WNFT memory) {
     //     tokenId; // suppress solc warn
