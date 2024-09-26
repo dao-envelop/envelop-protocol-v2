@@ -37,6 +37,10 @@ contract GetStorageSlot is Script {
             keccak256(abi.encode(uint256(keccak256("openzeppelin.storage.Singleton721")) - 1)) & ~bytes32(uint256(0xff))
         ));
 
+        console2.log("envelop.storage.WNFTV2Envelop721 \n %s \n", vm.toString(
+            keccak256(abi.encode(uint256(keccak256("envelop.storage.WNFTV2Envelop721")) - 1)) & ~bytes32(uint256(0xff))
+        ));
+
     }
     
     // function getSlot(string memory _s) public view returns (bytes32){
