@@ -3,20 +3,16 @@
 
 pragma solidity ^0.8.20;
 
-// import "@Uopenzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
-//import "@Uopenzeppelin/contracts/token/ERC1155/utils/ERC1155HolderUpgradeable.sol";
 import "./Singleton721.sol";
 import "../utils/LibET.sol";
-//import "../utils/TokenService.sol";
 import "../interfaces/IEnvelopV2wNFT.sol";
 import "./SmartWallet.sol";
 
 /**
- * @dev Implementation of WNFT that partial compatible with Envelop V1
+ * @dev Native Envelop V2 mplementation of WNFT
  */
 contract WNFTV2Envelop721 is 
     Singleton721, 
-    //TokenService, 
     SmartWallet,
     IEnvelopV2wNFT
 {
@@ -25,7 +21,7 @@ contract WNFTV2Envelop721 is
         string nftName;
         string nftSymbol;
         string tokenUri;
-        address[] addreParams;   // Semantic of this param will defined in exact implemenation 
+        address[] addrParams;    // Semantic of this param will defined in exact implemenation 
         bytes32[] hashedParams;  // Semantic of this param will defined in exact implemenation
         uint256[] numberParams;  // Semantic of this param will defined in exact implemenation
         bytes bytesParam;        // Semantic of this param will defined in exact implemenation
@@ -35,9 +31,8 @@ contract WNFTV2Envelop721 is
         ET.WNFT wnftData;
     }
 
-    string public constant INITIAL_SIGN_STR = "initialize(address,string,string,string)";
+    string public constant INITIAL_SIGN_STR = "initialize(InitParams)";
     uint256 public constant ORACLE_TYPE = 2002;
-
     bytes2 public constant SUPPORTED_RULES = 0xffff; // All rules are suupported. But implemented onky No_Transfer
         // #### Envelop ProtocolV1 Rules !!! NOT All support in this implementation V2
     // 15   14   13   12   11   10   9   8   7   6   5   4   3   2   1   0  <= Bit number(dec)
@@ -58,23 +53,17 @@ contract WNFTV2Envelop721 is
     //      for use in extendings
     
    
-    error InsufficientCollateral(ET.AssetItem declare, uint256 fact);
+    //error InsufficientCollateral(ET.AssetItem declare, uint256 fact);
     error WnftRuleViolation(bytes2 rule);
     error RuleSetNotSupported(bytes2 unsupportedRules);
 
    
-    
-    // We Use wnft Create and Burn events from V1 for seamless integration
-    // with Envelop Oracle grabbers. Because this wNFT have same 
-    // properties with V1 wNFT
-    event WrappedV1(
-        address indexed inAssetAddress,
-        address indexed outAssetAddress, 
-        uint256 indexed inAssetTokenId, 
-        uint256 outTokenId,
-        address wnftFirstOwner,
-        uint256 nativeCollateralAmount,
-        bytes2  rules
+  
+    event EnvelopWrappedV2(
+        address indexed creator, 
+        uint256 indexed wnftTkenId, 
+        bytes32  indexed rules,
+        bytes data
     );
 
    
@@ -104,7 +93,6 @@ contract WNFTV2Envelop721 is
 
     function initialize(
         InitParams calldata _init
-        //ET.AssetItem memory _wnftData
     ) public initializer fixEtherBalance()
     {
         
@@ -134,43 +122,16 @@ contract WNFTV2Envelop721 is
     function __WNFTLegacy721_init_unchained(
         InitParams calldata _init
     ) internal onlyInitializing {
-    //     WNFTLegacy721Storage storage $ = _getWNFTLegacy721Storage();
-    //     $.wnftData.inAsset = _wnftData.inAsset;
-    //     $.wnftData.unWrapDestination = _wnftData.unWrapDestination;
-    //     if (_wnftData.rules != 0x0000) {
-    //         _isValidRules(_wnftData.rules);
-    //         $.wnftData.rules = _wnftData.rules;
-    //     }
+        WNFTV2Envelop721Storage storage $ = _getWNFTV2Envelop721Storage();
+        if (bytes2(_init.hashedParams[0]) != 0x0000) {
+            _isValidRules(bytes2(_init.hashedParams[0]));
+            $.wnftData.rules = bytes2(_init.hashedParams[0]);
+        }
         
-    //     if (_wnftData.locks.length > 0) {
-    //         for (uint256 i = 0; i < _wnftData.locks.length; ++ i) {
-    //             _isValidLockRecord(_wnftData.locks[i]);
-    //             $.wnftData.locks.push(_wnftData.locks[i]);
-    //         }
-    //     }
-
-    //     if (_wnftData.collateral.length > 0) {
-    //         // !!!! Dont save collateral info!!!!!! Because we will not store this data
-    //         // in V2 protocol version
-    //          for (uint256 i = 0; i < _wnftData.collateral.length; ++ i) {
-    //             _isValidCollateralRecord(_wnftData.collateral[i]);
-    //         }
-    //     }
-
-    //     if (_wnftData.inAsset.asset.assetType != ET.AssetType.EMPTY) {
-    //         // asset that user want to wrap must be transfered to wNFT adddress 
-    //         _isValidCollateralRecord(_wnftData.inAsset);
-    //     }
-
-    //     emit WrappedV1(
-    //         _wnftData.inAsset.asset.contractAddress,
-    //         address(this),
-    //         _wnftData.inAsset.tokenId,
-    //         TOKEN_ID,
-    //         _creator,
-    //         msg.value, //  TODO  Batch??
-    //         _wnftData.rules
-    //     );
+        if (_init.numberParams[0] > 0) {
+           $.wnftData.locks.push(ET.Lock(0x00, _init.numberParams[0]));
+        }
+        emit EnvelopWrappedV2(_init.creator, TOKEN_ID, _init.hashedParams[0], "");
     }
     ////////////////////////////////////////////////////////////////////////
 
@@ -254,30 +215,7 @@ contract WNFTV2Envelop721 is
         return $.wnftData;
     }
 
-    // function tokenURI(uint256 tokenId) public view  override returns (string memory uri_) {
-    //     WNFTV2Envelop721Storage storage $ = _getWNFTV2Envelop721Storage();
-    //     uri_ = super.tokenURI(tokenId);
-
-    //     // V2 wnft RULE for override inAsset URL
-    //     if (_checkRule(0x0100, $.wnftData.rules)) {    
-    //         return uri_;
-    //     } 
-    //     if ($.wnftData.inAsset.asset.assetType == ET.AssetType.ERC721)
-    //     {
-    //         if (_ownerOf($.wnftData.inAsset) == address(this)) {
-    //             // method from TokenService
-    //             uri_ = _getURI($.wnftData.inAsset);
-    //         }
-    //     } else if ($.wnftData.inAsset.asset.assetType == ET.AssetType.ERC1155)
-    //     {
-    //         if (_balanceOf($.wnftData.inAsset, address(this)) > 0 ) {
-    //             // method from TokenService
-    //             uri_ = _getURI($.wnftData.inAsset);
-    //         }
-
-    //     }
-        
-    // }
+   
     ////////////////////////////////////////////////////////////////
     //    ******************* internals ***********************   //
     //    ******************* internals ***********************   //
