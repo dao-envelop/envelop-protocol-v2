@@ -55,7 +55,7 @@ contract Factory_Test_a_08 is Test {
             ) 
         );    
 
-        address payable _wnftWallet = payable(factory.creatWNFT(address(impl_legacy), initCallData));
+        address payable _wnftWallet = payable(factory.createWNFT(address(impl_legacy), initCallData));
         assertNotEq(_wnftWallet, address(impl_legacy));
 
         WNFTLegacy721 wnft = WNFTLegacy721(_wnftWallet);

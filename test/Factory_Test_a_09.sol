@@ -55,7 +55,7 @@ contract Factory_Test_a_09 is Test {
             ) 
         );  
 
-        address payable _wnftWallet = payable(factory.creatWNFT(address(impl_legacy), initCallData));
+        address payable _wnftWallet = payable(factory.createWNFT(address(impl_legacy), initCallData));
         
         // send collateral to wnft wallet
         erc20.transfer(_wnftWallet, sendERC20Amount);

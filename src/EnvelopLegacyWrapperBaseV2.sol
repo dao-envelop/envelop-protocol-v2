@@ -297,7 +297,7 @@ contract EnvelopLegacyWrapperBaseV2 is Ownable, TokenService {
 
         // create wnft
         address payable proxy = payable(
-            factory.creatWNFT(
+            factory.createWNFT(
                 implementation.contractAddress,
                 initCallData,
                 keccak256(abi.encode(implementation))

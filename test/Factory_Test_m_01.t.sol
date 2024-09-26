@@ -29,7 +29,7 @@ contract Factory_Test_m_01 is Test {
     
     function test_create() public {
         bytes memory initCallData;
-        address created = factory.creatWNFT(address(erc721), initCallData);
+        address created = factory.createWNFT(address(erc721), initCallData);
         MockERC721  erc721_clone = MockERC721(created);
         assertEq(erc721.CHECKED_NAME(), erc721_clone.CHECKED_NAME());
         assertNotEq(address(erc721), address(erc721_clone));
@@ -63,7 +63,7 @@ contract Factory_Test_m_01 is Test {
         //     (address, string, string, string)
         // );
 
-        address payable  created = payable(factory.creatWNFT(address(impl_legacy), initCallData));
+        address payable  created = payable(factory.createWNFT(address(impl_legacy), initCallData));
         assertNotEq(created, address(impl_legacy));
 
         WNFTLegacy721 wnft = WNFTLegacy721(created);
@@ -108,7 +108,7 @@ contract Factory_Test_m_01 is Test {
         //     (address, string, string, string)
         // );
 
-        address payable  created = payable(factory.creatWNFT(address(impl_legacy), initCallData));
+        address payable  created = payable(factory.createWNFT(address(impl_legacy), initCallData));
         assertNotEq(created, address(impl_legacy));
         WNFTLegacy721 wnft = WNFTLegacy721(created);
         address payable  wnft_address = payable(address(wnft));

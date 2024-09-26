@@ -4,13 +4,13 @@ pragma solidity ^0.8.20;
 
 interface IEnvelopWNFTFactory {
 
-    function creatWNFT(address _implementation, bytes memory _initCallData) 
+    function createWNFT(address _implementation, bytes memory _initCallData) 
         external 
         payable 
         returns(address wnft); 
 
 
-    function creatWNFT(address _implementation, bytes memory _initCallData, bytes32 _salt) 
+    function createWNFT(address _implementation, bytes memory _initCallData, bytes32 _salt) 
         external 
         payable 
         returns(address wnft); 

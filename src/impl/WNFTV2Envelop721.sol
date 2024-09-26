@@ -6,6 +6,7 @@ pragma solidity ^0.8.20;
 import "./Singleton721.sol";
 import "../utils/LibET.sol";
 import "../interfaces/IEnvelopV2wNFT.sol";
+import "../interfaces/IEnvelopWNFTFactory.sol";
 import "./SmartWallet.sol";
 
 /**
@@ -31,15 +32,17 @@ contract WNFTV2Envelop721 is
         ET.WNFT wnftData;
     }
 
-    string public constant INITIAL_SIGN_STR = "initialize(InitParams)";
+    address private immutable __self = address(this);
+    address public immutable FACTORY;
     uint256 public constant ORACLE_TYPE = 2002;
-    bytes2 public constant SUPPORTED_RULES = 0xffff; // All rules are suupported. But implemented onky No_Transfer
+    string  public constant INITIAL_SIGN_STR = "initialize(InitParams)";
+    bytes2  public constant SUPPORTED_RULES = 0xffff; // All rules are suupported. But implemented onky No_Transfer
         // #### Envelop ProtocolV1 Rules !!! NOT All support in this implementation V2
     // 15   14   13   12   11   10   9   8   7   6   5   4   3   2   1   0  <= Bit number(dec)
     // ------------------------------------------------------------------------------------  
     //  1    1    1    1    1    1   1   1   1   1   1   1   1   1   1   1
     //  |    |    |    |    |    |   |   |   |   |   |   |   |   |   |   |
-    //  |    |    |    |    |    |   |   |   |   |   |   |   |   |   |   +-No_Unwrap
+    //  |    |    |    |    |    |   |   |   |   |   |   |   |   |   |   +-No_Unwrap (NOT SUPPORTED)
     //  |    |    |    |    |    |   |   |   |   |   |   |   |   |   +-No_Wrap (NOT SUPPORTED)
     //  |    |    |    |    |    |   |   |   |   |   |   |   |   +-No_Transfer
     //  |    |    |    |    |    |   |   |   |   |   |   |   +-No_Collateral (NOT SUPPORTED)
@@ -56,6 +59,7 @@ contract WNFTV2Envelop721 is
     //error InsufficientCollateral(ET.AssetItem declare, uint256 fact);
     error WnftRuleViolation(bytes2 rule);
     error RuleSetNotSupported(bytes2 unsupportedRules);
+    error NoDelegateCall();
 
    
   
@@ -81,14 +85,37 @@ contract WNFTV2Envelop721 is
         _;
     }
 
+    /**  OZ
+     * @dev Check that the execution is not being performed through a delegate call. This allows a function to be
+     * callable on the implementing contract but not through proxies.
+     */
+    modifier notDelegated() {
+        _checkNotDelegated();
+        _;
+    }
+
+    
+
 
 
     // keccak256(abi.encode(uint256(keccak256("envelop.storage.WNFTV2Envelop721")) - 1)) & ~bytes32(uint256(0xff))
     bytes32 private constant WNFTV2Envelop721StorageLocation = 0x058a45f5aef3b02ebbc5c42b328f21f7cf8b0c85eb30c8af8e306a9c50c48100;
 
-    constructor() {
-      _disableInitializers();
-      emit EnvelopV2OracleType(ORACLE_TYPE, type(WNFTV2Envelop721).name);
+    constructor(address _defaultFactory) {
+        FACTORY = _defaultFactory;    
+        _disableInitializers();
+        emit EnvelopV2OracleType(ORACLE_TYPE, type(WNFTV2Envelop721).name);
+    }
+
+    function createWNFTonFactory(InitParams calldata _init) 
+        external 
+        notDelegated 
+        returns(address wnft) 
+    {
+        wnft = IEnvelopWNFTFactory(FACTORY).createWNFT(
+            address(this), 
+            abi.encodeWithSignature(INITIAL_SIGN_STR, _init)
+        );
     }
 
     function initialize(
@@ -136,6 +163,7 @@ contract WNFTV2Envelop721 is
     ////////////////////////////////////////////////////////////////////////
 
     
+
     function approveHiden(address to, uint256 tokenId) public virtual {
         _approve(to, tokenId, _msgSender(), false);
     }
@@ -253,8 +281,16 @@ contract WNFTV2Envelop721 is
 
     }
 
-    function _isValidLockRecord(ET.Lock memory _lockRec) internal virtual view {
 
+    /**      From OZ
+     * @dev Reverts if the execution is performed via delegatecall.
+     * See {notDelegated}.
+     */
+    function _checkNotDelegated() internal view virtual {
+        if (address(this) != __self) {
+            // Must not be called through delegatecall
+            revert NoDelegateCall();
+        }
     }
 
     

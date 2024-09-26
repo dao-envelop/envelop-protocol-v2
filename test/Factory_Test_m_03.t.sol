@@ -34,9 +34,9 @@ contract Factory_Test_m_02 is Test {
             impl_myshch.INITIAL_SIGN_STR(),
             address(this), "MyshchWallet", "MSHW", "https://api.envelop.is" 
         );
-        address payable  created = payable(factory.creatWNFT(address(impl_myshch), initCallData));
+        address payable  created = payable(factory.createWNFT(address(impl_myshch), initCallData));
         walletServ = WNFTMyshchWallet(created);
-        created = payable(factory.creatWNFT(address(impl_myshch), initCallData));
+        created = payable(factory.createWNFT(address(impl_myshch), initCallData));
         walletUser = WNFTMyshchWallet(created);
         Address.sendValue(payable(walletServ), 1e18);
         Address.sendValue(payable(walletUser), 2e18);

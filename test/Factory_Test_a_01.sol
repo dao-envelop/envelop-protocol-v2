@@ -55,9 +55,9 @@ contract Factory_Test_a_01 is Test {
 
         vm.prank(address(100));
         vm.expectRevert("Only for Envelop Authorized");
-        address payable _wnftWallet = payable(factory.creatWNFT(address(impl_legacy), initCallData));
+        address payable _wnftWallet = payable(factory.createWNFT(address(impl_legacy), initCallData));
 
-        _wnftWallet = payable(factory.creatWNFT(address(impl_legacy), initCallData));
+        _wnftWallet = payable(factory.createWNFT(address(impl_legacy), initCallData));
         assertNotEq(_wnftWallet, address(impl_legacy));
 
         // send eth to wnft wallet
@@ -131,6 +131,6 @@ contract Factory_Test_a_01 is Test {
         vm.expectRevert(
             abi.encodeWithSelector(WNFTLegacy721.RuleSetNotSupported.selector, calcRule)
         );
-        factory.creatWNFT(address(impl_legacy), initCallData);
+        factory.createWNFT(address(impl_legacy), initCallData);
     }
 }
