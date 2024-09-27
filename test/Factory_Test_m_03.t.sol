@@ -9,17 +9,19 @@ import {EnvelopWNFTFactory} from "../src/EnvelopWNFTFactory.sol";
 import "../src/impl/WNFTMyshchWallet.sol";
 import {MockERC20} from "../src/mock/MockERC20.sol";
 import "../src/impl/WNFTLegacy721.sol";
+import "../src/impl/WNFTV2Envelop721.sol";
 //import "../src/impl/Singleton721.sol";
 //import {ET} from "../src/utils/LibET.sol";
 
 
-contract Factory_Test_m_02 is Test {
+contract Factory_Test_m_03 is Test {
     address public constant addr4 = 0x6F9aaAaD96180b3D6c71Fbbae2C1c5d5193A64EC;
     uint256 public sendEtherAmount = 1e18;
     EnvelopWNFTFactory public factory;
     WNFTMyshchWallet public impl_myshch;
     WNFTMyshchWallet public walletServ;
     WNFTMyshchWallet public walletUser;
+    WNFTV2Envelop721 public impl_native;
     MockERC20 public erc20;
     uint256 public nonce;
     uint256 public sendERC20Amount = 1e14;
@@ -29,8 +31,10 @@ contract Factory_Test_m_02 is Test {
         erc20 = new MockERC20("Name of Mock", "MMM");
         factory = new EnvelopWNFTFactory();
         impl_myshch = new WNFTMyshchWallet(address(factory));
+        impl_native = new WNFTV2Envelop721(address(factory));
         factory.setWrapperStatus(address(this), true); // set wrapper
         factory.setWrapperStatus(address(impl_myshch), true); // set wrapper
+        factory.setWrapperStatus(address(impl_native), true); // set wrapper
 
         // struct InitParams {
         //     address creator;
@@ -43,7 +47,7 @@ contract Factory_Test_m_02 is Test {
         //     bytes bytesParam;        // Semantic of this param will defined in exact implemenation
         // }
         bytes memory initCallData = abi.encodeWithSignature(
-            impl_myshch.INITIAL_SIGN_STR(),
+            impl_native.INITIAL_SIGN_STR(),
             WNFTV2Envelop721.InitParams(
                 address(this), 
                 "MyshchWallet", 
@@ -55,7 +59,7 @@ contract Factory_Test_m_02 is Test {
                 "" 
             )
         );
-        address payable  created = payable(factory.createWNFT(address(impl_myshch), initCallData));
+        address payable  created = payable(factory.createWNFT(address(impl_native), initCallData));
         
         // prepare
         walletServ = WNFTMyshchWallet(created);

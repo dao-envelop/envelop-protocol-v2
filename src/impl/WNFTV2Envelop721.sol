@@ -35,7 +35,12 @@ contract WNFTV2Envelop721 is
     address private immutable __self = address(this);
     address public immutable FACTORY;
     uint256 public constant ORACLE_TYPE = 2002;
-    string  public constant INITIAL_SIGN_STR = "initialize(InitParams)";
+    //string  public constant INITIAL_SIGN_STR = "initialize(InitParams)";
+    string public constant INITIAL_SIGN_STR = 
+        "initialize("
+          "(address,string,string,string,address[],bytes32[],uint256[],bytes)"
+        ")";
+
     bytes2  public constant SUPPORTED_RULES = 0xffff; // All rules are suupported. But implemented onky No_Transfer
         // #### Envelop ProtocolV1 Rules !!! NOT All support in this implementation V2
     // 15   14   13   12   11   10   9   8   7   6   5   4   3   2   1   0  <= Bit number(dec)
@@ -152,15 +157,15 @@ contract WNFTV2Envelop721 is
         InitParams calldata _init
     ) internal onlyInitializing {
         WNFTV2Envelop721Storage storage $ = _getWNFTV2Envelop721Storage();
-        if (bytes2(_init.hashedParams[0]) != 0x0000) {
+        if (_init.hashedParams.length > 0 ) {
             _isValidRules(bytes2(_init.hashedParams[0]));
             $.wnftData.rules = bytes2(_init.hashedParams[0]);
         }
         
-        if (_init.numberParams[0] > 0) {
+        if (_init.numberParams.length  >  0) {
            $.wnftData.locks.push(ET.Lock(0x00, _init.numberParams[0]));
         }
-        emit EnvelopWrappedV2(_init.creator, TOKEN_ID, _init.hashedParams[0], "");
+        emit EnvelopWrappedV2(_init.creator, TOKEN_ID,  $.wnftData.rules, "");
     }
     ////////////////////////////////////////////////////////////////////////
     
