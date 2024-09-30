@@ -248,7 +248,6 @@ contract WNFTV2Envelop721 is
         WNFTV2Envelop721Storage storage $ = _getWNFTV2Envelop721Storage();
         return $.wnftData;
     }
-
    
     ////////////////////////////////////////////////////////////////
     //    ******************* internals ***********************   //
@@ -286,7 +285,6 @@ contract WNFTV2Envelop721 is
         ok = true;
 
     }
-
 
     /**      From OZ
      * @dev Reverts if the execution is performed via delegatecall.

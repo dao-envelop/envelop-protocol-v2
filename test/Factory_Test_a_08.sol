@@ -62,7 +62,6 @@ contract Factory_Test_a_08 is Test {
         
         // by owner
         wnft.approveHiden(address(10), impl_legacy.TOKEN_ID());
-        // проверить тут тоже апрув - он кому дан по итогу
 
         // add collateral
         erc20.transfer(address(wnft), sendERC20Amount);

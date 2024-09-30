@@ -14,7 +14,7 @@ import "../src/EnvelopLegacyWrapperBaseV2.sol";
 //import "../src/impl/Singleton721.sol";
 //import {ET} from "../src/utils/LibET.sol";
 
-// try to withdraw original nft - erc721
+// try to withdraw original nft - erc1155
 // when same NFT in collateral (same nft smart contract)
 contract Factory_Test_a_16 is Test {
     
@@ -50,7 +50,7 @@ contract Factory_Test_a_16 is Test {
     function test_create_legacy() public {
         uint256 tokenId = 0;
         uint256 amount = 6;
-        ET.AssetItem memory original_nft = ET.AssetItem(ET.Asset(ET.AssetType.ERC721, address(erc721)),tokenId,0);
+        ET.AssetItem memory original_nft = ET.AssetItem(ET.Asset(ET.AssetType.ERC1155, address(erc1155)),tokenId,amount);
         EnvelopLegacyWrapperBaseV2.INData memory inData = EnvelopLegacyWrapperBaseV2.INData(
                 original_nft, // inAsset
                 address(1), //unWrapDestination
@@ -73,7 +73,7 @@ contract Factory_Test_a_16 is Test {
         vm.startPrank(address(1));
         erc721.mint(address(1), tokenId + 1); 
         erc721.mint(address(1), tokenId + 2);
-        erc1155.mint(address(1), tokenId, amount);
+        erc1155.mint(address(1), tokenId, amount * 2);
         // make approve
         erc20.approve(address(wrapper), sendERC20Amount);
         erc721.setApprovalForAll(address(wrapper), true);
@@ -95,20 +95,18 @@ contract Factory_Test_a_16 is Test {
 
         vm.stopPrank();
         address payable _wnftWallet = payable(wnftAsset.asset.contractAddress);
-        assertEq(erc721.ownerOf(tokenId), _wnftWallet);
         assertEq(erc721.ownerOf(tokenId + 1), _wnftWallet);
         assertEq(erc20.balanceOf(_wnftWallet), sendERC20Amount);
         assertEq(_wnftWallet.balance, sendEtherAmount);
-        assertEq(erc1155.balanceOf(_wnftWallet, tokenId), amount);
+        assertEq(erc1155.balanceOf(_wnftWallet, tokenId), amount * 2);
         
         WNFTLegacy721 wnft = WNFTLegacy721(_wnftWallet);
 
         vm.prank(address(1));
         wnft.unWrap(colAssets);
-        assertEq(erc721.ownerOf(tokenId), address(1));
         assertEq(erc721.ownerOf(tokenId + 1), address(1));
         assertEq(erc721.ownerOf(tokenId + 2), address(1));
-        assertEq(erc1155.balanceOf(address(1), tokenId), amount);
+        assertEq(erc1155.balanceOf(address(1), tokenId), amount * 2);
         assertEq(erc20.balanceOf(address(1)), sendERC20Amount);
         assertEq(address(1).balance, sendEtherAmount);
 
