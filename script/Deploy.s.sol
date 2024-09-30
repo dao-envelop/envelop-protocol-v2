@@ -125,7 +125,7 @@ contract DeployScript is Script {
         }
         
         if (p.impl_legacy == address(0)) {
-            impl_legacy = new WNFTLegacy721();    
+            impl_legacy = new WNFTLegacy721();
             wrapper.setWNFTId(
                 ET.AssetType.ERC721, 
                 address(impl_legacy), 
