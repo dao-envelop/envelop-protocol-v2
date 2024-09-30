@@ -13,6 +13,11 @@ All code provided with  `SPDX-License-Identifier: MIT`
 This version has many deployments in different chains. Please follow the docs:  
 https://docs.envelop.is/tech/smart-contracts/deployment-addresses  
 
+### Sepolia
+```shell
+$ forge script script/Deploy.s.sol:DeployScript --rpc-url sepolia  --account ttwo --sender 0xDDA2F2E159d2Ce413Bd0e1dF5988Ee7A803432E3 --broadcast --verify  --etherscan-api-key $ETHERSCAN_TOKEN
+```
+
 ## Audit  
 Coming soon
 
