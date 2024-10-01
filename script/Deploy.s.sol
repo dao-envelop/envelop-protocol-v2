@@ -202,14 +202,14 @@ contract DeployScript is Script {
             ); 
             ET.AssetItem[] memory _coll = new ET.AssetItem[](0); 
         
-            ET.NFTItem memory nonce2  = wrapper.saltBase(ET.AssetType.ERC721);
-            address wnftPredictedAddress = factory.predictDeterministicAddress(
-                address(impl_legacy), // implementation address
-                keccak256(abi.encode(nonce2))
-            );
+            //ET.NFTItem memory nonce2  = wrapper.saltBase(ET.AssetType.ERC721);
+            // address wnftPredictedAddress = factory.predictDeterministicAddress(
+            //     address(impl_legacy), // implementation address
+            //     keccak256(abi.encode(nonce2))
+            // );
             ET.AssetItem  memory created = wrapper.wrap(ind, _coll, msg.sender);
             console2.log("\n**Tets legacy wnft WNFTLegacy721** ");
-            console2.log("https://%s/address/%s#code\n", explorer_url, address(impl_legacy));
+            console2.log("https://%s/address/%s#code\n", explorer_url, created.asset.contractAddress);
 
         }
             

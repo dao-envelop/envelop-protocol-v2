@@ -159,7 +159,7 @@ contract WNFTV2Envelop721 is
         WNFTV2Envelop721Storage storage $ = _getWNFTV2Envelop721Storage();
         if (_init.hashedParams.length > 0 ) {
             _isValidRules(bytes2(_init.hashedParams[0]));
-            $.wnftData.rules = bytes2(_init.hashedParams[0]);
+            $.wnftData.rules = bytes2(uint16(uint256(_init.hashedParams[0])));
         }
         
         if (_init.numberParams.length  >  0) {

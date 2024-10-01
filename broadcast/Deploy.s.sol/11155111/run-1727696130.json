@@ -122,7 +122,7 @@
       "isFixedGasLimit": false
     },
     {
-      "hash": "0x433850c99c122435b6beefc9fd46eff1bcd5da5de1c241afd574ad2639774c1a",
+      "hash": null,
       "transactionType": "CALL",
       "contractName": "EnvelopWNFTFactory",
       "contractAddress": "0x1fb8fbf700fe9ce0621b1436330be3e7d634840d",
@@ -172,11 +172,8 @@
   "pending": [
     "0xfc6589a2c4f1924d5b065887715b97dc1967e490aaf7b43776da8a7235a88617"
   ],
-  "libraries": [],
-  "pending": [],
   "returns": {},
   "timestamp": 1727696130,
   "chain": 11155111,
   "commit": "1538651"
-
 }
