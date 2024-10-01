@@ -209,7 +209,7 @@ contract DeployScript is Script {
             );
             ET.AssetItem  memory created = wrapper.wrap(ind, _coll, msg.sender);
             console2.log("\n**Tets legacy wnft WNFTLegacy721** ");
-            console2.log("https://%s/address/%s#code\n", explorer_url, address(impl_legacy));
+            console2.log("https://%s/address/%s#code\n", explorer_url, address(created));
 
         }
             

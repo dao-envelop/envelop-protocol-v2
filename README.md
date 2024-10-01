@@ -15,9 +15,14 @@ https://docs.envelop.is/tech/smart-contracts/deployment-addresses
 
 ### Sepolia
 ```shell
-$ forge script script/Deploy.s.sol:DeployScript --rpc-url sepolia  --account ttwo --sender 0xDDA2F2E159d2Ce413Bd0e1dF5988Ee7A803432E3 --broadcast --verify  --etherscan-api-key $ETHERSCAN_TOKEN
+$ forge script script/Deploy.s.sol:DeployScript --rpc-url sepolia  --account ttwo --sender 0xDDA2F2E159d2Ce413Bd0e1dF5988Ee7A803432E3 --broadcast --verify  --etherscan-api-key $ETHERSCAN_TOKEN --priority-gas-price 30000
 ```
 
+### Bsc
+```shell
+$ forge script script/Deploy.s.sol:DeployScript --rpc-url bnb_smart_chain  --account envdeployer --sender 0xE1a8F0a249A87FDB9D8B912E11B198a2709D6d9B --broadcast --verify  --etherscan-api-key $BSCSCAN_TOKEN
+```
+2040072488354782710
 ## Audit  
 Coming soon
 
