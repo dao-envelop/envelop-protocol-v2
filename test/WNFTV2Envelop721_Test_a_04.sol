@@ -8,12 +8,12 @@ import "forge-std/console.sol";
 import {EnvelopWNFTFactory} from "../src/EnvelopWNFTFactory.sol";
 import {MockERC721} from "../src/mock/MockERC721.sol";
 import {MockERC20} from "../src/mock/MockERC20.sol";
-import "../src/impl/WNFTLegacy721.sol";
+import "../src/impl/WNFTV2Envelop721.sol";
 //import "../src/impl/Singleton721.sol";
 //import {ET} from "../src/utils/LibET.sol";
 
 // call executeEncodedTx with timelock
-contract Factory_Test_a_05 is Test {
+contract WNFTV2Envelop721_Test_a_04 is Test {
     
     event Log(string message);
 
@@ -22,45 +22,39 @@ contract Factory_Test_a_05 is Test {
     MockERC721 public erc721;
     MockERC20 public erc20;
     EnvelopWNFTFactory public factory;
-    WNFTLegacy721 public impl_legacy;
+    WNFTV2Envelop721 public impl_legacy;
 
     receive() external payable virtual {}
+    
     function setUp() public {
-        erc721 = new MockERC721('Mock ERC721', 'ERC721');
-        erc20 = new MockERC20('Mock ERC20', 'ERC20');
+        erc721 = new MockERC721('Mock ERC721', 'ERC');
         factory = new EnvelopWNFTFactory();
-        impl_legacy = new WNFTLegacy721();
-        factory.setWrapperStatus(address(this), true); // set wrapper
+        impl_legacy = new WNFTV2Envelop721(address(factory));
+        factory.setWrapperStatus(address(impl_legacy), true); // set wrapper
+        erc20 = new MockERC20('Mock ERC20', 'ERC20');
     }
     
     function test_create_legacy() public {
-        ET.Lock[] memory locks = new ET.Lock[](1);
-        locks[0] = ET.Lock(0x00, block.timestamp + 10000);
-        bytes memory initCallData = abi.encodeWithSignature(
-            impl_legacy.INITIAL_SIGN_STR(),
-            address(this), // creator and owner 
-            "LegacyWNFTNAME", 
-            "LWNFT", 
-            "https://api.envelop.is" ,
-            //new ET.WNFT[](1)[0]
-            ET.WNFT(
-                ET.AssetItem(ET.Asset(ET.AssetType.EMPTY, address(0)),0,0), // inAsset
-                new ET.AssetItem[](0),   // collateral
-                address(0), //unWrapDestination 
-                new ET.Fee[](0), // fees
-                locks, // locks
-                new ET.Royalty[](0), // royalties
-                0x0105   //bytes2
-            ) 
-        );    
+        uint256[] memory numberParams = new uint256[](1);
+        numberParams[0] = block.timestamp + 10000;
+        WNFTV2Envelop721.InitParams memory initData = WNFTV2Envelop721.InitParams(
+            address(this),
+            'Envelop',
+            'ENV',
+            'https://api.envelop.is/',
+            new address[](0),
+            new bytes32[](0),
+            numberParams,
+            ""
+            );
 
-        address payable _wnftWallet = payable(factory.createWNFT(address(impl_legacy), initCallData));
-        assertNotEq(_wnftWallet, address(impl_legacy));
+        vm.prank(address(this));
+        address payable _wnftWallet = payable(impl_legacy.createWNFTonFactory(initData));
+        
+        WNFTV2Envelop721 wnft = WNFTV2Envelop721(_wnftWallet);
 
         // send erc20 to wnft wallet
         erc20.transfer(_wnftWallet, sendERC20Amount);
-        
-        WNFTLegacy721 wnft = WNFTLegacy721(_wnftWallet);
         
         bytes memory _data = abi.encodeWithSignature(
             "transfer(address,uint256)",
