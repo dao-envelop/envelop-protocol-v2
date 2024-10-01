@@ -13,6 +13,7 @@ import "../src/impl/WNFTV2Envelop721.sol";
 //import {ET} from "../src/utils/LibET.sol";
 
 // check no transfer rule 
+// check NoDelegateCall error
 contract WNFTV2Envelop721_Test_a_11 is Test {
     
     error ERC721InvalidApprover(address approver);
@@ -37,9 +38,6 @@ contract WNFTV2Envelop721_Test_a_11 is Test {
     function test_create_wNFT() public {
         bytes32[] memory hashedParams = new bytes32[](1);
         hashedParams[0] = bytes32(abi.encode(4));
-        console2.logBytes32(hashedParams[0]);
-        console2.log(uint256(hashedParams[0]));
-        console2.logBytes2(bytes2(uint16(uint256(hashedParams[0]))));
         WNFTV2Envelop721.InitParams memory initData = WNFTV2Envelop721.InitParams(
             address(this),
             'Envelop',
@@ -52,17 +50,38 @@ contract WNFTV2Envelop721_Test_a_11 is Test {
             );
 
         vm.prank(address(this));
+        vm.expectEmit();
+        emit WNFTV2Envelop721.EnvelopWrappedV2(address(this), impl_legacy.TOKEN_ID(),  bytes2(uint16(uint256(hashedParams[0]))), "");
         address payable _wnftWallet = payable(impl_legacy.createWNFTonFactory(initData));
 
         WNFTV2Envelop721 wnft = WNFTV2Envelop721(_wnftWallet);
         
         uint256 tokenId = impl_legacy.TOKEN_ID();        
-        wnft.transferFrom(address(this), address(1), tokenId);
-        //console2.logBytes2(wnft.wnftInfo(tokenId).rules);
-        /*
         vm.expectRevert(
             abi.encodeWithSelector(WNFTV2Envelop721.WnftRuleViolation.selector, bytes2(0x0004))
         );
-        wnft.transferFrom(address(this), address(1), tokenId);*/
+        wnft.transferFrom(address(this), address(1), tokenId);
+    }
+
+    function test_notDelegated() public {
+        WNFTV2Envelop721.InitParams memory initData = WNFTV2Envelop721.InitParams(
+            address(this),
+            'Envelop',
+            'ENV',
+            'https://api.envelop.is/',
+            new address[](0),
+            new bytes32[](0),
+            new uint256[](0),
+            ""
+            );
+
+        address payable _wnftWallet = payable(impl_legacy.createWNFTonFactory(initData));
+
+        WNFTV2Envelop721 wnft = WNFTV2Envelop721(_wnftWallet);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(WNFTV2Envelop721.NoDelegateCall.selector)
+        );
+        wnft.createWNFTonFactory(initData);
     }
 }
