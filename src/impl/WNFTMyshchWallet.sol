@@ -33,7 +33,7 @@ contract WNFTMyshchWallet is WNFTV2Envelop721
     ) public virtual override initializer 
     {
         
-        //__WNFTMyshchWallet_init(_init);
+        __WNFTMyshchWallet_init(_init);
     }
 
     // function _getWNFTLegacy721Storage() private pure returns (WNFTLegacy721Storage storage $) {
@@ -48,7 +48,7 @@ contract WNFTMyshchWallet is WNFTV2Envelop721
     function __WNFTMyshchWallet_init(
         InitParams calldata _init
     ) internal onlyInitializing {
-        // __WNFTV2Envelop721_init(_init);
+         __WNFTV2Envelop721_init(_init);
          __WNFTMyshchWallet_init_unchained(_init);
     }
 
@@ -76,7 +76,7 @@ contract WNFTMyshchWallet is WNFTV2Envelop721
         uint256 _amount
     )
         external
-        onlyWnftOwner()  
+        //onlyWnftOwner()  
     {
         uint256 gasBefore = gasleft();
         bytes memory _data = abi.encodeWithSignature(

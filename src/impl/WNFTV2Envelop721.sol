@@ -150,10 +150,10 @@ contract WNFTV2Envelop721 is
           InitParams calldata _init
     ) internal onlyInitializing fixEtherBalance {
         __Singleton721_init(_init.nftName, _init.nftSymbol, _init.creator, _init.tokenUri);
-        __WNFTLegacy721_init_unchained(_init);
+       __WNFTV2Envelop721_init_unchained(_init);
     }
 
-    function __WNFTLegacy721_init_unchained(
+    function __WNFTV2Envelop721_init_unchained(
         InitParams calldata _init
     ) internal onlyInitializing {
         WNFTV2Envelop721Storage storage $ = _getWNFTV2Envelop721Storage();

@@ -59,7 +59,7 @@ contract Factory_Test_m_03 is Test {
                 "" 
             )
         );
-        address payable  created = payable(factory.createWNFT(address(impl_native), initCallData));
+        address payable  created = payable(factory.createWNFT(address(impl_myshch), initCallData));
         
         // prepare
         walletServ = WNFTMyshchWallet(created);
@@ -73,7 +73,7 @@ contract Factory_Test_m_03 is Test {
 
     }
 
-    /*function test_create_exec_with_refund() public {
+    function test_create_exec_with_refund() public {
 
         bytes memory _data = abi.encodeWithSignature(
             "transfer(address,uint256)",
@@ -86,7 +86,6 @@ contract Factory_Test_m_03 is Test {
         assertNotEq(address(walletUser), address(walletServ));
         assertEq(erc20.balanceOf(address(walletUser)), sendERC20Amount);
 
-    }*/
-
+    }
     
 }
