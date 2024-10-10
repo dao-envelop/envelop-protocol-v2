@@ -76,7 +76,7 @@ contract WNFTMyshchWallet is WNFTV2Envelop721
         uint256 _amount
     )
         external
-        //onlyWnftOwner()  
+        onlyWnftOwner()  
     {
         uint256 gasBefore = gasleft();
         bytes memory _data = abi.encodeWithSignature(
@@ -92,7 +92,7 @@ contract WNFTMyshchWallet is WNFTV2Envelop721
     // Check allowance    
     returns (uint256 send) 
     {
-        send = (_gasLeft - gasleft());// * tx.gasprice;
+        send = (_gasLeft - gasleft()) * tx.gasprice;
         Address.sendValue(payable(msg.sender), send); 
     }
 
