@@ -18,12 +18,36 @@ import "./WNFTV2Envelop721.sol";
 contract WNFTMyshchWallet is WNFTV2Envelop721 
 {
 
+     
+    struct WNFTMyshchWalletStorage {
+        mapping(address => bool) approvedRelayer;
+    }
+
     uint256 public gasLeftOnStart; // Move to private struct
+    
     modifier onlyApproved() {
         _onlyApproved(msg.sender);
         _;
     }
+    
+    modifier onlyAprrovedRelayer() {
+        _onlyAprrovedRelayer(msg.sender);
+        _;
+    }
 
+    
+    ///////////////////////////////////////////////////////
+    ///                 OZ  Storage pattern              //
+    ///////////////////////////////////////////////////////
+
+    // keccak256(abi.encode(uint256(keccak256("envelop.storage.WNFTV2Envelop721")) - 1)) & ~bytes32(uint256(0xff))
+    bytes32 private constant WNFTMyshchWalletStorageLocation = 0xb7e82b5c82f21c1cdf373ea16f6379953c1d1abd353934dd29dd5c1151900100;
+    function _getWNFTMyshchWalletStorage() private pure returns (WNFTMyshchWalletStorage storage $) {
+        assembly {
+            $.slot := WNFTMyshchWalletStorageLocation
+        }
+    }
+    ///////////////////////////////////////////////////////
     constructor(address _defaultFactory) 
         WNFTV2Envelop721(_defaultFactory)
     {
@@ -33,7 +57,12 @@ contract WNFTMyshchWallet is WNFTV2Envelop721
         
     ////////////////////////////////////////////////////////////////////////
     // OZ init functions layout                                           //
-    ////////////////////////////////////////////////////////////////////////    
+    ////////////////////////////////////////////////////////////////////////  
+    // In This implementation next params are supported:
+    // WNFTV2Envelop721 hashedParams[0] - rules
+    // WNFTV2Envelop721 numberParams[0] - simpleTimeLock
+    // WNFTMyshchWallet addrParams[0] - default relayer
+  
     function initialize(
         InitParams calldata _init
     ) public virtual override initializer 
@@ -41,12 +70,6 @@ contract WNFTMyshchWallet is WNFTV2Envelop721
         
         __WNFTMyshchWallet_init(_init);
     }
-
-    // function _getWNFTLegacy721Storage() private pure returns (WNFTLegacy721Storage storage $) {
-    //     assembly {
-    //         $.slot := WNFTLegacy721StorageLocation
-    //     }
-    // }
 
     /**
      * @dev Initializes the contract by setting a `name` and a `symbol` to the token collection.
@@ -61,6 +84,10 @@ contract WNFTMyshchWallet is WNFTV2Envelop721
     function __WNFTMyshchWallet_init_unchained(
         InitParams calldata _init
     ) internal onlyInitializing {
+        WNFTMyshchWalletStorage storage $ = _getWNFTMyshchWalletStorage();
+        if (_init.addrParams.length  >  0) {
+            $.approvedRelayer[_init.addrParams[0]] = true;   
+        }
         
         // emit WrappedV1(
         //     _wnftData.inAsset.asset.contractAddress,
@@ -91,13 +118,13 @@ contract WNFTMyshchWallet is WNFTV2Envelop721
             _receiver, _amount
         );
         super._executeEncodedTx(_target, 0, _data);
-        IMyshchWalletwNFT(_receiver).getRefund();
+        uint256 refundAmount = IMyshchWalletwNFT(_receiver).getRefund();
+        Address.sendValue(payable(msg.sender), refundAmount); 
     }
 
     function setGasCheckPoint() 
         external
-        onlyApproved
-    // Check allowance    
+        onlyAprrovedRelayer
     returns (uint256) 
     {
         gasLeftOnStart = gasleft();
@@ -106,93 +133,34 @@ contract WNFTMyshchWallet is WNFTV2Envelop721
 
     function getRefund() 
         external
-        onlyApproved
-    // Check allowance    
+        onlyAprrovedRelayer
     returns (uint256 send) 
     {
         send = (gasLeftOnStart - gasleft()) * tx.gasprice;
         Address.sendValue(payable(msg.sender), send); 
     }
 
+    function setRelayerStatus(address _relayer, bool _status) 
+        external 
+        onlyWnftOwner 
+    {
+         WNFTMyshchWalletStorage storage $ = _getWNFTMyshchWalletStorage();
+         $.approvedRelayer[_relayer] = _status;
+    }
+
     ////////////////////////////////////////////////////////////////////////////
     /////                    GETTERS                                       /////
     ////////////////////////////////////////////////////////////////////////////
 
-    /**
-     * @dev See {IERC165-supportsInterface}.
-    
+    function getRelayerStatus(address _relayer) external view returns(bool) {
+         WNFTMyshchWalletStorage storage $ = _getWNFTMyshchWalletStorage();
+         return $.approvedRelayer[_relayer];
+    }
 
-    // function wnftInfo(uint256 tokenId) external view returns (ET.WNFT memory) {
-    //     tokenId; // suppress solc warn
-    //     WNFTLegacy721Storage storage $ = _getWNFTLegacy721Storage();
-    //     return $.wnftData;
-    // }
-
-    // function tokenURI(uint256 tokenId) public view  override returns (string memory uri_) {
-    //     WNFTLegacy721Storage storage $ = _getWNFTLegacy721Storage();
-    //     uri_ = super.tokenURI(tokenId);
-
-    //     // V2 wnft RULE for override inAsset URL
-    //     if (_checkRule(0x0100, $.wnftData.rules)) {    
-    //         return uri_;
-    //     } 
-    //     if ($.wnftData.inAsset.asset.assetType == ET.AssetType.ERC721)
-    //     {
-    //         if (_ownerOf($.wnftData.inAsset) == address(this)) {
-    //             // method from TokenService
-    //             uri_ = _getURI($.wnftData.inAsset);
-    //         }
-    //     } else if ($.wnftData.inAsset.asset.assetType == ET.AssetType.ERC1155)
-    //     {
-    //         if (_balanceOf($.wnftData.inAsset, address(this)) > 0 ) {
-    //             // method from TokenService
-    //             uri_ = _getURI($.wnftData.inAsset);
-    //         }
-
-    //     }
-        
-    // }
     ////////////////////////////////////////////////////////////////
     //    ******************* internals ***********************   //
-    //    ******************* internals ***********************   //
     ////////////////////////////////////////////////////////////////
-
-
-    // 0x00 - TimeLock
-    // 0x01 - TransferFeeLock   - UNSUPPORTED IN THIS IMPLEMENATION
-    // 0x02 - Personal Collateral count Lock check  - UNSUPPORTED IN THIS IMPLEMENATION
-    // function _checkLocks() internal virtual {
-    //     WNFTLegacy721Storage storage $ = _getWNFTLegacy721Storage();
-    //     ET.Lock[] memory lck = $.wnftData.locks;
-    //     for (uint256 i = 0; i < lck.length; ++ i) {
-    //         if (lck[i].lockType == 0x00) {
-    //             require(
-    //                 lck[i].param <= block.timestamp,
-    //                 "TimeLock error"
-    //             );
-    //         }
-    //     }
-    // }
     
-
-    /**
-     * @dev Use for check rules above.
-     */
-    // function _checkRule(bytes2 _rule, bytes2 _wNFTrules) internal pure returns (bool isSet) {
-    //     isSet =_rule == (_rule & _wNFTrules);
-    // }
-
-    // function _isValidRules(bytes2 _rules) internal pure virtual returns (bool ok) {
-    //     if (!_checkRule(_rules, SUPPORTED_RULES)) {
-    //         revert RuleSetNotSupported(_rules & SUPPORTED_RULES ^ _rules); //  return 1 in UNsupported digits
-    //     }
-    //     ok = true;
-
-    // }
-
-    // function _isValidLockRecord(ET.Lock memory _lockRec) internal virtual view {
-
-    // }
     function  _onlyApproved(address _sender) internal view virtual {
         address currOwner = ownerOf(TOKEN_ID);
         require(
@@ -201,6 +169,12 @@ contract WNFTMyshchWallet is WNFTV2Envelop721
             getApproved(TOKEN_ID) == _sender,
             "Only for apprved addresses"
         );
+    }
+
+    function _onlyAprrovedRelayer(address _sender) internal view virtual {
+        WNFTMyshchWalletStorage storage $ = _getWNFTMyshchWalletStorage();
+        require($.approvedRelayer[_sender], "Only for apprved relayer");
+
     }
 
 }

@@ -62,6 +62,7 @@ contract Factory_Test_m_03 is Test {
         //     uint256[] numberParams;  // Semantic of this param will defined in exact implemenation
         //     bytes bytesParam;        // Semantic of this param will defined in exact implemenation
         // }
+        
         bytes memory initCallData = abi.encodeWithSignature(
             impl_native.INITIAL_SIGN_STR(),
             WNFTV2Envelop721.InitParams(
@@ -79,6 +80,22 @@ contract Factory_Test_m_03 is Test {
         
         // prepare
         walletServ = WNFTMyshchWallet(created);
+
+        address[] memory _addrParams = new address[](1);
+        _addrParams[0] = created;
+        initCallData = abi.encodeWithSignature(
+            impl_native.INITIAL_SIGN_STR(),
+            WNFTV2Envelop721.InitParams(
+                address(this), 
+                "MyshchWallet", 
+                "MSHW", 
+                "https://api.envelop.is",
+                _addrParams,
+                new bytes32[](0),
+                new uint256[](0),
+                "" 
+            )
+        );
         created = payable(factory.createWNFT(address(impl_myshch), initCallData));
         walletUser = WNFTMyshchWallet(created);
         Address.sendValue(payable(walletServ), 1e18);
@@ -96,10 +113,10 @@ contract Factory_Test_m_03 is Test {
         before.amount1 = address(walletServ).balance;
         before.amount2 = address(walletUser).balance;
         before.amount3 = msg.sender.balance;
-        bytes memory _data = abi.encodeWithSignature(
-            "transfer(address,uint256)",
-            address(walletUser), sendERC20Amount
-        );
+        // bytes memory _data = abi.encodeWithSignature(
+        //     "transfer(address,uint256)",
+        //     address(walletUser), sendERC20Amount
+        // );
 
         // by owner
         walletUser.approve(address(walletServ), walletUser.TOKEN_ID());

@@ -28,6 +28,7 @@ contract WNFTV2Envelop721 is
         bytes bytesParam;        // Semantic of this param will defined in exact implemenation
     }
 
+    
     struct WNFTV2Envelop721Storage {
         ET.WNFT wnftData;
     }
@@ -40,7 +41,7 @@ contract WNFTV2Envelop721 is
         "initialize("
           "(address,string,string,string,address[],bytes32[],uint256[],bytes)"
         ")";
-
+    
     bytes2  public constant SUPPORTED_RULES = 0xffff; // All rules are suupported. But implemented onky No_Transfer
         // #### Envelop ProtocolV1 Rules !!! NOT All support in this implementation V2
     // 15   14   13   12   11   10   9   8   7   6   5   4   3   2   1   0  <= Bit number(dec)
@@ -134,13 +135,19 @@ contract WNFTV2Envelop721 is
 
     ////////////////////////////////////////////////////////////////////////
     // OZ init functions layout                                           //
-    ////////////////////////////////////////////////////////////////////////    
+    ////////////////////////////////////////////////////////////////////////  
+    // In This implementation next params are supported:
+    // WNFTV2Envelop721 hashedParams[0] - rules
+    // WNFTV2Envelop721 numberParams[0] - simpleTimeLock
+  
     function initialize(
         InitParams calldata _init
     ) public virtual initializer 
     {
         
         __WNFTV2Envelop721_init(_init);
+        //WNFTV2Envelop721Storage storage $ = _getWNFTV2Envelop721Storage();
+        
     }
         
     /**
@@ -166,6 +173,7 @@ contract WNFTV2Envelop721 is
            $.wnftData.locks.push(ET.Lock(0x00, _init.numberParams[0]));
         }
         emit EnvelopWrappedV2(_init.creator, TOKEN_ID,  $.wnftData.rules, "");
+        
     }
     ////////////////////////////////////////////////////////////////////////
     
@@ -243,7 +251,7 @@ contract WNFTV2Envelop721 is
        return interfaceId == type(IEnvelopV2wNFT).interfaceId || super.supportsInterface(interfaceId);
     }
 
-    function wnftInfo(uint256 tokenId) external view returns (ET.WNFT memory) {
+    function wnftInfo(uint256 tokenId) public view returns (ET.WNFT memory) {
         tokenId; // suppress solc warn
         WNFTV2Envelop721Storage storage $ = _getWNFTV2Envelop721Storage();
         return $.wnftData;
