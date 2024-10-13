@@ -14,5 +14,6 @@ interface IMyshchWalletwNFT {
         //ifUnlocked()
         //onlyWnftOwner()
          
-    function getRefund(uint256 _gasLeft) external  returns (uint256 send); 
+    function setGasCheckPoint() external returns (uint256);
+    function getRefund() external  returns (uint256 send); 
 }

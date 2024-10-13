@@ -18,6 +18,12 @@ import "./WNFTV2Envelop721.sol";
 contract WNFTMyshchWallet is WNFTV2Envelop721 
 {
 
+    uint256 public gasLeftOnStart; // Move to private struct
+    modifier onlyApproved() {
+        _onlyApproved(msg.sender);
+        _;
+    }
+
     constructor(address _defaultFactory) 
         WNFTV2Envelop721(_defaultFactory)
     {
@@ -78,21 +84,33 @@ contract WNFTMyshchWallet is WNFTV2Envelop721
         external
         onlyWnftOwner()  
     {
-        uint256 gasBefore = gasleft();
+        IMyshchWalletwNFT(_receiver).setGasCheckPoint();
+        //uint256 gasBefore = gasleft();
         bytes memory _data = abi.encodeWithSignature(
             "transfer(address,uint256)",
             _receiver, _amount
         );
         super._executeEncodedTx(_target, 0, _data);
-        IMyshchWalletwNFT(_receiver).getRefund(gasBefore);
+        IMyshchWalletwNFT(_receiver).getRefund();
     }
 
-    function getRefund(uint256 _gasLeft) 
+    function setGasCheckPoint() 
         external
+        onlyApproved
+    // Check allowance    
+    returns (uint256) 
+    {
+        gasLeftOnStart = gasleft();
+        return gasLeftOnStart;
+    }
+
+    function getRefund() 
+        external
+        onlyApproved
     // Check allowance    
     returns (uint256 send) 
     {
-        send = (_gasLeft - gasleft()) * tx.gasprice;
+        send = (gasLeftOnStart - gasleft()) * tx.gasprice;
         Address.sendValue(payable(msg.sender), send); 
     }
 
@@ -139,6 +157,7 @@ contract WNFTMyshchWallet is WNFTV2Envelop721
     //    ******************* internals ***********************   //
     ////////////////////////////////////////////////////////////////
 
+
     // 0x00 - TimeLock
     // 0x01 - TransferFeeLock   - UNSUPPORTED IN THIS IMPLEMENATION
     // 0x02 - Personal Collateral count Lock check  - UNSUPPORTED IN THIS IMPLEMENATION
@@ -174,6 +193,15 @@ contract WNFTMyshchWallet is WNFTV2Envelop721
     // function _isValidLockRecord(ET.Lock memory _lockRec) internal virtual view {
 
     // }
+    function  _onlyApproved(address _sender) internal view virtual {
+        address currOwner = ownerOf(TOKEN_ID);
+        require(
+            //currOwner == _sender ||
+            isApprovedForAll(currOwner, _sender) ||
+            getApproved(TOKEN_ID) == _sender,
+            "Only for apprved addresses"
+        );
+    }
 
 }
 
