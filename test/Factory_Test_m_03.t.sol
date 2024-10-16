@@ -39,6 +39,8 @@ contract Factory_Test_m_03 is Test {
     MockERC20 public erc20;
     uint256 public nonce;
     uint256 public sendERC20Amount = 1e14;
+    uint256 public constant FEE = 0;
+    address constant SERV_OWNER = address(18);
 
     receive() external payable virtual {}
     function setUp() public {
@@ -46,7 +48,7 @@ contract Factory_Test_m_03 is Test {
         console2.log("Tx sender: %s, balance: s%, gasleft %s", msg.sender, msg.sender.balance, gasleft());
         erc20 = new MockERC20("Name of Mock", "MMM");
         factory = new EnvelopWNFTFactory();
-        impl_myshch = new WNFTMyshchWallet(address(factory));
+        impl_myshch = new WNFTMyshchWallet(address(factory), FEE);
         impl_native = new WNFTV2Envelop721(address(factory));
         factory.setWrapperStatus(address(this), true); // set wrapper
         factory.setWrapperStatus(address(impl_myshch), true); // set wrapper
@@ -66,7 +68,7 @@ contract Factory_Test_m_03 is Test {
         bytes memory initCallData = abi.encodeWithSignature(
             impl_native.INITIAL_SIGN_STR(),
             WNFTV2Envelop721.InitParams(
-                address(this), 
+                SERV_OWNER, 
                 "MyshchWallet", 
                 "MSHW", 
                 "https://api.envelop.is",
@@ -86,7 +88,7 @@ contract Factory_Test_m_03 is Test {
         initCallData = abi.encodeWithSignature(
             impl_native.INITIAL_SIGN_STR(),
             WNFTV2Envelop721.InitParams(
-                address(this), 
+                address(2), 
                 "MyshchWallet", 
                 "MSHW", 
                 "https://api.envelop.is",
@@ -98,18 +100,22 @@ contract Factory_Test_m_03 is Test {
         );
         created = payable(factory.createWNFT(address(impl_myshch), initCallData));
         walletUser = WNFTMyshchWallet(created);
-        Address.sendValue(payable(walletServ), 1e18);
+        //Address.sendValue(payable(walletServ), 1e18);
         Address.sendValue(payable(walletUser), 2e18);
+        Address.sendValue(payable(SERV_OWNER), 1e18);
         erc20.transfer(address(walletServ), 100e18);
         assertNotEq(address(walletUser), address(walletServ));
         assertNotEq(erc20.balanceOf(address(walletUser)), erc20.balanceOf(address(walletServ)));
+        assertEq(walletUser.ownerOf(1), address(2));
+        assertEq(walletServ.ownerOf(1), SERV_OWNER);
 
     }
 
     function test_create_exec_with_refund() public {
+        vm.txGasPrice(1);
         console2.log("Tx sender: %s, gasleft %s", msg.sender,  gasleft());
         AmountsBefore memory before;
-        before.amount0 = address(this).balance;
+        before.amount0 = SERV_OWNER.balance;
         before.amount1 = address(walletServ).balance;
         before.amount2 = address(walletUser).balance;
         before.amount3 = msg.sender.balance;
@@ -119,14 +125,15 @@ contract Factory_Test_m_03 is Test {
         // );
 
         // by owner
-        walletUser.approve(address(walletServ), walletUser.TOKEN_ID());
+        //walletUser.approve(address(walletServ), walletUser.TOKEN_ID());
        
+        vm.startPrank(SERV_OWNER);
         walletServ.erc20TransferWithRefund(address(erc20), address(walletUser), sendERC20Amount);
-        
-        assertNotEq(address(walletUser), address(walletServ));
+        vm.stopPrank();
+
         assertEq(erc20.balanceOf(address(walletUser)), sendERC20Amount);
         assertLt(address(walletUser).balance, before.amount2);
-        assertEq(address(this).balance, before.amount0);
+        assertEq(SERV_OWNER.balance, before.amount0);
         //console2.log("\nDefault sender: %s", msg.sender);
         assertEq(msg.sender.balance, before.amount3);
         assertLt(before.amount1, address(walletServ).balance);
