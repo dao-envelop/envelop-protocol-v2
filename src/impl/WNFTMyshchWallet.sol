@@ -173,7 +173,7 @@ contract WNFTMyshchWallet is WNFTV2Envelop721
 
     function _onlyAprrovedRelayer(address _sender) internal view virtual {
         WNFTMyshchWalletStorage storage $ = _getWNFTMyshchWalletStorage();
-        require($.approvedRelayer[_sender], "Only for apprved relayer");
+        require($.approvedRelayer[_sender], "Only for approved relayer");
 
     }
 
