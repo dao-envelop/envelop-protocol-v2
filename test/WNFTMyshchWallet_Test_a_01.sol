@@ -37,7 +37,7 @@ contract WNFTMyshchWallet_Test_a_01 is Test {
     function setUp() public {
         erc721 = new MockERC721('Mock ERC721', 'ERC');
         factory = new EnvelopWNFTFactory();
-        impl_legacy = new WNFTMyshchWallet(address(factory));
+        impl_legacy = new WNFTMyshchWallet(address(factory), 0);
         factory.setWrapperStatus(address(impl_legacy), true); // set wrapper
         erc20 = new MockERC20('Mock ERC20', 'ERC20');
 
@@ -88,12 +88,15 @@ contract WNFTMyshchWallet_Test_a_01 is Test {
 
         //send eth to user wnft wallet
         _wnftWallet2.transfer(sendEtherAmount);
+        console2.log(address(2).balance);
+        console2.log(_wnftWallet2.balance);
         vm.prank(address(2));
         vm.txGasPrice(2);
         wnft1.erc20TransferWithRefund(address(erc20), _wnftWallet2, sendERC20Amount);
         VmSafe.Gas memory gasInfo = vm.lastCallGas();
         console2.log(gasInfo.gasTotalUsed);
         console2.log(address(2).balance);
+        console2.log(_wnftWallet2.balance);
     }
 
     /*function test_check_setGasCheckPoint() public {
