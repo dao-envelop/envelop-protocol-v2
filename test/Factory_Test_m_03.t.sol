@@ -133,10 +133,10 @@ contract Factory_Test_m_03 is Test {
 
         assertEq(erc20.balanceOf(address(walletUser)), sendERC20Amount);
         assertLt(address(walletUser).balance, before.amount2);
-        assertEq(SERV_OWNER.balance, before.amount0);
+        assertLt(before.amount0, SERV_OWNER.balance);
         //console2.log("\nDefault sender: %s", msg.sender);
         assertEq(msg.sender.balance, before.amount3);
-        assertLt(before.amount1, address(walletServ).balance);
+        assertEq(before.amount1, address(walletServ).balance);
         // assertLt(uint256(3),uint256(2)); // this will revert : assertion failed: 3 >= 2
 
     }
