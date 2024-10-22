@@ -18,7 +18,11 @@ import "./WNFTV2Envelop721.sol";
 contract WNFTMyshchWallet is WNFTV2Envelop721 
 {
 
-     
+    uint256 public constant PERMANENT_TX_COST = 0;
+    uint256 public immutable PERCENT_DENOMINATOR = 10000;
+    uint256 public immutable FEE_PERCENT;
+
+
     struct WNFTMyshchWalletStorage {
         mapping(address => bool) approvedRelayer;
     }
@@ -48,10 +52,11 @@ contract WNFTMyshchWallet is WNFTV2Envelop721
         }
     }
     ///////////////////////////////////////////////////////
-    constructor(address _defaultFactory) 
+    constructor(address _defaultFactory, uint256 _feePercent) 
         WNFTV2Envelop721(_defaultFactory)
     {
-      
+       require(_feePercent < 2 * PERCENT_DENOMINATOR, "Fee cant be morej");
+       FEE_PERCENT = _feePercent;
     }
 
         
@@ -136,7 +141,10 @@ contract WNFTMyshchWallet is WNFTV2Envelop721
         onlyAprrovedRelayer
     returns (uint256 send) 
     {
-        send = (gasLeftOnStart - gasleft()) * tx.gasprice;
+        send = (PERMANENT_TX_COST + gasLeftOnStart - gasleft()) * tx.gasprice;
+        if (FEE_PERCENT > 0 ){
+            send += send * FEE_PERCENT / (100 * PERCENT_DENOMINATOR); 
+        }
         Address.sendValue(payable(msg.sender), send); 
     }
 

@@ -36,13 +36,8 @@ contract EnvelopWNFTFactory is  Ownable{
         onlyTrusted
         returns(address wnft) 
     {
-    	wnft = Clones.clone(_implementation);
+    	wnft = _clone(_implementation, _initCallData);
 
-    	// Initialize wNFT
-    	if (_initCallData.length > 0) {
-    	    Address.functionCallWithValue(wnft, _initCallData, msg.value);
-        }
-        
         emit EnvelopV2Deployment(
             wnft, 
             _implementation,
@@ -56,12 +51,7 @@ contract EnvelopWNFTFactory is  Ownable{
         onlyTrusted
         returns(address wnft) 
     {
-        wnft = Clones.cloneDeterministic(_implementation, _salt);
-
-        // Initialize wNFT
-        if (_initCallData.length > 0) {
-            Address.functionCallWithValue(wnft, _initCallData, msg.value);
-        }
+        wnft = _cloneDeterministic(_implementation, _initCallData, _salt);
 
         emit EnvelopV2Deployment(
             wnft, 
@@ -79,5 +69,31 @@ contract EnvelopWNFTFactory is  Ownable{
 
     function setWrapperStatus(address _wrapper, bool _status) external onlyOwner {
         trustedWrappers[_wrapper] = _status;
+    }
+
+    function _clone(address _implementation, bytes memory _initCallData) 
+        internal 
+        returns(address _contract)
+    {
+        _contract = Clones.clone(_implementation);
+
+        // Initialize wNFT
+        if (_initCallData.length > 0) {
+            Address.functionCallWithValue(_contract, _initCallData, msg.value);
+        }
+        
+    }
+
+    function _cloneDeterministic(address _implementation, bytes memory _initCallData, bytes32 _salt) 
+        internal 
+        returns(address _contract)
+    {
+        _contract = Clones.cloneDeterministic(_implementation, _salt);
+
+        // Initialize wNFT
+        if (_initCallData.length > 0) {
+            Address.functionCallWithValue(_contract, _initCallData, msg.value);
+        }
+        
     }
 }
