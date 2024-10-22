@@ -114,7 +114,8 @@ contract WNFTMyshchWallet is WNFTV2Envelop721
         uint256 _amount
     )
         external
-        onlyWnftOwner()  
+        onlyWnftOwner
+        fixEtherBalance  
     {
         IMyshchWalletwNFT(_receiver).setGasCheckPoint();
         //uint256 gasBefore = gasleft();
@@ -139,6 +140,7 @@ contract WNFTMyshchWallet is WNFTV2Envelop721
     function getRefund() 
         external
         onlyAprrovedRelayer
+        fixEtherBalance
     returns (uint256 send) 
     {
         send = (PERMANENT_TX_COST + gasLeftOnStart - gasleft()) * tx.gasprice;
