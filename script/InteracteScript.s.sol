@@ -17,8 +17,8 @@ contract InteracteScript is Script {
 
     address payable nativeImpl = payable(0x53e5CA35761cD24D83479f9066e4C0281dEd59da);
     address payable legacyImpl = payable(0xB692f2f8bABC3e348484dBa1ef24F61F75D61cdB);
-    address payable myshchImpl = payable(0xfFFa3fDF2e17F0b021eb26657d6CCAFeE051d653);
-    address payable relayer = payable(0x900637951D58f392D0b5E1F25a73BD6E383c6fF0);
+    address payable myshchImpl = payable(0x8dF685E00bb1Dd3e2F7a765f0cB0bEF92AAFe73F);
+    address payable relayer = payable(0xc0FcACE0E8B38d28AE743B3A3d3C1b46fdB8ce90);
 
     address _factory = 0x431Db5c6ce5D85A0BAa2198Aa7Aa0E65d37a25c8;
     address _wrapper = 0x9ED82f27f05e0aa6A1eC7811518DeC0F788B5774;
@@ -45,6 +45,7 @@ contract InteracteScript is Script {
             ""
             );*/
 
+        //address[] memory addrs1 = new address[](0);
         address[] memory addrs1 = new address[](1);
         addrs1[0] = relayer;
         WNFTV2Envelop721.InitParams memory initData = WNFTV2Envelop721.InitParams(

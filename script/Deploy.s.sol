@@ -123,6 +123,7 @@ contract DeployScript is Script {
         WNFTV2Envelop721 impl_native;
         WNFTMyshchWallet impl_myshch;
 
+        //factory = EnvelopWNFTFactory(0x431Db5c6ce5D85A0BAa2198Aa7Aa0E65d37a25c8);
         if (p.factory == address(0)) {
             factory = new EnvelopWNFTFactory();    
         } else {
@@ -155,10 +156,10 @@ contract DeployScript is Script {
         }
 
         if (p.impl_myshch == address(0)) {
-            impl_myshch = new WNFTMyshchWallet(address(factory));    
-            factory.setWrapperStatus(address(impl_native), true); // set wrapper
+            impl_myshch = new WNFTMyshchWallet(address(factory),0);    
+            factory.setWrapperStatus(address(impl_myshch), true); // set wrapper
         } else {
-            impl_myshch = WNFTV2Envelop721(payable(p.impl_native));
+            impl_myshch = WNFTMyshchWallet(payable(p.impl_myshch));
         }
 
                 
