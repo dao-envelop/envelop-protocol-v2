@@ -94,12 +94,19 @@ abstract contract SmartWallet is
         virtual 
     {
         if (_balanceBefore != _balanceAfter) {
-            emit EtherBalanceChanged(
-               _balanceBefore, 
-               _balanceAfter, 
-               msg.value, 
-               msg.sender
-            );
+            _emitWrapper(_balanceBefore, _balanceAfter);
         }
+    }
+
+    /// To avoid use payable modifier
+    function _emitWrapper(uint256 _balanceBefore, uint256 _balanceAfter)
+        internal
+    {
+        emit EtherBalanceChanged(
+            _balanceBefore, 
+            _balanceAfter, 
+            msg.value, 
+            msg.sender
+        );
     }
 }
