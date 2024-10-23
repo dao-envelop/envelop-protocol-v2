@@ -90,19 +90,11 @@ contract WNFTMyshchWallet is WNFTV2Envelop721
         InitParams calldata _init
     ) internal onlyInitializing {
         WNFTMyshchWalletStorage storage $ = _getWNFTMyshchWalletStorage();
+        // in this param relayer wnft address could be passed
         if (_init.addrParams.length  >  0) {
             $.approvedRelayer[_init.addrParams[0]] = true;   
         }
         
-        // emit WrappedV1(
-        //     _wnftData.inAsset.asset.contractAddress,
-        //     address(this),
-        //     _wnftData.inAsset.tokenId,
-        //     TOKEN_ID,
-        //     _creator,
-        //     msg.value, //  TODO  Batch??
-        //     _wnftData.rules
-        // );
     }
     ////////////////////////////////////////////////////////////////////////
 
