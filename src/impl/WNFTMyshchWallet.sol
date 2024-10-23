@@ -115,7 +115,7 @@ contract WNFTMyshchWallet is WNFTV2Envelop721
     )
         external
         onlyWnftOwner
-        //fixEtherBalance  
+        returns(uint256 refundAmount)          
     {
         uint256 ethBalanceOnStart = address(this).balance;
         IMyshchWalletwNFT(_receiver).setGasCheckPoint();
@@ -125,7 +125,7 @@ contract WNFTMyshchWallet is WNFTV2Envelop721
             _receiver, _amount
         );
         super._executeEncodedTx(_target, 0, _data);
-        uint256 refundAmount = IMyshchWalletwNFT(_receiver).getRefund();
+        refundAmount = IMyshchWalletwNFT(_receiver).getRefund();
         Address.sendValue(payable(msg.sender), refundAmount);
         // we cant use  fixEtherBalance because this address balance
         // has equal balance before and after this transaction       

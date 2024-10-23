@@ -102,7 +102,7 @@ contract Factory_Test_m_03 is Test {
         walletUser = WNFTMyshchWallet(created);
         //Address.sendValue(payable(walletServ), 1e18);
         Address.sendValue(payable(walletUser), 2e18);
-        Address.sendValue(payable(SERV_OWNER), 1e18);
+        //Address.sendValue(payable(SERV_OWNER), 1e18);
         erc20.transfer(address(walletServ), 100e18);
         assertNotEq(address(walletUser), address(walletServ));
         assertNotEq(erc20.balanceOf(address(walletUser)), erc20.balanceOf(address(walletServ)));
@@ -128,12 +128,12 @@ contract Factory_Test_m_03 is Test {
         //walletUser.approve(address(walletServ), walletUser.TOKEN_ID());
        
         vm.startPrank(SERV_OWNER);
-        walletServ.erc20TransferWithRefund(address(erc20), address(walletUser), sendERC20Amount);
+        uint256 refAmount =  walletServ.erc20TransferWithRefund(address(erc20), address(walletUser), sendERC20Amount);
         vm.stopPrank();
 
         assertEq(erc20.balanceOf(address(walletUser)), sendERC20Amount);
-        assertLt(address(walletUser).balance, before.amount2);
-        assertLt(before.amount0, SERV_OWNER.balance);
+        assertEq(address(walletUser).balance, before.amount2 - refAmount);
+        assertEq(before.amount0 + refAmount, SERV_OWNER.balance);
         //console2.log("\nDefault sender: %s", msg.sender);
         assertEq(msg.sender.balance, before.amount3);
         assertEq(before.amount1, address(walletServ).balance);
