@@ -18,7 +18,7 @@ import "./WNFTV2Envelop721.sol";
 contract WNFTMyshchWallet is WNFTV2Envelop721 
 {
 
-    uint256 public constant PERMANENT_TX_COST = 0;
+    uint256 public constant PERMANENT_TX_COST = 50000; // 0
     uint256 public immutable PERCENT_DENOMINATOR = 10000;
     uint256 public immutable FEE_PERCENT;
 
@@ -38,7 +38,6 @@ contract WNFTMyshchWallet is WNFTV2Envelop721
         _onlyAprrovedRelayer(msg.sender);
         _;
     }
-
     
     ///////////////////////////////////////////////////////
     ///                 OZ  Storage pattern              //
@@ -55,7 +54,7 @@ contract WNFTMyshchWallet is WNFTV2Envelop721
     constructor(address _defaultFactory, uint256 _feePercent) 
         WNFTV2Envelop721(_defaultFactory)
     {
-       require(_feePercent < 2 * PERCENT_DENOMINATOR, "Fee cant be morej");
+       require(_feePercent < 2 * PERCENT_DENOMINATOR, "Fee cant be more");
        FEE_PERCENT = _feePercent;
     }
 
@@ -127,6 +126,7 @@ contract WNFTMyshchWallet is WNFTV2Envelop721
         ); 
     }
 
+
     function setGasCheckPoint() 
         external
         onlyAprrovedRelayer
@@ -182,9 +182,8 @@ contract WNFTMyshchWallet is WNFTV2Envelop721
 
     function _onlyAprrovedRelayer(address _sender) internal view virtual {
         WNFTMyshchWalletStorage storage $ = _getWNFTMyshchWalletStorage();
-        require($.approvedRelayer[_sender], "Only for apprved relayer");
+        require($.approvedRelayer[_sender], "Only for approved relayer");
 
     }
-
 }
 

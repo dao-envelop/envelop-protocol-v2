@@ -34,7 +34,7 @@ contract WNFTV2Envelop721_Test_a_04 is Test {
         erc20 = new MockERC20('Mock ERC20', 'ERC20');
     }
     
-    function test_create_legacy() public {
+    function test_create_wnft() public {
         uint256[] memory numberParams = new uint256[](1);
         numberParams[0] = block.timestamp + 10000;
         WNFTV2Envelop721.InitParams memory initData = WNFTV2Envelop721.InitParams(

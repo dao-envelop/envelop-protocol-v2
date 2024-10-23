@@ -10,7 +10,9 @@ import "../src/impl/WNFTMyshchWallet.sol";
 import {MockERC20} from "../src/mock/MockERC20.sol";
 import "../src/impl/WNFTLegacy721.sol";
 import "../src/impl/WNFTV2Envelop721.sol";
+import "../src/impl/WNFTMyshchWallet.sol";
 import {EnvelopLegacyWrapperBaseV2} from "../src/EnvelopLegacyWrapperBaseV2.sol";
+
 
 // Address:     0x7EC0BF0a4D535Ea220c6bD961e352B752906D568
 // Private key: 0x1bbde125e133d7b485f332b8125b891ea2fbb6a957e758db72e6539d46e2cd71
@@ -33,6 +35,7 @@ contract DeployScript is Script {
         address legacy_wrapper;
         address impl_legacy;
         address impl_native;
+        address impl_myshch;
         bool need_test_tx;
     }
 
@@ -83,6 +86,14 @@ contract DeployScript is Script {
             p.impl_native = address(0);
         }
 
+        key = string.concat(".", vm.toString(block.chainid),".impl_myshch");
+        if (vm.keyExists(params_json_file, key)) 
+        {
+            p.impl_myshch = params_json_file.readAddress(key);
+        } else {
+            p.impl_myshch = address(0);
+        }
+
         key = string.concat(".", vm.toString(block.chainid),".need_test_tx");
         if (vm.keyExists(params_json_file, key)) 
         {
@@ -110,7 +121,9 @@ contract DeployScript is Script {
         EnvelopLegacyWrapperBaseV2 wrapper;
         WNFTLegacy721 impl_legacy;
         WNFTV2Envelop721 impl_native;
+        WNFTMyshchWallet impl_myshch;
 
+        //factory = EnvelopWNFTFactory(0x431Db5c6ce5D85A0BAa2198Aa7Aa0E65d37a25c8);
         if (p.factory == address(0)) {
             factory = new EnvelopWNFTFactory();    
         } else {
@@ -142,11 +155,14 @@ contract DeployScript is Script {
             impl_native = WNFTV2Envelop721(payable(p.impl_native));
         }
 
-        //impl_myshch = new WNFTMyshchWallet(address(factory));
-        //factory.setWrapperStatus(address(impl_myshch), true); // set wrapper
-        
-        
-        
+        if (p.impl_myshch == address(0)) {
+            impl_myshch = new WNFTMyshchWallet(address(factory),0);    
+            factory.setWrapperStatus(address(impl_myshch), true); // set wrapper
+        } else {
+            impl_myshch = WNFTMyshchWallet(payable(p.impl_myshch));
+        }
+
+                
         vm.stopBroadcast();
         
         ///////// Pretty printing ////////////////
@@ -169,8 +185,8 @@ contract DeployScript is Script {
         console2.log("https://%s/address/%s#code\n", explorer_url, address(impl_legacy));
         console2.log("\n**WNFTV2Envelop721** ");
         console2.log("https://%s/address/%s#code\n", explorer_url, address(impl_native));
-        //console2.log("\n**WNFTMyshchWallet** ");
-        //console2.log("https://%s/address/%s#code\n", explorer_url, address(impl_myshch));
+        console2.log("\n**WNFTMyshchWallet** ");
+        console2.log("https://%s/address/%s#code\n", explorer_url, address(impl_myshch));
 
 
 
@@ -179,7 +195,7 @@ contract DeployScript is Script {
         console2.log("wrapper = EnvelopLegacyWrapperBaseV2.at('%s')", address(wrapper));
         console2.log("impl_legacy = WNFTLegacy721.at('%s')", address(impl_legacy));
         console2.log("impl_native = WNFTV2Envelop721.at('%s')", address(impl_native));
-        //console2.log("impl_myshch = WNFTMyshchWallet.at('%s')", address(impl_myshch));
+        console2.log("impl_myshch = WNFTMyshchWallet.at('%s')", address(impl_myshch));
         console2.log("```");
    
         // ///////// End of pretty printing ////////////////
