@@ -20,9 +20,17 @@ contract MyShchFactory is EnvelopWNFTFactory {
         bytes bytesParam;        // Semantic of this param will defined in exact implemenation
     }
 
+    struct Signer {
+        bool isTrusted;
+        uint64 botId;
+    }
+
     address[] public implementations;
     mapping(uint64 tgId => uint256 nonce) public currentNonce;
-    mapping(address signer => bool isTrusted) public trustedSigners;
+    mapping(address signer => Signer) public trustedSigners;
+
+    error OneBotPerSigner(address signer, uint64 botId);
+    error UnexpectedSigner(address signer);
 
     constructor (address _implementation)
         EnvelopWNFTFactory()
@@ -31,15 +39,47 @@ contract MyShchFactory is EnvelopWNFTFactory {
         implementations.push(_implementation);
     }
 
-    function mintPersonalMSW(uint64 _tgId, address _botWallet, bytes calldata _signature) 
+    function mintPersonalMSW(uint64 _tgId, bytes calldata _signature) 
         external 
         returns(address wnft)
     {
-        
+        address[] memory addrParams;
+        bytes32[] memory hashedParams;
+        Signer memory s = trustedSigners[msg.sender];
         // Check signature
+        // No need check signature if signer mint for yourself
+        if (s.isTrusted) {
+            // Only one bot for one EOA
+            if (s.botId == 0){
+                trustedSigners[msg.sender].botId = _tgId;
+            } else {
+                revert OneBotPerSigner(msg.sender, s.botId);
+            }
+            // prepare wNFT init params. This will be sbt, no default relayer
+            hashedParams = new bytes32[](1);
+            addrParams = new address[](0);
+            hashedParams[0] = bytes32(abi.encode(4));
+        } else {
+            s = _isTrustedSigner(
+                _restoreDigest(_tgId, currentNonce[_tgId] + 1), 
+                _signature
+            );
+            // (address signer,,) = ECDSA.tryRecover(
+            //     _restoreDigest(_tgId, currentNonce[_tgId]), 
+            //     _signature
+            // );
+            // s = trustedSigners[signer];
+            // if (!s.isTrusted) {
+            //     revert UnexpectedSigner(signer);
+            // }
+
+            // prepare wNFT init params. Default relayer
+            hashedParams = new bytes32[](1);
+            addrParams = new address[](1);
+            addrParams[0] =  _getAddressForNonce(s.botId, currentNonce[s.botId]);
+        }    
+
         // Encode default initial
-        address[] memory _addrParams = new address[](1);
-        _addrParams[0] = _botWallet;
         bytes memory initCallData = abi.encodeWithSignature(
             IEnvelopV2wNFT(implementations[implementations.length - 1]).INITIAL_SIGN_STR(),
             InitParams(
@@ -47,8 +87,8 @@ contract MyShchFactory is EnvelopWNFTFactory {
                 "MyshchWallet", 
                 "MSHW", 
                 "https://api.envelop.is",  //TODO  change  address
-                _addrParams,
-                new bytes32[](0),
+                addrParams,
+                hashedParams,
                 new uint256[](0),
                 "" 
             )
@@ -56,16 +96,30 @@ contract MyShchFactory is EnvelopWNFTFactory {
         wnft = _mintWallet(_tgId, initCallData); 
     }
 
-    function mintBatcMSW() 
+    function mintBatcMSW(
+        uint64[] calldata _tgIds, 
+        address[] memory _receivers, 
+        bytes calldata _signature
+    )  
         external 
         returns(address[] memory wnfts)
     {
+        Signer memory s = _isTrustedSigner(
+            // TODO  add salt
+            keccak256(abi.encode(msg.sender)), 
+            _signature
+        );
 
     }
 
     function newImplementation(address _implementation) external onlyOwner {
         require(_implementation != address(0), "No zero address");
         implementations.push(_implementation);
+    }
+
+    function setSignerStatus(address _signer, bool _status) external onlyOwner {
+        require(_signer != address(0), "No zero address");
+        trustedSigners[_signer].isTrusted = _status;
     }
 
     function getCurrentAddress(uint64 _tgId) external view returns(address wnft) {
@@ -86,6 +140,14 @@ contract MyShchFactory is EnvelopWNFTFactory {
 
     function getImplementationHistory() external view returns(address[] memory) {
         return implementations;
+    }
+
+    function getDigestForSign(uint64 _tgId, uint256 _nonce) 
+        external 
+        pure 
+        returns(bytes32) 
+    {
+         return _restoreDigest(_tgId, _nonce); 
     }
 
     function _mintWallet(uint64 _tgId, bytes memory _initCallData) 
@@ -118,7 +180,30 @@ contract MyShchFactory is EnvelopWNFTFactory {
         );
     }
 
-    function _restoreDigest(uint64 _tgId, uint256 _nonce) internal pure returns(bytes32 dgst) {
-        dgst = MessageHashUtils.toEthSignedMessageHash(keccak256(abi.encode(_tgId, _nonce)));
+    function _isTrustedSigner(bytes32 _digest, bytes calldata _signature) 
+        internal 
+        view 
+        returns(Signer memory s) 
+    {
+        (address signer,,) = ECDSA.tryRecover(
+            _digest, 
+            _signature
+        );
+        s = trustedSigners[signer];
+        if (!s.isTrusted) {
+            revert UnexpectedSigner(signer);
+        }
+    }
+
+    function _restoreDigest(uint64 _tgId, uint256 _nonce) 
+        internal 
+        pure 
+        returns(bytes32 dgst) 
+    {
+        dgst = MessageHashUtils.toEthSignedMessageHash(
+            keccak256(
+                abi.encode(_tgId, _nonce)
+            )
+        );
     }
 }
