@@ -41,6 +41,7 @@ contract MyShchFactory is EnvelopWNFTFactory {
 
     function mintPersonalMSW(uint64 _tgId, bytes calldata _signature) 
         external 
+        payable
         returns(address wnft)
     {
         address[] memory addrParams;
@@ -94,6 +95,7 @@ contract MyShchFactory is EnvelopWNFTFactory {
             )
         );
         wnft = _mintWallet(_tgId, initCallData); 
+        Address.sendValue(payable(wnft), msg.value);
     }
 
     function mintBatcMSW(
