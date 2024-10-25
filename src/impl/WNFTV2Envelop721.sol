@@ -116,7 +116,8 @@ contract WNFTV2Envelop721 is
     ///////////////////////////////////////////////////////
 
     constructor(address _defaultFactory) {
-        require(_defaultFactory != address(0), "No Zero Factoties");
+        // Zero address for _defaultFactory  is ENAMBLEd. Because some inheritors
+        // would like to switch OFF using `createWNFTonFactory` from  implementation
         FACTORY = _defaultFactory;    
         _disableInitializers();
         emit EnvelopV2OracleType(ORACLE_TYPE, type(WNFTV2Envelop721).name);
@@ -142,7 +143,7 @@ contract WNFTV2Envelop721 is
   
     function initialize(
         InitParams calldata _init
-    ) public virtual initializer 
+    ) public payable virtual initializer 
     {
         
         __WNFTV2Envelop721_init(_init);

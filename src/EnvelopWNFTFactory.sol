@@ -84,7 +84,11 @@ contract EnvelopWNFTFactory is  Ownable{
         
     }
 
-    function _cloneDeterministic(address _implementation, bytes memory _initCallData, bytes32 _salt) 
+    function _cloneDeterministic(
+        address _implementation, 
+        bytes memory _initCallData, 
+        bytes32 _salt
+    ) 
         internal 
         returns(address _contract)
     {
@@ -93,6 +97,24 @@ contract EnvelopWNFTFactory is  Ownable{
         // Initialize wNFT
         if (_initCallData.length > 0) {
             Address.functionCallWithValue(_contract, _initCallData, msg.value);
+        }
+        
+    }
+
+    function _cloneDeterministic(
+        address _implementation, 
+        bytes memory _initCallData, 
+        bytes32 _salt, 
+        uint256 _valueDenominator
+    ) 
+        internal 
+        returns(address _contract)
+    {
+        _contract = Clones.cloneDeterministic(_implementation, _salt);
+
+        // Initialize wNFT
+        if (_initCallData.length > 0) {
+            Address.functionCallWithValue(_contract, _initCallData, msg.value /_valueDenominator);
         }
         
     }

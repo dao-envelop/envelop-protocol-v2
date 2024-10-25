@@ -69,7 +69,7 @@ contract WNFTMyshchWallet is WNFTV2Envelop721
   
     function initialize(
         InitParams calldata _init
-    ) public virtual override initializer 
+    ) public payable virtual override initializer 
     {
         
         __WNFTMyshchWallet_init(_init);
