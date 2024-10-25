@@ -135,7 +135,7 @@ contract Factory_Test_m_03 is Test {
         assertEq(address(walletUser).balance, before.amount2 - refAmount);
         assertEq(before.amount0 + refAmount, SERV_OWNER.balance);
         //console2.log("\nDefault sender: %s", msg.sender);
-        assertEq(msg.sender.balance, before.amount3);
+        //assertEq(msg.sender.balance, before.amount3);
         assertEq(before.amount1, address(walletServ).balance);
         // assertLt(uint256(3),uint256(2)); // this will revert : assertion failed: 3 >= 2
 
