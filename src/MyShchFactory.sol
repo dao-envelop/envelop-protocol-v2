@@ -53,9 +53,7 @@ contract MyShchFactory is EnvelopWNFTFactory {
             // Only one bot for one EOA
             if (s.botId == 0){
                 trustedSigners[msg.sender].botId = _tgId;
-            } else {
-                revert OneBotPerSigner(msg.sender, s.botId);
-            }
+            } 
             // prepare wNFT init params. This will be sbt, no default relayer
             hashedParams = new bytes32[](1);
             addrParams = new address[](0);
@@ -165,7 +163,7 @@ contract MyShchFactory is EnvelopWNFTFactory {
 
     function getDigestForSign(uint64 _tgId, uint256 _nonce) 
         external 
-        pure 
+        view 
         returns(bytes32) 
     {
          return _restoreDigest(_tgId, _nonce); 
@@ -222,12 +220,12 @@ contract MyShchFactory is EnvelopWNFTFactory {
 
     function _restoreDigest(uint64 _tgId, uint256 _nonce) 
         internal 
-        pure 
+        view 
         returns(bytes32 dgst) 
     {
         dgst = MessageHashUtils.toEthSignedMessageHash(
             keccak256(
-                abi.encode(_tgId, _nonce)
+                abi.encode(_tgId, _nonce, block.chainid)
             )
         );
     }
