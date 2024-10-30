@@ -109,12 +109,14 @@ contract DeployMyshchSetScript is Script {
         WNFTMyshchWallet impl_myshch;
 
         if (p.impl_myshch == address(0)) {
+            console2.log("Deploying implementation: %s", vm.toString(p.impl_myshch));
             impl_myshch = new WNFTMyshchWallet(address(0),0);    
         } else {
             impl_myshch = WNFTMyshchWallet(payable(p.impl_myshch));
         }
 
         if (p.factory == address(0)) {
+            console2.log("Deploying factory: %s", vm.toString(p.factory));
             factory = new MyShchFactory(address(impl_myshch));    
         } else {
             factory = MyShchFactory(p.factory);
