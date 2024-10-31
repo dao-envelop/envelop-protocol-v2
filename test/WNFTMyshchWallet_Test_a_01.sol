@@ -27,7 +27,7 @@ contract WNFTMyshchWallet_Test_a_01 is Test {
     MockERC721 public erc721;
     MockERC20 public erc20;
     EnvelopWNFTFactory public factory;
-    WNFTMyshchWallet public impl_legacy;
+    WNFTMyshchWallet public impl_myshch;
 
     address payable _wnftWallet1;
     address payable _wnftWallet2;
@@ -37,8 +37,8 @@ contract WNFTMyshchWallet_Test_a_01 is Test {
     function setUp() public {
         erc721 = new MockERC721('Mock ERC721', 'ERC');
         factory = new EnvelopWNFTFactory();
-        impl_legacy = new WNFTMyshchWallet(address(factory), 0);
-        factory.setWrapperStatus(address(impl_legacy), true); // set wrapper
+        impl_myshch = new WNFTMyshchWallet(address(factory), 0);
+        factory.setWrapperStatus(address(impl_myshch), true); // set wrapper
         erc20 = new MockERC20('Mock ERC20', 'ERC20');
 
         // create admin wnft wallet
@@ -55,7 +55,7 @@ contract WNFTMyshchWallet_Test_a_01 is Test {
         );
 
         vm.prank(address(this));
-        _wnftWallet1 = payable(impl_legacy.createWNFTonFactory(initData));
+        _wnftWallet1 = payable(impl_myshch.createWNFTonFactory(initData));
 
         // create user wnft wallet
         address[] memory addrs2 = new address[](1);
@@ -71,7 +71,7 @@ contract WNFTMyshchWallet_Test_a_01 is Test {
             ""
         );
         vm.prank(address(this));
-        _wnftWallet2 = payable(impl_legacy.createWNFTonFactory(initData));
+        _wnftWallet2 = payable(impl_myshch.createWNFTonFactory(initData));
 
     }
     
@@ -99,7 +99,7 @@ contract WNFTMyshchWallet_Test_a_01 is Test {
         console2.log(_wnftWallet2.balance);
     }
 
-    /*function test_check_setGasCheckPoint() public {
+    function test_check_setGasCheckPoint() public {
         
         WNFTMyshchWallet wnft1 = WNFTMyshchWallet(_wnftWallet1);
 
@@ -140,5 +140,5 @@ contract WNFTMyshchWallet_Test_a_01 is Test {
         vm.prank(address(1));
         wnft1.getRefund();
         console2.log(address(1).balance);
-    }*/
+    }
 }

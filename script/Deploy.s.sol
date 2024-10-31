@@ -123,8 +123,8 @@ contract DeployScript is Script {
         WNFTV2Envelop721 impl_native;
         WNFTMyshchWallet impl_myshch;
 
-        //factory = EnvelopWNFTFactory(0x431Db5c6ce5D85A0BAa2198Aa7Aa0E65d37a25c8);
-        if (p.factory == address(0)) {
+        factory = EnvelopWNFTFactory(0x431Db5c6ce5D85A0BAa2198Aa7Aa0E65d37a25c8);
+        /*if (p.factory == address(0)) {
             factory = new EnvelopWNFTFactory();    
         } else {
             factory = EnvelopWNFTFactory(p.factory);
@@ -153,7 +153,7 @@ contract DeployScript is Script {
             factory.setWrapperStatus(address(impl_native), true); // set wrapper
         } else {
             impl_native = WNFTV2Envelop721(payable(p.impl_native));
-        }
+        }*/
 
         if (p.impl_myshch == address(0)) {
             impl_myshch = new WNFTMyshchWallet(address(factory),0);    
@@ -177,31 +177,31 @@ contract DeployScript is Script {
             string.concat(".", vm.toString(block.chainid))
         );
         
-        console2.log("\n**EnvelopWNFTFactory**  ");
+        /*console2.log("\n**EnvelopWNFTFactory**  ");
         console2.log("https://%s/address/%s#code\n", explorer_url, address(factory));
         console2.log("\n**EnvelopLegacyWrapperBaseV2** ");
         console2.log("https://%s/address/%s#code\n", explorer_url, address(wrapper));
         console2.log("\n**WNFTLegacy721** ");
         console2.log("https://%s/address/%s#code\n", explorer_url, address(impl_legacy));
         console2.log("\n**WNFTV2Envelop721** ");
-        console2.log("https://%s/address/%s#code\n", explorer_url, address(impl_native));
+        console2.log("https://%s/address/%s#code\n", explorer_url, address(impl_native));*/
         console2.log("\n**WNFTMyshchWallet** ");
         console2.log("https://%s/address/%s#code\n", explorer_url, address(impl_myshch));
 
 
 
         console2.log("```python");
-        console2.log("factory = EnvelopWNFTFactory.at('%s')", address(factory));
+        /*console2.log("factory = EnvelopWNFTFactory.at('%s')", address(factory));
         console2.log("wrapper = EnvelopLegacyWrapperBaseV2.at('%s')", address(wrapper));
         console2.log("impl_legacy = WNFTLegacy721.at('%s')", address(impl_legacy));
-        console2.log("impl_native = WNFTV2Envelop721.at('%s')", address(impl_native));
+        console2.log("impl_native = WNFTV2Envelop721.at('%s')", address(impl_native));*/
         console2.log("impl_myshch = WNFTMyshchWallet.at('%s')", address(impl_myshch));
         console2.log("```");
    
         // ///////// End of pretty printing ////////////////
         
         // ///  Init ///
-        console2.log("Init transactions....");
+        /*console2.log("Init transactions....");
         vm.startBroadcast();
 
         // test transactions
@@ -230,6 +230,6 @@ contract DeployScript is Script {
         }
             
         vm.stopBroadcast();
-        console2.log("Initialisation finished");
+        console2.log("Initialisation finished");*/
     }
 }

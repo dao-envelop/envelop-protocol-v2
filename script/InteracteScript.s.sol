@@ -17,8 +17,8 @@ contract InteracteScript is Script {
 
     address payable nativeImpl = payable(0x53e5CA35761cD24D83479f9066e4C0281dEd59da);
     address payable legacyImpl = payable(0xB692f2f8bABC3e348484dBa1ef24F61F75D61cdB);
-    address payable myshchImpl = payable(0x8dF685E00bb1Dd3e2F7a765f0cB0bEF92AAFe73F);
-    address payable relayer = payable(0xc0FcACE0E8B38d28AE743B3A3d3C1b46fdB8ce90);
+    address payable myshchImpl = payable(0x7b294BFa2E76058512adb0807Bddf5e34235a70a);
+    address payable relayer = payable(0xf4139ff4C97d189Db6D7F57849CBe22fAacEc688);
 
     address _factory = 0x431Db5c6ce5D85A0BAa2198Aa7Aa0E65d37a25c8;
     address _wrapper = 0x9ED82f27f05e0aa6A1eC7811518DeC0F788B5774;
@@ -46,7 +46,7 @@ contract InteracteScript is Script {
             );*/
 
         //address[] memory addrs1 = new address[](0);
-        address[] memory addrs1 = new address[](1);
+        /*address[] memory addrs1 = new address[](1);
         addrs1[0] = relayer;
         WNFTV2Envelop721.InitParams memory initData = WNFTV2Envelop721.InitParams(
             owner,
@@ -57,13 +57,13 @@ contract InteracteScript is Script {
             new bytes32[](0),
             new uint256[](0),
             ""
-        );
+        );*/
 
         vm.startBroadcast();
-        address payable _wnftWallet2 = payable(impl_myshch.createWNFTonFactory(initData));
+        //address payable _wnftWallet2 = payable(impl_myshch.createWNFTonFactory(initData));
         //address payable _wnftWallet = payable(impl_native.createWNFTonFactory(initData));
-        console2.log(_wnftWallet2);
-        //address payable _wnftWallet = payable(0x673EeD3d0E1f5d24848Be5866791e02545ffDBAD);
+        //console2.log(_wnftWallet2);
+        address payable _wnftWallet2 = payable(0xA6BEfE30e866016Bf1Bb6cd6f1294bB8E96c8d1a);
         //address payable _wnftWalletLegacy = payable(0x6ce103d9241825b1B99355C45e8883d05eE6Bd9A);
 
         //1 IERC20(0x5dB9f4C9239345308614604e69258C0bba9b437f).transfer(_wnftWallet, 1e18);
@@ -72,13 +72,13 @@ contract InteracteScript is Script {
         require(success, "Failed to send Ether");*/
 
 
-        WNFTMyshchWallet wnft2 = WNFTMyshchWallet(_wnftWallet2);
+        WNFTMyshchWallet wnft = WNFTMyshchWallet(_wnftWallet2);
         //WNFTLegacy721 wnftLegacy = WNFTLegacy721(_wnftWalletLegacy);
-        /*bytes memory _data = abi.encodeWithSignature(
+        bytes memory _data = abi.encodeWithSignature(
             "transfer(address,uint256)",
-            receiver, 1e15
+            receiver, 1e18
         );
-        wnft.executeEncodedTx(niftsy, 0, _data);*/
+        wnft.executeEncodedTx(niftsy, 0, _data);
         /*3 bytes memory _data = "";
 
         wnft.executeEncodedTx(receiver, 1e15, _data);*/
