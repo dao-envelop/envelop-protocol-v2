@@ -110,8 +110,9 @@
             "0x7EC0BF0a4D535Ea220c6bD961e352B752906D568",
             "0x4b664eD07D19d0b192A037Cfb331644cA536029d"
         ],
-        "factory": "0x9730A7a1B354986ebBC94da01d315Cb89585A681",
-        "impl_myshch": "0x2FA7EEd6850019E93c22e6294B6b9a798f6A66fc"
+        "impl_myshch": "0x2FA7EEd6850019E93c22e6294B6b9a798f6A66fc",
+        "impl_erc20": "0x6178438A0BB1c6002B585a670AAa0f8c4D8b0aed",
+        "factory": "0xD2c6DA6809cfa805B1917B81b799e2F3bc5E4d26"
 
     },
 
