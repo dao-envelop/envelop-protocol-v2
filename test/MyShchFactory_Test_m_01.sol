@@ -9,6 +9,7 @@ import "forge-std/console.sol";
 import {MyShchFactory} from "../src/MyShchFactory.sol";
 import {MockERC721} from "../src/mock/MockERC721.sol";
 import {MockERC20} from "../src/mock/MockERC20.sol";
+import {CustomERC20} from "../src/impl/CustomERC20.sol";
 import "../src/impl/WNFTMyshchWallet.sol";
 //import "../src/impl/WNFTV2Envelop721.sol";
 //import "../src/impl/Singleton721.sol";
@@ -51,6 +52,7 @@ contract MyShchFactory_Test_m_01 is Test {
     MockERC20 public erc20;
     MyShchFactory public factory;
     WNFTMyshchWallet public impl_myshch;
+    CustomERC20 public impl_erc20;
 
     address payable botWNFT;
     address payable userWNFT;
@@ -64,6 +66,7 @@ contract MyShchFactory_Test_m_01 is Test {
         factory = new MyShchFactory(address(impl_myshch));
         factory.setSignerStatus(botEOA, true); 
         erc20 = new MockERC20('Mock ERC20', 'ERC20');
+        impl_erc20 = new CustomERC20();
 
         vm.prank(address(botEOA));
         botWNFT = payable(factory.mintPersonalMSW(BOT_TG_ID, ""));
@@ -86,5 +89,39 @@ contract MyShchFactory_Test_m_01 is Test {
         assertNotEq(userWNFT, address(impl_myshch));
         assertEq(userEOA.balance, 0);
         assertEq(userWNFT.balance, sendEtherAmount);
+    }
+
+    function test_custom_erc20() public {
+        factory.newImplementation(MyShchFactory.AssetType.ERC20, address(impl_erc20));
+        MyShchFactory.InitDistributtion[] memory initDisrtrib = new MyShchFactory.InitDistributtion[](2);
+        initDisrtrib[0] = MyShchFactory.InitDistributtion(address(1), 100);
+        initDisrtrib[1] = MyShchFactory.InitDistributtion(address(2), 200);
+        address custom_20address = factory.createCustomERC20(
+            address(this),           // _creator,
+            "Custom ERC20 Name",     // name_,
+            "CUSTSYM",               // symbol_,
+            1_000_000e18,            // _totalSupply,
+            initDisrtrib             // _initialHolders
+        );
+        
+        CustomERC20 token = CustomERC20(custom_20address);
+        assertEq(
+           token.balanceOf(address(this)),
+            1_000_000e18 -  initDisrtrib[0].amount -  initDisrtrib[1].amount
+        );
+        assertEq(
+           token.balanceOf(address(1)),
+           initDisrtrib[0].amount
+        );
+        assertEq(
+           token.balanceOf(address(2)),
+           initDisrtrib[1].amount
+        );
+
+        token.transfer(address(4), 1e18);
+        assertEq(
+           token.balanceOf(address(4)),
+           1e18
+        );
     }
 }

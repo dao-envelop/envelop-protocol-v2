@@ -160,8 +160,6 @@ contract MyShchFactory is EnvelopWNFTFactory {
         );
 
         erc20 = _clone(erc20impl, initCallData);
-
-    
     }
     ///////////////////////////////////////////////
     /// Admins functions                      /////
