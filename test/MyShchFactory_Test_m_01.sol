@@ -123,6 +123,13 @@ contract MyShchFactory_Test_m_01 is Test {
            token.balanceOf(address(4)),
            1e18
         );
+
+        vm.startPrank(address(4));
+        token.burn(1e18);
+        assertEq(
+           token.balanceOf(address(4)),
+           0
+        );
     }
 
     function test_impl20() public {
