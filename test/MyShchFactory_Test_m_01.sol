@@ -124,4 +124,18 @@ contract MyShchFactory_Test_m_01 is Test {
            1e18
         );
     }
+
+    function test_impl20() public {
+        CustomERC20.InitDistributtion[] memory initDisrtrib = new CustomERC20.InitDistributtion[](2);
+        initDisrtrib[0] = CustomERC20.InitDistributtion(address(1), 100);
+        initDisrtrib[1] = CustomERC20.InitDistributtion(address(2), 200);
+        vm.expectRevert();
+        impl_erc20.initialize(
+            address(this),           // _creator,
+            "Custom ERC20 Name",     // name_,
+            "CUSTSYM",               // symbol_,
+            1_000_000e18,            // _totalSupply,
+            initDisrtrib             // _initialHolders
+        );
+    }
 }
