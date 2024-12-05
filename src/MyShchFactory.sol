@@ -198,12 +198,19 @@ contract MyShchFactory is EnvelopWNFTFactory {
         return implementations[AssetType.ERC721];
     }
 
+    
+    /**
+     * @dev Returns pure digest, without EIP-191 prefixing.
+     * @dev So not forget do prefix + hash befor sign offchain
+     * @param _tgId unic external identifier
+     * @param _nonce incrementing value for obtain digest for next mint
+     */ 
     function getDigestForSign(uint64 _tgId, uint256 _nonce) 
         external 
         view 
         returns(bytes32) 
     {
-         return _restoreDigest(_tgId, _nonce); 
+        return keccak256(abi.encode(_tgId, _nonce, block.chainid)); 
     }
 
     ///////////////////////////////////////////////

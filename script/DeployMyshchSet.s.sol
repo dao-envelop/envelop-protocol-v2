@@ -6,7 +6,7 @@ import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {Script, console2} from "forge-std/Script.sol";
 import "../lib/forge-std/src/StdJson.sol";
 
-import {MyShchFactory} from "../src/MyShchFactory.sol";
+import "../src/MyShchFactory.sol";
 import "../src/impl/WNFTMyshchWallet.sol";
 import {MockERC20} from "../src/mock/MockERC20.sol";
 //import "../src/impl/WNFTV2Envelop721.sol";
@@ -290,7 +290,9 @@ contract TestTxScript is Script {
  
             // Users wnft wallet
             bytes memory botSignature;
-            bytes32 digest = factory.getDigestForSign(22222, factory.currentNonce(22222) + 1);
+            bytes32 digest =  MessageHashUtils.toEthSignedMessageHash(
+                factory.getDigestForSign(22222, factory.currentNonce(22222) + 1)
+            );
             (uint8 v, bytes32 r, bytes32 s) = vm.sign(botEOA_PRIVKEY, digest);
             botSignature = abi.encodePacked(r,s,v);
             factory.mintPersonalMSW{value: 7000}(22222, botSignature);

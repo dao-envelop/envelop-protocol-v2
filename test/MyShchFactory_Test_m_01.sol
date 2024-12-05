@@ -6,7 +6,7 @@ import {VmSafe} from "forge-std/Vm.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import "forge-std/console.sol";
 
-import {MyShchFactory} from "../src/MyShchFactory.sol";
+import  "../src/MyShchFactory.sol";
 import {MockERC721} from "../src/mock/MockERC721.sol";
 import {MockERC20} from "../src/mock/MockERC20.sol";
 import {CustomERC20} from "../src/impl/CustomERC20.sol";
@@ -81,7 +81,12 @@ contract MyShchFactory_Test_m_01 is Test {
     function test_wnft_user_wallet() public {
         vm.deal(userEOA, sendEtherAmount);
         bytes memory botSignature;
-        bytes32 digest = factory.getDigestForSign(USER_TG_ID, factory.currentNonce(USER_TG_ID) + 1);
+        // MessageHashUtils.toEthSignedMessageHash(
+        //         abi.encode(uint64(222), uint256(1), uint256(11155111))
+        // );
+        bytes32 digest = MessageHashUtils.toEthSignedMessageHash(
+            factory.getDigestForSign(USER_TG_ID, factory.currentNonce(USER_TG_ID) + 1)
+        );
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(botEOA_PRIVKEY, digest);
         botSignature = abi.encodePacked(r,s,v);
         vm.prank(userEOA);
@@ -144,5 +149,29 @@ contract MyShchFactory_Test_m_01 is Test {
             1_000_000e18,            // _totalSupply,
             initDisrtrib             // _initialHolders
         );
+    }
+
+    function test_digest() public {
+        //  as now
+        bytes32 dgst = MessageHashUtils.toEthSignedMessageHash(
+            keccak256(
+                abi.encode(uint64(222), uint256(1), uint256(11155111))
+            )
+        );
+        console2.logBytes32(dgst);
+
+        // hash
+        dgst = MessageHashUtils.toEthSignedMessageHash(
+                abi.encode(uint64(222), uint256(1), uint256(11155111))
+        );
+        console2.logBytes32(dgst);
+
+        dgst = 
+            keccak256(
+                abi.encode(uint64(222), uint256(1), uint256(11155111))
+        );
+        console2.logBytes32(dgst);
+
+        console2.logBytes(abi.encode(uint64(222), uint256(1), uint256(11155111)));
     }
 }
