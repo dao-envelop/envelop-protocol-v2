@@ -7,6 +7,13 @@ import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import "./EnvelopWNFTFactory.sol";
 
 contract MyShchFactory is EnvelopWNFTFactory {
+    
+    enum AssetType {EMPTY, NATIVE, ERC20, ERC721, ERC1155, FUTURE1, FUTURE2, FUTURE3}
+
+    struct InitDistributtion {
+        address receiver;
+        uint256 amount;
+    }
 
     // TODO  think about move to V2 Interface
     struct InitParams {
@@ -25,7 +32,8 @@ contract MyShchFactory is EnvelopWNFTFactory {
         uint64 botId;
     }
 
-    address[] public implementations;
+    //address[] public implementations;
+    mapping(AssetType => address[]) public implementations;
     mapping(uint64 tgId => uint256 nonce) public currentNonce;
     mapping(address signer => Signer) public trustedSigners;
 
@@ -36,7 +44,7 @@ contract MyShchFactory is EnvelopWNFTFactory {
         EnvelopWNFTFactory()
     {
         require(_implementation != address(0), "No zero address");
-        implementations.push(_implementation);
+        implementations[AssetType.ERC721].push(_implementation);
     }
 
     function mintPersonalMSW(uint64 _tgId, bytes calldata _signature) 
@@ -72,7 +80,9 @@ contract MyShchFactory is EnvelopWNFTFactory {
 
         // Encode default initial
         bytes memory initCallData = abi.encodeWithSignature(
-            IEnvelopV2wNFT(implementations[implementations.length - 1]).INITIAL_SIGN_STR(),
+            IEnvelopV2wNFT(
+                implementations[AssetType.ERC721][implementations[AssetType.ERC721].length - 1]
+            ).INITIAL_SIGN_STR(),
             InitParams(
                 msg.sender, 
                 "MyshchWallet", 
@@ -88,7 +98,7 @@ contract MyShchFactory is EnvelopWNFTFactory {
         //Address.sendValue(payable(wnft), msg.value);
     }
 
-    function mintBatcMSW(
+    function mintBatchMSW(
         uint64[] calldata _tgIds, 
         address[] memory _receivers, 
         bytes calldata _signature
@@ -109,7 +119,9 @@ contract MyShchFactory is EnvelopWNFTFactory {
         for (uint256 i = 0; i < _tgIds.length; i++) {
             // Prepare initializing
             bytes memory initCallData = abi.encodeWithSignature(
-            IEnvelopV2wNFT(implementations[implementations.length - 1]).INITIAL_SIGN_STR(),
+            IEnvelopV2wNFT(
+                implementations[AssetType.ERC721][implementations[AssetType.ERC721].length - 1]
+            ).INITIAL_SIGN_STR(),
             InitParams(
                 _receivers[i], 
                 "MyshchWallet", 
@@ -128,14 +140,39 @@ contract MyShchFactory is EnvelopWNFTFactory {
         }
 
     }
+
+    function createCustomERC20(
+        address _creator,
+        string memory name_,
+        string memory symbol_,
+        uint256 _totalSupply,
+        InitDistributtion[] memory _initialHolders
+    ) external returns(address erc20) {
+        
+        address erc20impl =  implementations[AssetType.ERC20][implementations[AssetType.ERC20].length - 1];
+        // Encode default initial
+        bytes memory initCallData = abi.encodeWithSignature(
+            // We can use this interface because erc20 implementation has same method
+            IEnvelopV2wNFT(
+                erc20impl
+            ).INITIAL_SIGN_STR(),
+            _creator, name_, symbol_, _totalSupply, _initialHolders
+        );
+
+        erc20 = _clone(erc20impl, initCallData);
+    }
     ///////////////////////////////////////////////
     /// Admins functions                      /////
     ///////////////////////////////////////////////
     function newImplementation(address _implementation) external onlyOwner {
         require(_implementation != address(0), "No zero address");
-        implementations.push(_implementation);
+        implementations[AssetType.ERC721].push(_implementation);
     }
-
+    
+    function newImplementation(AssetType _type, address _implementation) external onlyOwner {
+        require(_implementation != address(0), "No zero address");
+        implementations[_type].push(_implementation);
+    }
     function setSignerStatus(address _signer, bool _status) external onlyOwner {
         require(_signer != address(0), "No zero address");
         trustedSigners[_signer].isTrusted = _status;
@@ -158,15 +195,22 @@ contract MyShchFactory is EnvelopWNFTFactory {
     }
 
     function getImplementationHistory() external view returns(address[] memory) {
-        return implementations;
+        return implementations[AssetType.ERC721];
     }
 
+    
+    /**
+     * @dev Returns pure digest, without EIP-191 prefixing.
+     * @dev So not forget do prefix + hash befor sign offchain
+     * @param _tgId unic external identifier
+     * @param _nonce incrementing value for obtain digest for next mint
+     */ 
     function getDigestForSign(uint64 _tgId, uint256 _nonce) 
         external 
         view 
         returns(bytes32) 
     {
-         return _restoreDigest(_tgId, _nonce); 
+        return keccak256(abi.encode(_tgId, _nonce, block.chainid)); 
     }
 
     ///////////////////////////////////////////////
@@ -177,7 +221,7 @@ contract MyShchFactory is EnvelopWNFTFactory {
         returns(address wnft) 
     {
         currentNonce[_tgId] ++;
-        address impl  = implementations[implementations.length - 1];
+        address impl  = implementations[AssetType.ERC721][implementations[AssetType.ERC721].length - 1];
         wnft = _cloneDeterministic(
             impl, 
             _initCallData, 
@@ -198,7 +242,7 @@ contract MyShchFactory is EnvelopWNFTFactory {
         returns(address)
     {
         return predictDeterministicAddress(
-            implementations[implementations.length - 1], // implementation address
+            implementations[AssetType.ERC721][implementations[AssetType.ERC721].length - 1], // implementation address
             keccak256(abi.encode(_tgId, _nonce))
         );
     }

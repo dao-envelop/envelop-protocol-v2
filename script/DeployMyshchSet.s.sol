@@ -6,11 +6,12 @@ import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {Script, console2} from "forge-std/Script.sol";
 import "../lib/forge-std/src/StdJson.sol";
 
-import {MyShchFactory} from "../src/MyShchFactory.sol";
+import "../src/MyShchFactory.sol";
 import "../src/impl/WNFTMyshchWallet.sol";
 import {MockERC20} from "../src/mock/MockERC20.sol";
 //import "../src/impl/WNFTV2Envelop721.sol";
 import "../src/impl/WNFTMyshchWallet.sol";
+import "../src/impl/CustomERC20.sol";
 
 
 // Address:     0x7EC0BF0a4D535Ea220c6bD961e352B752906D568
@@ -32,6 +33,7 @@ contract DeployMyshchSetScript is Script {
     struct Params {
         address factory;   
         address impl_myshch;
+        address impl_erc20;
         bool need_test_tx;
         address[] trusted_signers_list;
     }
@@ -82,6 +84,14 @@ contract DeployMyshchSetScript is Script {
             p.impl_myshch = address(0);
         }
 
+        key = string.concat(".", vm.toString(block.chainid),".impl_erc20");
+        if (vm.keyExists(params_json_file, key)) 
+        {
+            p.impl_erc20 = params_json_file.readAddress(key);
+        } else {
+            p.impl_erc20 = address(0);
+        }
+
         key = string.concat(".", vm.toString(block.chainid),".need_test_tx");
         if (vm.keyExists(params_json_file, key)) 
         {
@@ -107,20 +117,30 @@ contract DeployMyshchSetScript is Script {
         vm.startBroadcast();
         MyShchFactory factory;
         WNFTMyshchWallet impl_myshch;
+        CustomERC20 impl_erc20;
 
         if (p.impl_myshch == address(0)) {
-            console2.log("Deploying implementation: %s", vm.toString(p.impl_myshch));
             impl_myshch = new WNFTMyshchWallet(address(0),0);    
+            console2.log("Deploying implementation: %s", vm.toString(address(impl_myshch)));
         } else {
             impl_myshch = WNFTMyshchWallet(payable(p.impl_myshch));
         }
 
+        if (p.impl_erc20 == address(0)) {
+            impl_erc20 = new CustomERC20();    
+            console2.log("Deploying implementation: %s", vm.toString(address(impl_erc20)));
+        } else {
+            impl_erc20 = CustomERC20(p.impl_erc20);
+        }
+
         if (p.factory == address(0)) {
-            console2.log("Deploying factory: %s", vm.toString(p.factory));
             factory = new MyShchFactory(address(impl_myshch));    
+            console2.log("Deploying factory: %s", vm.toString(address(factory)));
         } else {
             factory = MyShchFactory(p.factory);
         }
+
+        factory.newImplementation(MyShchFactory.AssetType.ERC20, address(impl_erc20));
 
         vm.stopBroadcast();
         
@@ -142,11 +162,15 @@ contract DeployMyshchSetScript is Script {
         console2.log("\n**WNFTMyshchWallet** ");
         console2.log("https://%s/address/%s#code\n", explorer_url, address(impl_myshch));
 
+        console2.log("\n**CustomERC20** ");
+        console2.log("https://%s/address/%s#code\n", explorer_url, address(impl_erc20));
+
 
 
         console2.log("```python");
         console2.log("factory = MyShchFactory.at('%s')", address(factory));
         console2.log("impl_myshch = WNFTMyshchWallet.at('%s')", address(impl_myshch));
+        console2.log("impl_erc20 = CustomERC20.at('%s')", address(impl_erc20));
         console2.log("```");
    
         // ///////// End of pretty printing ////////////////
@@ -171,6 +195,7 @@ contract TestTxScript is Script {
     struct Params {
         address factory;   
         address impl_myshch;
+        address impl_erc20;
         bool need_test_tx;
         address[] trusted_signers_list;
     }
@@ -224,6 +249,15 @@ contract TestTxScript is Script {
             p.impl_myshch = address(0);
         }
 
+        key = string.concat(".", vm.toString(block.chainid),".impl_erc20");
+        if (vm.keyExists(params_json_file, key)) 
+        {
+            p.impl_erc20 = params_json_file.readAddress(key);
+        } else {
+            p.impl_erc20 = address(0);
+        }
+
+
         key = string.concat(".", vm.toString(block.chainid),".need_test_tx");
         if (vm.keyExists(params_json_file, key)) 
         {
@@ -239,8 +273,12 @@ contract TestTxScript is Script {
       
             MyShchFactory factory;
             WNFTMyshchWallet impl_myshch;
+            CustomERC20 impl_erc20;
             if (p.impl_myshch != address(0)) {
                 impl_myshch = WNFTMyshchWallet(payable(p.impl_myshch));
+            }
+            if (p.impl_erc20 != address(0)) {
+                impl_erc20 = CustomERC20(payable(p.impl_erc20));
             }
 
             if (p.factory != address(0)) {
@@ -252,10 +290,25 @@ contract TestTxScript is Script {
  
             // Users wnft wallet
             bytes memory botSignature;
-            bytes32 digest = factory.getDigestForSign(22222, factory.currentNonce(22222) + 1);
+            bytes32 digest =  MessageHashUtils.toEthSignedMessageHash(
+                factory.getDigestForSign(22222, factory.currentNonce(22222) + 1)
+            );
             (uint8 v, bytes32 r, bytes32 s) = vm.sign(botEOA_PRIVKEY, digest);
             botSignature = abi.encodePacked(r,s,v);
             factory.mintPersonalMSW{value: 7000}(22222, botSignature);
+
+            // Custom ERC20
+            factory.newImplementation(MyShchFactory.AssetType.ERC20, address(impl_erc20));
+            MyShchFactory.InitDistributtion[] memory initDisrtrib = new MyShchFactory.InitDistributtion[](2);
+            initDisrtrib[0] = MyShchFactory.InitDistributtion(address(1), 100);
+            initDisrtrib[1] = MyShchFactory.InitDistributtion(address(2), 200);
+            address custom_20address = factory.createCustomERC20(
+                address(this),           // _creator,
+                "Custom ERC20 Name",     // name_,
+                "CUSTSYM",               // symbol_,
+                1_000_000e18,            // _totalSupply,
+                initDisrtrib             // _initialHolders
+            );
 
             vm.stopBroadcast();
             console2.log("Test tx finished");
