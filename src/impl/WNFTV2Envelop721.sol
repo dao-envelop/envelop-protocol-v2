@@ -61,7 +61,8 @@ contract WNFTV2Envelop721 is
     //  +----+----+----+----+----+---+ 
     //      for use in extendings
     
-   
+    uint256 public nonce; // counter for createWNFTonFactory2
+
     //error InsufficientCollateral(ET.AssetItem declare, uint256 fact);
     error WnftRuleViolation(bytes2 rule);
     error RuleSetNotSupported(bytes2 unsupportedRules);
@@ -116,7 +117,7 @@ contract WNFTV2Envelop721 is
     ///////////////////////////////////////////////////////
 
     constructor(address _defaultFactory) {
-        // Zero address for _defaultFactory  is ENAMBLEd. Because some inheritors
+        // Zero address for _defaultFactory  is ENABLEd. Because some inheritors
         // would like to switch OFF using `createWNFTonFactory` from  implementation
         FACTORY = _defaultFactory;    
         _disableInitializers();
@@ -131,6 +132,19 @@ contract WNFTV2Envelop721 is
         wnft = IEnvelopWNFTFactory(FACTORY).createWNFT(
             address(this), 
             abi.encodeWithSignature(INITIAL_SIGN_STR, _init)
+        );
+    }
+
+    function createWNFTonFactory2(InitParams calldata _init) 
+        external 
+        notDelegated 
+        returns(address wnft) 
+    {
+        bytes32 salt = keccak256(abi.encode(address(this), ++nonce));
+        wnft = IEnvelopWNFTFactory(FACTORY).createWNFT(
+            address(this), 
+            abi.encodeWithSignature(INITIAL_SIGN_STR, _init),
+            salt
         );
     }
 

@@ -140,5 +140,68 @@ contract Factory_Test_m_03 is Test {
         // assertLt(uint256(3),uint256(2)); // this will revert : assertion failed: 3 >= 2
 
     }
+
+    function test_createPredicted() public {
+        address predictedwNFT1 = factory.predictDeterministicAddress(
+            address(impl_native),
+            keccak256(abi.encode(impl_native, impl_native.nonce() + 1))
+        );
+        
+        address predictedwNFT2 = factory.predictDeterministicAddress(
+            address(impl_native),
+            keccak256(abi.encode(impl_native, impl_native.nonce() + 2))
+        );
+
+        erc20.transfer(predictedwNFT1, sendERC20Amount);
+        erc20.transfer(predictedwNFT2, sendERC20Amount * 2);
+
+        address[] memory targets = new address[](2);
+        bytes[] memory dataArray = new bytes[](2);
+        uint256[] memory values = new uint256[](2);
+
+        targets[0] = address(impl_native);
+        targets[1] = address(impl_native);
+
+        // prepare data for child wallets
+        WNFTV2Envelop721.InitParams memory initData = WNFTV2Envelop721.InitParams(
+            address(1),
+            'Envelop',
+            'ENV',
+            'https://api.envelop.is/',
+            new address[](0),
+            new bytes32[](0),
+            new uint256[](0),
+            ""
+            );
+
+        bytes memory _data = abi.encodeWithSignature(
+            "createWNFTonFactory2((address,string,string,string,address[],bytes32[],uint256[],bytes))",
+            initData
+        );
+
+        dataArray[0] = _data;
+        dataArray[1] = _data;
+        values[0] = 0;
+        values[1] = 0;
+        
+        vm.prank(SERV_OWNER);
+        bytes[] memory result = walletServ.executeEncodedTxBatch(targets, values, dataArray);
+        //wnft.executeEncodedTx(address(impl_legacy), 0, _data);
+
+        address payable w1 =  payable(abi.decode(result[0],
+             (address)
+        ));
+
+        console2.log(w1);
+
+        address payable w2 =  payable(abi.decode(result[1],
+             (address)
+        ));
+        assertEq(w1, predictedwNFT1);
+        assertEq(w2, predictedwNFT2);
+        assertEq(erc20.balanceOf(w1), sendERC20Amount);
+        assertEq(erc20.balanceOf(w2), sendERC20Amount * 2);
+
+    }
     
 }
