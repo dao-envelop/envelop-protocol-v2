@@ -93,7 +93,8 @@ contract WNFTV2Envelop721 is
     }
 
     /**  OZ
-     * @dev Check that the execution is not being performed through a delegate call. This allows a function to be
+     * @dev Check that the execution is not being performed through a delegate call. 
+     * This allows a function to be
      * callable on the implementing contract but not through proxies.
      */
     modifier notDelegated() {
@@ -161,7 +162,6 @@ contract WNFTV2Envelop721 is
     {
         
         __WNFTV2Envelop721_init(_init);
-        //WNFTV2Envelop721Storage storage $ = _getWNFTV2Envelop721Storage();
         
     }
         

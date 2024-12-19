@@ -7,7 +7,10 @@ import "@openzeppelin/contracts/proxy/Clones.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/IEnvelopV2wNFT.sol";
-
+/*
+ * @dev https://eips.ethereum.org/EIPS/eip-1167[EIP 1167] is a standard for
+ * deploying minimal proxy contracts, also known as "clones".
+ */
 contract EnvelopWNFTFactory is  Ownable{
     
     mapping(address wrapper => bool isTrusted) public trustedWrappers;

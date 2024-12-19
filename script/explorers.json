@@ -1,6 +1,7 @@
 {   
     "1":"etherscan.io", 
     "5":"goerli.etherscan.io",
+    "10":"optimistic.etherscan.io",
     "56":"bscscan.com",
     "97":"testnet.bscscan.com",
     "137":"polygonscan.com",
