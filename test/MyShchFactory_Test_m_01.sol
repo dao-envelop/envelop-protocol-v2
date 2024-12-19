@@ -172,6 +172,10 @@ contract MyShchFactory_Test_m_01 is Test {
         );
         console2.logBytes32(dgst);
 
-        console2.logBytes(abi.encode(uint64(222), uint256(1), uint256(11155111)));
+        console2.logBytes(
+             abi.encodeWithSignature("transfer(address,uint256)", 0x80Fb1BA90B93626C73f29b30d3804be6635D6fFC, 77e18)
+        );
+
+
     }
 }
