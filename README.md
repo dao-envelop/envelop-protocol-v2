@@ -25,7 +25,7 @@ $ source .env
 ``` 
 
 ```shell
-$ # Script for geting hash for staroge addresses
+$ # Script for geting hash for storage addresses
 $ forge script script/GetStorageSlot.s.sol:GetStorageSlot
 ```
 

@@ -1,7 +1,3 @@
-```shell
-$ # Script for geting hash for staroge addresses
-$ forge script script/GetStorageSlot.s.sol:GetStorageSlot
-```
 ## Deployments
 !!! For use cli below don't forget set appropriate variables in `.env` (see Development section) 
 ### Sepolia
