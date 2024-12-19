@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Myshch Factory for Envelop wNFT contracts
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.28;
 
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";

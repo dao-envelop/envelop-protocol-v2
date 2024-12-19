@@ -109,8 +109,8 @@ contract WNFTV2Envelop721_Test_a_wNFTMaker is Test  {
              (address)
         ));
 
-        WNFTV2Envelop721 childWnft1 = WNFTV2Envelop721(w1);
-        WNFTV2Envelop721 childWnft2 = WNFTV2Envelop721(w2);
+        //WNFTV2Envelop721 childWnft1 = WNFTV2Envelop721(w1);
+        //WNFTV2Envelop721 childWnft2 = WNFTV2Envelop721(w2);
 
         // add erc20 tokens to child wnfts
         address[] memory chaildTargets = new address[](4);

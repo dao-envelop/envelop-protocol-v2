@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Envelop Factory for wNFT contracts
 
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.28;
 
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";

@@ -309,8 +309,9 @@ contract TestTxScript is Script {
                 1_000_000e18,            // _totalSupply,
                 initDisrtrib             // _initialHolders
             );
-
+            
             vm.stopBroadcast();
+            console2.log("Custom ERC20 token created: %s", custom_20address);
             console2.log("Test tx finished");
         }
     }

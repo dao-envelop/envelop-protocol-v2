@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // ENVELOP(NIFTSY) protocol for NFT. 
-pragma solidity 0.8.26;
+pragma solidity ^0.8.26;
 
 import "./../utils/TokenService.sol";
 import "./../utils/LibET.sol";

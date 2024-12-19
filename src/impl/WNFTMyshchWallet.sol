@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Envelop V2, wNFT implementation
 
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.28;
 
 // import "@Uopenzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
 //import "@Uopenzeppelin/contracts/token/ERC1155/utils/ERC1155HolderUpgradeable.sol";

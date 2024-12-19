@@ -53,7 +53,7 @@ contract Factory_Test_a_26 is Test  {
     
     // wrap wnft
     function test_hack() public {
-        uint256 tokenId = 0;
+        //uint256 tokenId = 0;
         ET.AssetItem memory original_nft = ET.AssetItem(ET.Asset(ET.AssetType.EMPTY, address(0)),0,0);
         EnvelopLegacyWrapperBaseV2.INData memory inData = EnvelopLegacyWrapperBaseV2.INData(
                 original_nft, // inAsset

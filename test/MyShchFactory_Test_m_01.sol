@@ -73,7 +73,7 @@ contract MyShchFactory_Test_m_01 is Test {
 
     }
     
-    function test_wnft_bot_wallet() public {
+    function test_wnft_bot_wallet() public view{
         assertNotEq(botWNFT, address(impl_myshch));
         
     }
@@ -151,7 +151,7 @@ contract MyShchFactory_Test_m_01 is Test {
         );
     }
 
-    function test_digest() public {
+    function test_digest() public pure  {
         //  as now
         bytes32 dgst = MessageHashUtils.toEthSignedMessageHash(
             keccak256(

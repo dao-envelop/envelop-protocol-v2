@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // ENVELOP(NIFTSY) protocol V2 for NFT . 
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.28;
 //import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
 interface IMyshchWalletwNFT {

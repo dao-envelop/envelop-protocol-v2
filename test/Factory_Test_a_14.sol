@@ -58,7 +58,7 @@ contract Factory_Test_a_14 is Test {
         
         WNFTLegacy721 wnft = WNFTLegacy721(_wnftWallet);
                 
-        uint256 tokenId = impl_legacy.TOKEN_ID();
+        //uint256 tokenId = impl_legacy.TOKEN_ID();
         ET.AssetItem[] memory assets = new ET.AssetItem[](0);
         vm.expectRevert(
             abi.encodeWithSelector(WNFTLegacy721.WnftRuleViolation.selector, bytes2(0x0001))

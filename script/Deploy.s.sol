@@ -118,9 +118,9 @@ contract DeployScript is Script {
         //////////   Deploy   //////////////
         vm.startBroadcast();
         EnvelopWNFTFactory factory;
-        EnvelopLegacyWrapperBaseV2 wrapper;
-        WNFTLegacy721 impl_legacy;
-        WNFTV2Envelop721 impl_native;
+        //EnvelopLegacyWrapperBaseV2 wrapper;
+        //WNFTLegacy721 impl_legacy;
+        //WNFTV2Envelop721 impl_native;
         WNFTMyshchWallet impl_myshch;
 
         factory = EnvelopWNFTFactory(0x431Db5c6ce5D85A0BAa2198Aa7Aa0E65d37a25c8);

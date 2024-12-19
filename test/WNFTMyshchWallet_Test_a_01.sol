@@ -82,7 +82,7 @@ contract WNFTMyshchWallet_Test_a_01 is Test {
         // send erc20 to wnft wallet
         erc20.transfer(_wnftWallet1, sendERC20Amount);
         
-        WNFTMyshchWallet wnft2 = WNFTMyshchWallet(_wnftWallet2);
+        //WNFTMyshchWallet wnft2 = WNFTMyshchWallet(_wnftWallet2);
 
         wnft1.setApprovalForAll(address(2), true);
 
