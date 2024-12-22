@@ -64,17 +64,22 @@ contract WNFTV2Envelop721_Test_a_wNFTMaker is Test  {
         erc20_2.transfer(_wnftWallet, 2 * sendEtherAmount);
 
         // make new wnftWallet using executeOp
-        // transfer erc20 to new wnftWallet
-        // сделать несколько кошельков
-        // try to executeEncodedTx original nft - revert
-        address[] memory targets = new address[](2);
-        bytes[] memory dataArray = new bytes[](2);
-        uint256[] memory values = new uint256[](2);
+        // transfer erc20 tyokens to new wnftWallet
+        // make 2 child wallets
+        // transfer erc20 tokens from master wallet to child wallets
+
+        address[] memory targets = new address[](6);
+        bytes[] memory dataArray = new bytes[](6);
+        uint256[] memory values = new uint256[](6);
 
         targets[0] = address(impl_legacy);
         targets[1] = address(impl_legacy);
+        targets[2] = address(erc20_1);
+        targets[3] = address(erc20_1);
+        targets[4] = address(erc20_2);
+        targets[5] = address(erc20_2);
 
-        // prepare data for child wallets
+        // prepare data for deploying of child wallets
         initData = WNFTV2Envelop721.InitParams(
             address(1),
             'Envelop',
@@ -86,71 +91,57 @@ contract WNFTV2Envelop721_Test_a_wNFTMaker is Test  {
             ""
             );
 
+        // using method with salt
         bytes memory _data = abi.encodeWithSignature(
-            "createWNFTonFactory((address,string,string,string,address[],bytes32[],uint256[],bytes))",
+            "createWNFTonFactory2((address,string,string,string,address[],bytes32[],uint256[],bytes))",
             initData
         );
 
+        for (uint i =0; i < 6; i++)
+        {
+            values[i] = 0;    
+        }
+        
+        // calc child wallet addresses
+        bytes32 salt = keccak256(abi.encode(address(impl_legacy), impl_legacy.nonce() + 1));
+        address calcW1 = factory.predictDeterministicAddress(address(impl_legacy), salt);
+        salt = keccak256(abi.encode(address(impl_legacy), impl_legacy.nonce() + 2));
+        address calcW2 = factory.predictDeterministicAddress(address(impl_legacy), salt);
+
         dataArray[0] = _data;
         dataArray[1] = _data;
-        values[0] = 0;
-        values[1] = 0;
+        dataArray[2] = abi.encodeWithSignature(
+            "transfer(address,uint256)",
+            calcW1,sendEtherAmount / 2
+        );
+        dataArray[3] = abi.encodeWithSignature(
+            "transfer(address,uint256)",
+            calcW2,sendEtherAmount / 2
+        );
+        dataArray[4] = abi.encodeWithSignature(
+            "transfer(address,uint256)",
+            calcW1,sendEtherAmount
+        );
+        dataArray[5] = abi.encodeWithSignature(
+            "transfer(address,uint256)",
+            calcW2,sendEtherAmount
+        );
 
         bytes[] memory result = wnft.executeEncodedTxBatch(targets, values, dataArray);
-        //wnft.executeEncodedTx(address(impl_legacy), 0, _data);
 
+        // get child wallet adresses from output
         address payable w1 =  payable(abi.decode(result[0],
              (address)
         ));
-
-        console2.log(w1);
 
         address payable w2 =  payable(abi.decode(result[1],
              (address)
         ));
 
-        //WNFTV2Envelop721 childWnft1 = WNFTV2Envelop721(w1);
-        //WNFTV2Envelop721 childWnft2 = WNFTV2Envelop721(w2);
-
-        // add erc20 tokens to child wnfts
-        address[] memory chaildTargets = new address[](4);
-        bytes[] memory childDataArray = new bytes[](4);
-        uint256[] memory childValues = new uint256[](4);
-
-        chaildTargets[0] = address(erc20_1);
-        chaildTargets[1] = address(erc20_1);
-        chaildTargets[2] = address(erc20_2);
-        chaildTargets[3] = address(erc20_2);
-
-        childDataArray[0] = abi.encodeWithSignature(
-            "transfer(address,uint256)",
-            w1,sendEtherAmount / 2
-        );
-        childDataArray[1] = abi.encodeWithSignature(
-            "transfer(address,uint256)",
-            w2,sendEtherAmount / 2
-        );
-        childDataArray[2] = abi.encodeWithSignature(
-            "transfer(address,uint256)",
-            w1,sendEtherAmount
-        );
-        childDataArray[3] = abi.encodeWithSignature(
-            "transfer(address,uint256)",
-            w2,sendEtherAmount
-        );
-
-        childValues[0] = 0;
-        childValues[1] = 0;
-        childValues[2] = 0;
-        childValues[3] = 0;
-
-        wnft.executeEncodedTxBatch(chaildTargets, childValues, childDataArray);
-
+        // check balance of child wallets
         assertEq(erc20_1.balanceOf(w1), sendEtherAmount / 2);
         assertEq(erc20_1.balanceOf(w2), sendEtherAmount / 2);
         assertEq(erc20_2.balanceOf(w1), sendEtherAmount);
         assertEq(erc20_2.balanceOf(w2), sendEtherAmount);
-
-
     }
 }
