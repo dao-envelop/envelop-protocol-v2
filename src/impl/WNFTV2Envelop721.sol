@@ -31,6 +31,7 @@ contract WNFTV2Envelop721 is
     
     struct WNFTV2Envelop721Storage {
         ET.WNFT wnftData;
+        uint256 nonce; // counter for createWNFTonFactory2
     }
 
     address private immutable __self = address(this);
@@ -61,7 +62,7 @@ contract WNFTV2Envelop721 is
     //  +----+----+----+----+----+---+ 
     //      for use in extendings
     
-    uint256 public nonce; // counter for createWNFTonFactory2
+    
 
     //error InsufficientCollateral(ET.AssetItem declare, uint256 fact);
     error WnftRuleViolation(bytes2 rule);
@@ -141,7 +142,8 @@ contract WNFTV2Envelop721 is
         notDelegated 
         returns(address wnft) 
     {
-        bytes32 salt = keccak256(abi.encode(address(this), ++nonce));
+        WNFTV2Envelop721Storage storage $ = _getWNFTV2Envelop721Storage();
+        bytes32 salt = keccak256(abi.encode(address(this), ++ $.nonce));
         wnft = IEnvelopWNFTFactory(FACTORY).createWNFT(
             address(this), 
             abi.encodeWithSignature(INITIAL_SIGN_STR, _init),
@@ -225,7 +227,7 @@ contract WNFTV2Envelop721 is
         onlyWnftOwner()
         returns (bytes memory r) 
     {
-        r = super._executeEncodedTx(_target, _value, _data);
+        r = _executeEncodedTx(_target, _value, _data);
     }
 
     /**
@@ -245,12 +247,16 @@ contract WNFTV2Envelop721 is
         returns (bytes[] memory r) 
     {
     
-        r = super._executeEncodedTxBatch(_targetArray, _valueArray, _dataArray);
+        r = _executeEncodedTxBatch(_targetArray, _valueArray, _dataArray);
     }
     ////////////////////////////////////////////////////////////////////////////
     /////                    GETTERS                                       /////
     ////////////////////////////////////////////////////////////////////////////
 
+    function nonce() public view returns(uint256) {
+         WNFTV2Envelop721Storage storage $ = _getWNFTV2Envelop721Storage();
+         return $.nonce;
+    }
     /**
      * @dev See {IERC165-supportsInterface}.
      */
