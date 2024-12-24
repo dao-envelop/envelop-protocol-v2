@@ -32,7 +32,7 @@ abstract contract Singleton721 is ERC721Upgradeable, IERC4906 {
     // defines events and does not include any external function.
     bytes4 private constant ERC4906_INTERFACE_ID = bytes4(0x49064906);
     uint256 public constant TOKEN_ID = 1;
-    string public constant DEFAULT_BASE_URI = "https://api.envelop.is/v2meta/";
+    string public constant DEFAULT_BASE_URI = "https://api.envelop.is/dmetadata/";
     
       //string public constant INITIAL_SIGN_STR = "initialize(address,string,string,string)";
     

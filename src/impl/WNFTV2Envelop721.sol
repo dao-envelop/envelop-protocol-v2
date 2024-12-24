@@ -126,8 +126,8 @@ contract WNFTV2Envelop721 is
         emit EnvelopV2OracleType(ORACLE_TYPE, type(WNFTV2Envelop721).name);
     }
 
-    function createWNFTonFactory(InitParams calldata _init) 
-        external 
+    function createWNFTonFactory(InitParams memory _init) 
+        public 
         virtual
         notDelegated 
         returns(address wnft) 
@@ -138,8 +138,8 @@ contract WNFTV2Envelop721 is
         );
     }
 
-    function createWNFTonFactory2(InitParams calldata _init) 
-        external
+    function createWNFTonFactory2(InitParams memory _init) 
+        public
         virtual 
         notDelegated 
         returns(address wnft) 
