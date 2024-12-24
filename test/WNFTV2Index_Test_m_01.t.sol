@@ -18,6 +18,7 @@ import "../src/EnvelopLegacyWrapperBaseV2.sol";
 // add collateral to wnft (erc721, erc1155) and withdraw
 contract WNFTV2Index_Test_m_01 is Test  {
     using Strings for uint160;
+    using Strings for uint256;
     
     event Log(string message);
 
@@ -133,6 +134,8 @@ contract WNFTV2Index_Test_m_01 is Test  {
              (address)
         ));
 
+        WNFTV2Index index1 = WNFTV2Index(w1);
+
         address payable w2 =  payable(abi.decode(result[1],
              (address)
         ));
@@ -142,5 +145,21 @@ contract WNFTV2Index_Test_m_01 is Test  {
         assertEq(erc20_1.balanceOf(w2), sendEtherAmount / 2);
         assertEq(erc20_2.balanceOf(w1), sendEtherAmount);
         assertEq(erc20_2.balanceOf(w2), sendEtherAmount);
+
+        assertEq(index1.name(), "Envelop wNFT V2 Index");
+        assertEq(index1.symbol(), "ENVELOPV2");
+        assertEq(
+            index1.tokenURI(1),  
+            
+            string(
+                abi.encodePacked(
+                    index1.DEFAULT_BASE_URI(),
+                    block.chainid.toString(),
+                    "/",
+                    uint160(address(index1)).toHexString(),
+                    "/1"
+                )
+            )
+        );
     }
 }

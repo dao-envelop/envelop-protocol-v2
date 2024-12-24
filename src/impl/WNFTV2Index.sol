@@ -28,6 +28,7 @@ contract WNFTV2Index is WNFTV2Envelop721 {
         // To be sure about safe gas during proxy initializing. See Singleton721
         _init.nftName = "";
         _init.nftSymbol = "";
+        _init.tokenUri = "";
         return super.createWNFTonFactory(_init);
     }
 
@@ -40,6 +41,7 @@ contract WNFTV2Index is WNFTV2Envelop721 {
         // To be sure about safe gas during proxy initializing. See Singleton721
          _init.nftName = "";
          _init.nftSymbol = "";
+         _init.tokenUri = "";
          return super.createWNFTonFactory2(_init);
     }
 
