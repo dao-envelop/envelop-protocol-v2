@@ -66,7 +66,12 @@ abstract contract Singleton721 is ERC721Upgradeable, IERC4906 {
         string memory _tokenUrl
     ) internal onlyInitializing {
         
-        __ERC721_init_unchained(name_, symbol_);
+        // In case of miss name_  there is no reason to init `ERC721Upgradeable`
+        // because default values can be used
+        if (bytes(name_).length != 0){
+            __ERC721_init_unchained(name_, symbol_);    
+        } 
+        
         __Singleton721_init_unchained( _creator, _tokenUrl);
     }
 
