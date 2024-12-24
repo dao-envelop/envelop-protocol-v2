@@ -128,6 +128,7 @@ contract WNFTV2Envelop721 is
 
     function createWNFTonFactory(InitParams calldata _init) 
         external 
+        virtual
         notDelegated 
         returns(address wnft) 
     {
@@ -138,7 +139,8 @@ contract WNFTV2Envelop721 is
     }
 
     function createWNFTonFactory2(InitParams calldata _init) 
-        external 
+        external
+        virtual 
         notDelegated 
         returns(address wnft) 
     {
