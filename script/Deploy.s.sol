@@ -11,6 +11,7 @@ import {MockERC20} from "../src/mock/MockERC20.sol";
 import "../src/impl/WNFTLegacy721.sol";
 import "../src/impl/WNFTV2Envelop721.sol";
 import "../src/impl/WNFTMyshchWallet.sol";
+import "../src/impl/WNFTV2Index.sol";
 import {EnvelopLegacyWrapperBaseV2} from "../src/EnvelopLegacyWrapperBaseV2.sol";
 
 
@@ -36,10 +37,12 @@ contract DeployScript is Script {
         address impl_legacy;
         address impl_native;
         address impl_myshch;
+        address impl_index;
         bool need_test_tx;
     }
 
-    Params p; 
+    Params p;
+    address[] implementations;  
 
     function run() public {
         console2.log("Chain id: %s", vm.toString(block.chainid));
@@ -94,6 +97,14 @@ contract DeployScript is Script {
             p.impl_myshch = address(0);
         }
 
+        key = string.concat(".", vm.toString(block.chainid),".impl_index");
+        if (vm.keyExists(params_json_file, key)) 
+        {
+            p.impl_index = params_json_file.readAddress(key);
+        } else {
+            p.impl_index = address(0);
+        }
+
         key = string.concat(".", vm.toString(block.chainid),".need_test_tx");
         if (vm.keyExists(params_json_file, key)) 
         {
@@ -118,24 +129,26 @@ contract DeployScript is Script {
         //////////   Deploy   //////////////
         vm.startBroadcast();
         EnvelopWNFTFactory factory;
-        //EnvelopLegacyWrapperBaseV2 wrapper;
-        //WNFTLegacy721 impl_legacy;
-        //WNFTV2Envelop721 impl_native;
+        EnvelopLegacyWrapperBaseV2 wrapper;
+        WNFTLegacy721 impl_legacy;
+        WNFTV2Envelop721 impl_native;
         WNFTMyshchWallet impl_myshch;
+        WNFTV2Index impl_index;
 
-        factory = EnvelopWNFTFactory(0x431Db5c6ce5D85A0BAa2198Aa7Aa0E65d37a25c8);
-        /*if (p.factory == address(0)) {
+        //factory = EnvelopWNFTFactory(0x431Db5c6ce5D85A0BAa2198Aa7Aa0E65d37a25c8);
+        if (p.factory == address(0)) {
             factory = new EnvelopWNFTFactory();    
         } else {
             factory = EnvelopWNFTFactory(p.factory);
         }
 
         if (p.legacy_wrapper == address(0)){
-            wrapper = new EnvelopLegacyWrapperBaseV2(address(factory));    
+            wrapper = new EnvelopLegacyWrapperBaseV2(address(factory)); 
             factory.setWrapperStatus(address(wrapper), true); // set wrapper
         } else {
             wrapper = EnvelopLegacyWrapperBaseV2(p.legacy_wrapper);    
         }
+        implementations.push(address(wrapper));
         
         if (p.impl_legacy == address(0)) {
             impl_legacy = new WNFTLegacy721();
@@ -149,20 +162,31 @@ contract DeployScript is Script {
         }
         
         if (p.impl_native == address(0)) {
-            impl_native = new WNFTV2Envelop721(address(factory));    
-            factory.setWrapperStatus(address(impl_native), true); // set wrapper
+            impl_native = new WNFTV2Envelop721(address(factory)); 
+           // if (!factory.trustedWrappers(address(impl_native))) {
+                factory.setWrapperStatus(address(impl_native), true); // set wrapper    
+           // }   
+            
         } else {
             impl_native = WNFTV2Envelop721(payable(p.impl_native));
-        }*/
+        }
+        implementations.push(address(impl_native));
 
         if (p.impl_myshch == address(0)) {
             impl_myshch = new WNFTMyshchWallet(address(factory),0);    
-            factory.setWrapperStatus(address(impl_myshch), true); // set wrapper
+            //factory.setWrapperStatus(address(impl_myshch), true); // set wrapper
         } else {
             impl_myshch = WNFTMyshchWallet(payable(p.impl_myshch));
         }
+        implementations.push(address(impl_myshch));
 
-                
+        if (p.impl_index == address(0)) {
+            impl_index = new WNFTV2Index(address(factory));    
+            //factory.setWrapperStatus(address(impl_myshch), true); // set wrapper
+        } else {
+            impl_index = WNFTV2Index(payable(p.impl_index));
+        }
+        implementations.push(address(impl_index));
         vm.stopBroadcast();
         
         ///////// Pretty printing ////////////////
@@ -177,59 +201,68 @@ contract DeployScript is Script {
             string.concat(".", vm.toString(block.chainid))
         );
         
-        /*console2.log("\n**EnvelopWNFTFactory**  ");
+        console2.log("\n**EnvelopWNFTFactory**  ");
         console2.log("https://%s/address/%s#code\n", explorer_url, address(factory));
         console2.log("\n**EnvelopLegacyWrapperBaseV2** ");
         console2.log("https://%s/address/%s#code\n", explorer_url, address(wrapper));
         console2.log("\n**WNFTLegacy721** ");
         console2.log("https://%s/address/%s#code\n", explorer_url, address(impl_legacy));
         console2.log("\n**WNFTV2Envelop721** ");
-        console2.log("https://%s/address/%s#code\n", explorer_url, address(impl_native));*/
+        console2.log("https://%s/address/%s#code\n", explorer_url, address(impl_native));
         console2.log("\n**WNFTMyshchWallet** ");
         console2.log("https://%s/address/%s#code\n", explorer_url, address(impl_myshch));
+        console2.log("\n**WNFTV2Index** ");
+        console2.log("https://%s/address/%s#code\n", explorer_url, address(impl_index));
 
 
 
         console2.log("```python");
-        /*console2.log("factory = EnvelopWNFTFactory.at('%s')", address(factory));
+        console2.log("factory = EnvelopWNFTFactory.at('%s')", address(factory));
         console2.log("wrapper = EnvelopLegacyWrapperBaseV2.at('%s')", address(wrapper));
         console2.log("impl_legacy = WNFTLegacy721.at('%s')", address(impl_legacy));
-        console2.log("impl_native = WNFTV2Envelop721.at('%s')", address(impl_native));*/
+        console2.log("impl_native = WNFTV2Envelop721.at('%s')", address(impl_native));
         console2.log("impl_myshch = WNFTMyshchWallet.at('%s')", address(impl_myshch));
+        console2.log("impl_index = WNFTV2Index.at('%s')", address(impl_index));
         console2.log("```");
    
         // ///////// End of pretty printing ////////////////
         
         // ///  Init ///
-        /*console2.log("Init transactions....");
+        console2.log("Init transactions....");
         vm.startBroadcast();
+        for (uint256 i = 0; i < implementations.length; ++ i){
+            // Check and set trusted wrappers
+            if (!factory.trustedWrappers(implementations[i])) {
+                factory.setWrapperStatus(implementations[i], true); // set wrapper    
+            }   
+        }
 
         // test transactions
-        if (p.need_test_tx){
-            EnvelopLegacyWrapperBaseV2.INData memory ind = EnvelopLegacyWrapperBaseV2.INData(
-                ET.AssetItem(ET.Asset(ET.AssetType.EMPTY, address(0)),0,0), // inAsset
-                address(this), //unWrapDestination (unused)
-                new ET.Fee[](0), // fees
-                new ET.Lock[](0), // locks
-                new ET.Royalty[](0), // royalties
-                ET.AssetType.ERC721,
-                0, // outbalance
-                0x0105   //bytes2
-            ); 
-            ET.AssetItem[] memory _coll = new ET.AssetItem[](0); 
+        // if (p.need_test_tx){
+        //     EnvelopLegacyWrapperBaseV2.INData memory ind = EnvelopLegacyWrapperBaseV2.INData(
+        //         ET.AssetItem(ET.Asset(ET.AssetType.EMPTY, address(0)),0,0), // inAsset
+        //         address(this), //unWrapDestination (unused)
+        //         new ET.Fee[](0), // fees
+        //         new ET.Lock[](0), // locks
+        //         new ET.Royalty[](0), // royalties
+        //         ET.AssetType.ERC721,
+        //         0, // outbalance
+        //         0x0105   //bytes2
+        //     ); 
+        //     ET.AssetItem[] memory _coll = new ET.AssetItem[](0); 
         
-            //ET.NFTItem memory nonce2  = wrapper.saltBase(ET.AssetType.ERC721);
-            // address wnftPredictedAddress = factory.predictDeterministicAddress(
-            //     address(impl_legacy), // implementation address
-            //     keccak256(abi.encode(nonce2))
-            // );
-            ET.AssetItem  memory created = wrapper.wrap(ind, _coll, msg.sender);
-            console2.log("\n**Tets legacy wnft WNFTLegacy721** ");
-            console2.log("https://%s/address/%s#code\n", explorer_url, created.asset.contractAddress);
+        //     //ET.NFTItem memory nonce2  = wrapper.saltBase(ET.AssetType.ERC721);
+        //     // address wnftPredictedAddress = factory.predictDeterministicAddress(
+        //     //     address(impl_legacy), // implementation address
+        //     //     keccak256(abi.encode(nonce2))
+        //     // );
+        //     ET.AssetItem  memory created = wrapper.wrap(ind, _coll, msg.sender);
+        //     console2.log("\n**Tets legacy wnft WNFTLegacy721** ");
+        //     console2.log("https://%s/address/%s#code\n", explorer_url, created.asset.contractAddress);
 
-        }
+        // }
             
         vm.stopBroadcast();
-        console2.log("Initialisation finished");*/
+        console2.log("Initialisation finished");
     }
 }

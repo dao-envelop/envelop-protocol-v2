@@ -11,7 +11,8 @@ import {MockERC721} from "../src/mock/MockERC721.sol";
 import {MockERC20} from "../src/mock/MockERC20.sol";
 import {MockERC1155} from "../src/mock/MockERC1155.sol";
 import "../src/impl/WNFTV2Index.sol";
-import "../src/EnvelopLegacyWrapperBaseV2.sol";
+import "../src/impl/WNFTV2Envelop721.sol";
+//import "../src/EnvelopLegacyWrapperBaseV2.sol";
 //import "../src/impl/Singleton721.sol";
 //import {ET} from "../src/utils/LibET.sol";
 
@@ -31,6 +32,7 @@ contract WNFTV2Index_Test_m_01 is Test  {
     MockERC1155 public erc1155;
     EnvelopWNFTFactory public factory;
     WNFTV2Index public impl_index;
+    WNFTV2Envelop721 public impl_native;
 
 
     receive() external payable virtual {}
@@ -38,7 +40,9 @@ contract WNFTV2Index_Test_m_01 is Test  {
         erc721 = new MockERC721('Mock ERC721', 'ERC');
         factory = new EnvelopWNFTFactory();
         impl_index = new WNFTV2Index(address(factory));
+        impl_native = new WNFTV2Envelop721(address(factory));
         factory.setWrapperStatus(address(impl_index), true); // set wrapper
+        factory.setWrapperStatus(address(impl_native), true); // set wrapper
         erc20_1 = new MockERC20('Mock ERC20', 'ERC20');
         erc20_2 = new MockERC20('Mock ERC20', 'ERC20');
         erc1155 = new MockERC1155('https://bunny.com');
@@ -47,9 +51,9 @@ contract WNFTV2Index_Test_m_01 is Test  {
     function test_wNFTMaker() public {
         WNFTV2Envelop721.InitParams memory initData = WNFTV2Envelop721.InitParams(
             address(this),
-            'Envelop',
-            'ENV',
-            'https://api.envelop.is/',
+            'Envelop V2 Smart Wallet',
+            'ENVELOPV2',
+            'https://api.envelop.is/wallet',
             new address[](0),
             new bytes32[](0),
             new uint256[](0),
@@ -57,7 +61,7 @@ contract WNFTV2Index_Test_m_01 is Test  {
             );
 
         vm.prank(address(this));
-        address payable _wnftWallet = payable(impl_index.createWNFTonFactory(initData));
+        address payable _wnftWallet = payable(impl_native.createWNFTonFactory(initData));
 
         WNFTV2Index wnft = WNFTV2Index(_wnftWallet);
         erc20_1.transfer(_wnftWallet, sendEtherAmount);

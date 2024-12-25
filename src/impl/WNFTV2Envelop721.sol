@@ -31,7 +31,7 @@ contract WNFTV2Envelop721 is
     
     struct WNFTV2Envelop721Storage {
         ET.WNFT wnftData;
-        uint256 nonce; // counter for createWNFTonFactory2
+        
     }
 
     address private immutable __self = address(this);
@@ -62,7 +62,8 @@ contract WNFTV2Envelop721 is
     //  +----+----+----+----+----+---+ 
     //      for use in extendings
     
-    
+    // Out main storage because setter not supporrts delegate calls 
+    uint256 public nonce; // counter for createWNFTonFactory2
 
     //error InsufficientCollateral(ET.AssetItem declare, uint256 fact);
     error WnftRuleViolation(bytes2 rule);
@@ -144,8 +145,7 @@ contract WNFTV2Envelop721 is
         notDelegated 
         returns(address wnft) 
     {
-        WNFTV2Envelop721Storage storage $ = _getWNFTV2Envelop721Storage();
-        bytes32 salt = keccak256(abi.encode(address(this), ++ $.nonce));
+        bytes32 salt = keccak256(abi.encode(address(this), ++ nonce));
         wnft = IEnvelopWNFTFactory(FACTORY).createWNFT(
             address(this), 
             abi.encodeWithSignature(INITIAL_SIGN_STR, _init),
@@ -255,10 +255,6 @@ contract WNFTV2Envelop721 is
     /////                    GETTERS                                       /////
     ////////////////////////////////////////////////////////////////////////////
 
-    function nonce() public view returns(uint256) {
-         WNFTV2Envelop721Storage storage $ = _getWNFTV2Envelop721Storage();
-         return $.nonce;
-    }
     /**
      * @dev See {IERC165-supportsInterface}.
      */
