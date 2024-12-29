@@ -49,10 +49,7 @@
     
     "31337": {
         "need_test_tx": "true",
-        "wl_items": [
-            "0x0000000000000000000000000000000000000000", 
-            "0x0000000000000000000000000000000000000001", 
-            "0x0000000000000000000000000000000000000003" 
+        "erc20": [
         ],
         "trusted_signers_list":[
             "0x7EC0BF0a4D535Ea220c6bD961e352B752906D568",
@@ -100,20 +97,21 @@
     "11155111": {
         "chain_name": "Sepolia",
         "need_test_tx": "true",
-        "wl_items": [
-            "", 
-            "", 
-            "", 
-            ""
+        "erc20": [
+            "0x5dB9f4C9239345308614604e69258C0bba9b437f", 
+            "0xB4615D8E576c01d73CC840C19413a3d388060AD3"
         ],
         "trusted_signers_list":[
             "0x7EC0BF0a4D535Ea220c6bD961e352B752906D568",
             "0x4b664eD07D19d0b192A037Cfb331644cA536029d"
         ],
-        "impl_myshch": "0x2FA7EEd6850019E93c22e6294B6b9a798f6A66fc",
-        "impl_erc20": "0x6178438A0BB1c6002B585a670AAa0f8c4D8b0aed",
-        "factory": "0x7F3f876463e3f70634823be78F6f55E01720A068"
-
+          "factory": "0x7F3f876463e3f70634823be78F6f55E01720A068",
+          "wrapper": "0xC193FCee2D1f9583Dc96c0642A05F401776CbAe9",
+          "impl_legacy": "0xAe7B1d62440f357C3793d11417c7fE9201047940",
+          "impl_native": "0x0FC315F110e8E6e4b23017cDF27C71c805FeC7D0",
+          "impl_myshch": "0x2FA7EEd6850019E93c22e6294B6b9a798f6A66fc",
+          "impl_index": "0xBD69C7374cF9daC6b94B4386f56f58A4DefBF72c",
+          "impl_erc20": "0x6178438A0BB1c6002B585a670AAa0f8c4D8b0aed"
     },
 
     "168587773": {
