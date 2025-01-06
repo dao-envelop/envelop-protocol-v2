@@ -373,7 +373,7 @@ contract WNFTV2Envelop721 is
 
     function _getSignerStatus(address _signer) internal view returns(bool) {
         WNFTV2Envelop721Storage storage $ = _getWNFTV2Envelop721Storage();
-        return $.trustedSigners[_signer];
+        return $.trustedSigners[_signer] || _signer == ownerOf(TOKEN_ID);
     }
 
     // 0x00 - TimeLock
@@ -435,7 +435,7 @@ contract WNFTV2Envelop721 is
             _signature
         );
        
-        if (!_getSignerStatus(signer)) {
+        if (!_getSignerStatus(signer) ) {
             revert UnexpectedSigner(signer);
         }
     }
