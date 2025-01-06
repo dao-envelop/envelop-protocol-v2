@@ -3,6 +3,8 @@
 
 pragma solidity ^0.8.28;
 
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import "./Singleton721.sol";
 import "../utils/LibET.sol";
 import "../interfaces/IEnvelopV2wNFT.sol";
@@ -31,6 +33,8 @@ contract WNFTV2Envelop721 is
     
     struct WNFTV2Envelop721Storage {
         ET.WNFT wnftData;
+        mapping(address => uint256) nonceForAddress;
+        mapping(address => bool) trustedSigners;
         
     }
 
@@ -69,7 +73,9 @@ contract WNFTV2Envelop721 is
     error WnftRuleViolation(bytes2 rule);
     error RuleSetNotSupported(bytes2 unsupportedRules);
     error NoDelegateCall();
+    error UnexpectedSigner(address signer);
 
+    
    
   
     event EnvelopWrappedV2(
@@ -101,6 +107,17 @@ contract WNFTV2Envelop721 is
      */
     modifier notDelegated() {
         _checkNotDelegated();
+        _;
+    }
+
+    modifier onlyValidSigner(
+        address _target,
+        uint256 _value,
+        bytes memory _data,
+        bytes memory _signature
+    ) 
+    {
+        _isValidSigner(_target, _value, _data, _signature);
         _;
     }
 
@@ -251,6 +268,38 @@ contract WNFTV2Envelop721 is
     
         r = _executeEncodedTxBatch(_targetArray, _valueArray, _dataArray);
     }
+
+    /**
+     * @dev Use this method for interact any dApps onchain
+     * @param _target address of dApp smart contract
+     * @param _value amount of native token in tx(msg.value)
+     * @param _data ABI encoded transaction payload
+     * @param _signature only valid signers allowed to be executed
+     */
+    function executeEncodedTxBySignature(
+        address _target,
+        uint256 _value,
+        bytes memory _data,
+        bytes memory _signature
+    ) 
+        external 
+        ifUnlocked()
+        onlyValidSigner(_target, _value, _data, _signature)
+        returns (bytes memory r) 
+    {
+        r = _executeEncodedTx(_target, _value, _data);
+    }
+
+    
+
+    function setSignerStatus(address _address, bool _status) 
+        external 
+        onlyWnftOwner 
+    {
+         require(_address != address(0), "No Zero Addresses");
+         WNFTV2Envelop721Storage storage $ = _getWNFTV2Envelop721Storage();
+         $.trustedSigners[_address] = _status;
+    }
     ////////////////////////////////////////////////////////////////////////////
     /////                    GETTERS                                       /////
     ////////////////////////////////////////////////////////////////////////////
@@ -275,11 +324,57 @@ contract WNFTV2Envelop721 is
         WNFTV2Envelop721Storage storage $ = _getWNFTV2Envelop721Storage();
         return $.wnftData;
     }
-   
+
+    function getCurrentNonceForAddress(address _sender) external view returns(uint256) {
+         return _getCurrentNonce(_sender);
+    }
+
+    function getSignerStatus(address _signer) external view returns(bool) {
+        return _getSignerStatus(_signer);
+    }
+    
+    /**
+     * @dev Returns pure digest, without EIP-191 prefixing.
+     * @dev So not forget do prefix + hash befor sign offchain
+     * @param _target address which will be called
+     * @param _value ethere amount if need fo  tx
+     * @param _data encoded tx
+     * @param _sender address which would send tx
+     */ 
+    function getDigestForSign(
+        address _target,
+        uint256 _value,
+        bytes memory _data,
+        address _sender
+    ) 
+        external 
+        view 
+        returns(bytes32) 
+    {
+        return _pureDigest(_target, _value, _data, _sender); 
+    }
+
+
+     
     ////////////////////////////////////////////////////////////////
     //    ******************* internals ***********************   //
     //    ******************* internals ***********************   //
     ////////////////////////////////////////////////////////////////
+
+     function _increaseNonce(address _sender) internal returns(uint256) {
+        WNFTV2Envelop721Storage storage $ = _getWNFTV2Envelop721Storage();
+        return ++ $.nonceForAddress[_sender];
+    }
+
+    function _getCurrentNonce(address _sender) internal view returns(uint256) {
+        WNFTV2Envelop721Storage storage $ = _getWNFTV2Envelop721Storage();
+        return $.nonceForAddress[_sender];
+    }
+
+    function _getSignerStatus(address _signer) internal view returns(bool) {
+        WNFTV2Envelop721Storage storage $ = _getWNFTV2Envelop721Storage();
+        return $.trustedSigners[_signer];
+    }
 
     // 0x00 - TimeLock
     // 0x01 - TransferFeeLock   - UNSUPPORTED IN THIS IMPLEMENATION
@@ -324,7 +419,60 @@ contract WNFTV2Envelop721 is
         }
     }
 
-    
-    
+    function _isValidSigner(
+        address _target,
+        uint256 _value,
+        bytes memory _data,
+        bytes memory _signature
+    ) 
+        internal 
+        virtual
+        view 
+        // returns(Signer memory s) 
+    {
+        (address signer,,) = ECDSA.tryRecover(
+            _restoreDigestWasSigned(_target, _value, _data, msg.sender), 
+            _signature
+        );
+       
+        if (!_getSignerStatus(signer)) {
+            revert UnexpectedSigner(signer);
+        }
+    }
+
+    function _restoreDigestWasSigned( 
+        address _target,
+        uint256 _value,
+        bytes memory _data,
+        address _sender
+    ) 
+        internal 
+        virtual
+        view 
+        returns(bytes32 dgst) 
+    {
+        dgst = MessageHashUtils.toEthSignedMessageHash(
+            _pureDigest(_target, _value, _data, _sender)
+        );
+    }
+
+    function _pureDigest(
+        address _target,
+        uint256 _value,
+        bytes memory _data, 
+        address _sender
+    )
+        internal
+        virtual
+        view
+        returns(bytes32 dgst)
+    {
+        return keccak256(
+            abi.encode(
+                block.chainid, msg.sender, _getCurrentNonce(_sender) + 1,
+                _target, _value, _data
+            )
+        );
+    }
 }
 

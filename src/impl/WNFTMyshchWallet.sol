@@ -166,10 +166,11 @@ contract WNFTMyshchWallet is WNFTV2Envelop721
          return $.approvedRelayer[_relayer];
     }
 
+
     ////////////////////////////////////////////////////////////////
     //    ******************* internals ***********************   //
     ////////////////////////////////////////////////////////////////
-    
+
     function  _onlyApproved(address _sender) internal view virtual {
         address currOwner = ownerOf(TOKEN_ID);
         require(
