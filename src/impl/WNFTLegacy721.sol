@@ -3,10 +3,7 @@
 
 pragma solidity ^0.8.20;
 
-// import "@Uopenzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
-//import "@Uopenzeppelin/contracts/token/ERC1155/utils/ERC1155HolderUpgradeable.sol";
 import "./Singleton721.sol";
-import "../utils/LibET.sol";
 import "../utils/TokenService.sol";
 import "../interfaces/IEnvelopV2wNFT.sol";
 import "./SmartWallet.sol";
@@ -22,6 +19,7 @@ contract WNFTLegacy721 is
     // ERC721HolderUpgradeable, 
     // ERC1155HolderUpgradeable 
 {
+    address public constant FACTORY = address(0); // to be compatible with IEnvelopV2wNFT
     string public constant INITIAL_SIGN_STR = 
         "initialize(address,string,string,string,"
           "("

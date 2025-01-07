@@ -3,8 +3,9 @@
 
 pragma solidity ^0.8.28;
 
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import "./Singleton721.sol";
-import "../utils/LibET.sol";
 import "../interfaces/IEnvelopV2wNFT.sol";
 import "../interfaces/IEnvelopWNFTFactory.sol";
 import "./SmartWallet.sol";
@@ -31,13 +32,14 @@ contract WNFTV2Envelop721 is
     
     struct WNFTV2Envelop721Storage {
         ET.WNFT wnftData;
+        mapping(address => uint256) nonceForAddress;
+        mapping(address => bool) trustedSigners;
         
     }
 
     address private immutable __self = address(this);
     address public immutable FACTORY;
     uint256 public constant ORACLE_TYPE = 2002;
-    //string  public constant INITIAL_SIGN_STR = "initialize(InitParams)";
     string public constant INITIAL_SIGN_STR = 
         "initialize("
           "(address,string,string,string,address[],bytes32[],uint256[],bytes)"
@@ -65,12 +67,10 @@ contract WNFTV2Envelop721 is
     // Out main storage because setter not supporrts delegate calls 
     uint256 public nonce; // counter for createWNFTonFactory2
 
-    //error InsufficientCollateral(ET.AssetItem declare, uint256 fact);
     error WnftRuleViolation(bytes2 rule);
     error RuleSetNotSupported(bytes2 unsupportedRules);
     error NoDelegateCall();
-
-   
+    error UnexpectedSigner(address signer);
   
     event EnvelopWrappedV2(
         address indexed creator, 
@@ -78,16 +78,11 @@ contract WNFTV2Envelop721 is
         bytes32  indexed rules,
         bytes data
     );
-
-   
-
-     event EnvelopRulesChanged(
+    event EnvelopRulesChanged(
         address indexed wrappedAddress,
         uint256 indexed wrappedId,
         bytes2 newRules
     );
-
-     
 
     modifier ifUnlocked() {
         _checkLocks();
@@ -104,7 +99,6 @@ contract WNFTV2Envelop721 is
         _;
     }
 
-    
 
     ///////////////////////////////////////////////////////
     ///                 OZ  Storage pattern              //
@@ -127,6 +121,11 @@ contract WNFTV2Envelop721 is
         emit EnvelopV2OracleType(ORACLE_TYPE, type(WNFTV2Envelop721).name);
     }
 
+    /**  
+     * @dev This can be called from anybody  to create proxy for this implementation
+     * @param _init  see `struct InitParams` above. This is universal inititialization
+     * type for most of Envelop V2 implementations 
+     */
     function createWNFTonFactory(InitParams memory _init) 
         public 
         virtual
@@ -139,6 +138,13 @@ contract WNFTV2Envelop721 is
         );
     }
 
+    /**  
+     * @dev This can be called from anybody  to create proxy for this implementation
+     * in deterministic way. `predictDeterministicAddress` from `EnvelopWNFTFactory`
+     * can be used to predict proxy address. 
+     * @param _init  see `struct InitParams` above. This is universal inititialization
+     * type for most of Envelop V2 implementations 
+     */
     function createWNFTonFactory2(InitParams memory _init) 
         public
         virtual 
@@ -164,9 +170,7 @@ contract WNFTV2Envelop721 is
         InitParams calldata _init
     ) public payable virtual initializer 
     {
-        
         __WNFTV2Envelop721_init(_init);
-        
     }
         
     /**
@@ -196,11 +200,33 @@ contract WNFTV2Envelop721 is
     }
     ////////////////////////////////////////////////////////////////////////
     
-
+    /**
+     * @dev Variant of `approve` with an optional flag to enable or disable
+     *  the {Approval} event. The event is not emitted in the context of transfers.
+     */
     function approveHiden(address to, uint256 tokenId) public virtual {
         _approve(to, tokenId, _msgSender(), false);
     }
 
+    /**
+     * @dev Transfers `tokenId` token from `from` to `to`.
+     *
+     * WARNING: Note that the caller is responsible to confirm that the recipient is capable of receiving ERC721
+     * or else they may be permanently lost. Usage of {safeTransferFrom} prevents loss, though the caller must
+     * understand this adds an external call which potentially creates a reentrancy vulnerability.
+     *
+     * Requirements:
+     *
+     * - `from` cannot be the zero address.
+     * - `to` cannot be the zero address.
+     * - `tokenId` token must be owned by `from`.
+     * - If the caller is not `from`, it must be approved to move this token by either {approve} or {setApprovalForAll}.
+     *
+     * Emits a {Transfer} event.
+     * 
+     * 
+     * This method overrides standart OZ to implement wNFT rules check (NO TRNASFER)
+     */
     function transferFrom(address from, address to, uint256 tokenId) public override {
         WNFTV2Envelop721Storage storage $ = _getWNFTV2Envelop721Storage();
         // Check No Transfer rule
@@ -251,6 +277,44 @@ contract WNFTV2Envelop721 is
     
         r = _executeEncodedTxBatch(_targetArray, _valueArray, _dataArray);
     }
+
+    /**
+     * @dev Use this method for interact any dApps onchain
+     * @param _target address of dApp smart contract
+     * @param _value amount of native token in tx(msg.value)
+     * @param _data ABI encoded transaction payload
+     * @param _signature only valid signers allowed to be executed
+     */
+    function executeEncodedTxBySignature(
+        address _target,
+        uint256 _value,
+        bytes memory _data,
+        bytes memory _signature
+    ) 
+        external 
+        ifUnlocked()
+        returns (bytes memory r) 
+    {
+        _isValidSigner(_target, _value, _data, _signature);
+        _increaseNonce(msg.sender);
+        r  = _executeEncodedTx(_target, _value, _data);
+        
+    }
+
+    /**
+     * @dev Use this method for set signers status who can make 
+     * sinatures for `executeEncodedTxBySignature`
+     * @param _address signer address
+     * @param _status signet status to set
+     */
+    function setSignerStatus(address _address, bool _status) 
+        external 
+        onlyWnftOwner 
+    {
+         require(_address != address(0), "No Zero Addresses");
+         WNFTV2Envelop721Storage storage $ = _getWNFTV2Envelop721Storage();
+         $.trustedSigners[_address] = _status;
+    }
     ////////////////////////////////////////////////////////////////////////////
     /////                    GETTERS                                       /////
     ////////////////////////////////////////////////////////////////////////////
@@ -270,16 +334,64 @@ contract WNFTV2Envelop721 is
        return interfaceId == type(IEnvelopV2wNFT).interfaceId || super.supportsInterface(interfaceId);
     }
 
+    /**
+     * @dev Returns V1 style wNFT data structures, still used to store some data. 
+     * For backward compatibility with some dApps. 
+     * @param tokenId is optional because only one NFT exist in V2 contract
+     */
     function wnftInfo(uint256 tokenId) public view returns (ET.WNFT memory) {
         tokenId; // suppress solc warn
         WNFTV2Envelop721Storage storage $ = _getWNFTV2Envelop721Storage();
         return $.wnftData;
     }
-   
+    
+    /**
+     * @dev Returns current nonce for address
+     * @param _sender address of caller `executeEncodedTxBySignature`
+     */
+    function getCurrentNonceForAddress(address _sender) external view returns(uint256) {
+         return _getCurrentNonce(_sender);
+    }
+
+    /**
+     * @dev Returns signers status who can make 
+     * sinatures for `executeEncodedTxBySignature`
+     * @param _signer address of signer
+     */
+    function getSignerStatus(address _signer) external view returns(bool) {
+        return _getSignerStatus(_signer);
+    }
+    
+    /**
+     * @dev Returns pure digest, without EIP-191 prefixing.
+     * @dev So not forget do prefix + hash befor sign offchain
+     * @param _target address which will be called
+     * @param _value ethere amount if need fo  tx
+     * @param _data encoded tx
+     * @param _sender address which would send tx
+     */ 
+    function getDigestForSign(
+        address _target,
+        uint256 _value,
+        bytes memory _data,
+        address _sender
+    ) 
+        external 
+        view 
+        returns(bytes32) 
+    {
+        return _pureDigest(_target, _value, _data, _sender); 
+    }
+
     ////////////////////////////////////////////////////////////////
     //    ******************* internals ***********************   //
     //    ******************* internals ***********************   //
     ////////////////////////////////////////////////////////////////
+
+     function _increaseNonce(address _sender) internal returns(uint256) {
+        WNFTV2Envelop721Storage storage $ = _getWNFTV2Envelop721Storage();
+        return ++ $.nonceForAddress[_sender];
+    }
 
     // 0x00 - TimeLock
     // 0x01 - TransferFeeLock   - UNSUPPORTED IN THIS IMPLEMENATION
@@ -324,7 +436,72 @@ contract WNFTV2Envelop721 is
         }
     }
 
-    
-    
+    //////////////////////////////////////////
+    ///  Exucute with signature helpers    ///
+    //////////////////////////////////////////
+    function _getCurrentNonce(address _sender) internal view returns(uint256) {
+        WNFTV2Envelop721Storage storage $ = _getWNFTV2Envelop721Storage();
+        return $.nonceForAddress[_sender];
+    }
+
+    function _getSignerStatus(address _signer) internal view returns(bool) {
+        WNFTV2Envelop721Storage storage $ = _getWNFTV2Envelop721Storage();
+        return $.trustedSigners[_signer] || _signer == ownerOf(TOKEN_ID);
+    }
+
+    function _isValidSigner(
+        address _target,
+        uint256 _value,
+        bytes memory _data,
+        bytes memory _signature
+    ) 
+        internal 
+        virtual
+        view 
+    {
+        (address signer,,) = ECDSA.tryRecover(
+            _restoreDigestWasSigned(_target, _value, _data, msg.sender), 
+            _signature
+        );
+       
+        if (!_getSignerStatus(signer) ) {
+            revert UnexpectedSigner(signer);
+        }
+    }
+
+    function _restoreDigestWasSigned( 
+        address _target,
+        uint256 _value,
+        bytes memory _data,
+        address _sender
+    ) 
+        internal 
+        virtual
+        view 
+        returns(bytes32 dgst) 
+    {
+        dgst = MessageHashUtils.toEthSignedMessageHash(
+            _pureDigest(_target, _value, _data, _sender)
+        );
+    }
+
+    function _pureDigest(
+        address _target,
+        uint256 _value,
+        bytes memory _data, 
+        address _sender
+    )
+        internal
+        virtual
+        view
+        returns(bytes32 dgst)
+    {
+        return keccak256(
+            abi.encode(
+                block.chainid, _sender, _getCurrentNonce(_sender) + 1,
+                _target, _value, _data
+            )
+        );
+    }
 }
 
