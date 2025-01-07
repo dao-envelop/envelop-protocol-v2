@@ -143,5 +143,12 @@ contract WNFTV2Envelop721_Test_a_wNFTMaker is Test  {
         assertEq(erc20_1.balanceOf(w2), sendEtherAmount / 2);
         assertEq(erc20_2.balanceOf(w1), sendEtherAmount);
         assertEq(erc20_2.balanceOf(w2), sendEtherAmount);
+
+        bytes memory dd = abi.encodeWithSignature(
+            "transfer(address,uint256)",
+            0x5992Fe461F81C8E0aFFA95b831E50e9b3854BA0E,10000000000000000000);
+        console2.logBytes(dd);
     }
+
+    
 }

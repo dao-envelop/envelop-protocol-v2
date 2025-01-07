@@ -61,6 +61,11 @@ contract WNFTV2Envelop721_Test_a_11 is Test {
             abi.encodeWithSelector(WNFTV2Envelop721.WnftRuleViolation.selector, bytes2(0x0004))
         );
         wnft.transferFrom(address(this), address(1), tokenId);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(WNFTV2Envelop721.WnftRuleViolation.selector, bytes2(0x0004))
+        );
+        wnft.safeTransferFrom(address(this), address(1), tokenId, bytes(""));
     }
 
     function test_notDelegated() public {
