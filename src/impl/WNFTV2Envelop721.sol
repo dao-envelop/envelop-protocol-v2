@@ -381,8 +381,6 @@ contract WNFTV2Envelop721 is
         return _pureDigest(_target, _value, _data, _sender); 
     }
 
-
-     
     ////////////////////////////////////////////////////////////////
     //    ******************* internals ***********************   //
     //    ******************* internals ***********************   //
@@ -496,7 +494,7 @@ contract WNFTV2Envelop721 is
     {
         return keccak256(
             abi.encode(
-                block.chainid, msg.sender, _getCurrentNonce(_sender) + 1,
+                block.chainid, _sender, _getCurrentNonce(_sender) + 1,
                 _target, _value, _data
             )
         );
