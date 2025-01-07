@@ -62,7 +62,7 @@ contract WNFTV2Envelop721_Test_m_01 is Test {
     
     
 
-    function test_wnft_user_wallet() public {
+    function test_execWithSignature() public {
         WNFTV2Envelop721.InitParams memory initData = WNFTV2Envelop721.InitParams(
             address(this),
             'Envelop',
@@ -101,6 +101,7 @@ contract WNFTV2Envelop721_Test_m_01 is Test {
         botSignature = abi.encodePacked(r,s,v);
         
         assertEq(erc20.balanceOf(userEOA), 0);
+        assertEq(wnft.getCurrentNonceForAddress(userEOA), 0);
         
         vm.startPrank(userEOA);
         // Execute from other adress with signature
@@ -114,6 +115,7 @@ contract WNFTV2Envelop721_Test_m_01 is Test {
             botSignature
         );
         assertEq(erc20.balanceOf(userEOA), sendERC20Amount / 2);
+        assertEq(wnft.getCurrentNonceForAddress(userEOA), 1);
     }
 
     

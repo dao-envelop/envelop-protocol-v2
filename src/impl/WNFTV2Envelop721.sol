@@ -296,7 +296,9 @@ contract WNFTV2Envelop721 is
         returns (bytes memory r) 
     {
         _isValidSigner(_target, _value, _data, _signature);
+        _increaseNonce(msg.sender);
         r  = _executeEncodedTx(_target, _value, _data);
+        
     }
 
     /**
@@ -391,16 +393,6 @@ contract WNFTV2Envelop721 is
         return ++ $.nonceForAddress[_sender];
     }
 
-    function _getCurrentNonce(address _sender) internal view returns(uint256) {
-        WNFTV2Envelop721Storage storage $ = _getWNFTV2Envelop721Storage();
-        return $.nonceForAddress[_sender];
-    }
-
-    function _getSignerStatus(address _signer) internal view returns(bool) {
-        WNFTV2Envelop721Storage storage $ = _getWNFTV2Envelop721Storage();
-        return $.trustedSigners[_signer] || _signer == ownerOf(TOKEN_ID);
-    }
-
     // 0x00 - TimeLock
     // 0x01 - TransferFeeLock   - UNSUPPORTED IN THIS IMPLEMENATION
     // 0x02 - Personal Collateral count Lock check  - UNSUPPORTED IN THIS IMPLEMENATION
@@ -444,6 +436,19 @@ contract WNFTV2Envelop721 is
         }
     }
 
+    //////////////////////////////////////////
+    ///  Exucute with signature helpers    ///
+    //////////////////////////////////////////
+    function _getCurrentNonce(address _sender) internal view returns(uint256) {
+        WNFTV2Envelop721Storage storage $ = _getWNFTV2Envelop721Storage();
+        return $.nonceForAddress[_sender];
+    }
+
+    function _getSignerStatus(address _signer) internal view returns(bool) {
+        WNFTV2Envelop721Storage storage $ = _getWNFTV2Envelop721Storage();
+        return $.trustedSigners[_signer] || _signer == ownerOf(TOKEN_ID);
+    }
+
     function _isValidSigner(
         address _target,
         uint256 _value,
@@ -453,7 +458,6 @@ contract WNFTV2Envelop721 is
         internal 
         virtual
         view 
-        // returns(Signer memory s) 
     {
         (address signer,,) = ECDSA.tryRecover(
             _restoreDigestWasSigned(_target, _value, _data, msg.sender), 
