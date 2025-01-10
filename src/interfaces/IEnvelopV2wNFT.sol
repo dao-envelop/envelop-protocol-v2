@@ -49,4 +49,13 @@ interface IEnvelopV2wNFT is  IERC165{
      * @param tokenId is optional because only one NFT exist in V2 contract
      */
     function wnftInfo(uint256 tokenId) external view returns (ET.WNFT memory);
+
+    /*function executeEncodedTxBySignature(
+        address _target,
+        uint256 _value,
+        bytes memory _data,
+        bytes memory _signature
+    ) 
+        external 
+        returns (bytes memory r); */
 }
