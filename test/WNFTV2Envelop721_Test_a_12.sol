@@ -364,9 +364,9 @@ contract WNFTV2Envelop721_Test_a_12 is Test {
         bytes32 pureDigest = keccak256(
             abi.encode(
                 block.chainid, 
-                _wnftWalletAddress, 
+                userEOA, //_wnftWalletAddress, 
                 2, // nonce
-                _wnftWalletAddress, //target
+                address(erc20), //target
                 0, // ether value
                 abi.encodeWithSignature(
                     "transfer(address,uint256)",
