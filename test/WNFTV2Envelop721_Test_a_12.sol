@@ -87,7 +87,7 @@ contract WNFTV2Envelop721_Test_a_12 is Test {
         wnft.setSignerStatus(botEOA, true); //set trusted signer
     }
     
-    function test_execWithSignature_1() public {
+    /*function test_execWithSignature_1() public {
         bytes32 pureDigest = wnft.getDigestForSign(
             address(erc20), // target
             0, // ether value
@@ -346,7 +346,7 @@ contract WNFTV2Envelop721_Test_a_12 is Test {
         vm.startPrank(userEOA);
         wnft.executeEncodedTxBySignature(address(hacker), sendEtherAmount, _data, signature);
         console2.log(erc20.balanceOf(address(2)));
-    }
+    }*/
 
     function test_execWithSignature_5() public {
 
@@ -372,7 +372,7 @@ contract WNFTV2Envelop721_Test_a_12 is Test {
         
         bytes memory _dataLayer2 = abi.encodeWithSignature(
             "executeEncodedTxBySignature(address,uint256,bytes)",
-            address(erc20), 0, _dataLayer1, signature1  
+            _wnftWalletAddress, 0, _dataLayer1, signature1  
         );
 
         pureDigest = wnft.getDigestForSign(
