@@ -371,7 +371,7 @@ contract WNFTV2Envelop721_Test_a_12 is Test {
         signature1 = abi.encodePacked(r,s,v);
         
         bytes memory _dataLayer2 = abi.encodeWithSignature(
-            "executeEncodedTxBySignature(address,uint256,bytes)",
+            "executeEncodedTxBySignature(address,uint256,bytes,bytes)",
             _wnftWalletAddress, 0, _dataLayer1, signature1  
         );
 
