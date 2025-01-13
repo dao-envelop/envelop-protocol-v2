@@ -355,12 +355,26 @@ contract WNFTV2Envelop721_Test_a_12 is Test {
             address(11), sendERC20Amount / 2
         );
 
-        bytes32 pureDigest = wnft.getDigestForSign(
+        /*bytes32 pureDigest = wnft.getDigestForSign(
             address(erc20), // target
             0, // ether value
             _dataLayer1, //data
             _wnftWalletAddress
+        );*/
+        bytes32 pureDigest = keccak256(
+            abi.encode(
+                block.chainid, 
+                _wnftWalletAddress, 
+                2, // nonce
+                _wnftWalletAddress, //target
+                0, // ether value
+                abi.encodeWithSignature(
+                    "transfer(address,uint256)",
+                    address(11), sendERC20Amount / 2
+                ) // data
+            )
         );
+
         // conevert pure digest to RETH style
         bytes32 digest = MessageHashUtils.toEthSignedMessageHash(pureDigest);
 
