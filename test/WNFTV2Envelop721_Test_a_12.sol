@@ -315,7 +315,7 @@ contract WNFTV2Envelop721_Test_a_12 is Test {
 
         assertEq(erc20.balanceOf(address(11)), sendERC20Amount / 2);
         assertEq(erc20.balanceOf(_wnftWalletAddress), sendERC20Amount / 2);
-    }
+    }*/
 
     function test_execWithSignature_4() public {
         (bool sent, bytes memory data) = _wnftWalletAddress.call{value: sendEtherAmount}("");
@@ -346,7 +346,7 @@ contract WNFTV2Envelop721_Test_a_12 is Test {
         vm.startPrank(userEOA);
         wnft.executeEncodedTxBySignature(address(hacker), sendEtherAmount, _data, signature);
         console2.log(erc20.balanceOf(address(2)));
-    }*/
+    }
 
     function test_execWithSignature_5() public {
 

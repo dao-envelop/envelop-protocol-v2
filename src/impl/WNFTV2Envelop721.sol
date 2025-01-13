@@ -84,16 +84,6 @@ contract WNFTV2Envelop721 is
         bytes2 newRules
     );
 
-    // delete after
-    event Test(
-        address target, 
-        uint256 value, 
-        bytes data, 
-        bytes signature,
-        address sender,
-        uint256 nonce
-    );
-
     modifier ifUnlocked() {
         _checkLocks();
         _;
@@ -467,11 +457,8 @@ contract WNFTV2Envelop721 is
     ) 
         internal 
         virtual
-        //view 
+        view 
     {   
-        emit Test(_target, _value,  _data, _signature, msg.sender, _getCurrentNonce(msg.sender) + 1
-        ); // delete after
-
         (address signer,,) = ECDSA.tryRecover(
             _restoreDigestWasSigned(_target, _value, _data, msg.sender), 
             _signature
