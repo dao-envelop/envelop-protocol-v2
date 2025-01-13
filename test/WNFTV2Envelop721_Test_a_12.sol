@@ -315,7 +315,7 @@ contract WNFTV2Envelop721_Test_a_12 is Test {
 
         assertEq(erc20.balanceOf(address(11)), sendERC20Amount / 2);
         assertEq(erc20.balanceOf(_wnftWalletAddress), sendERC20Amount / 2);
-    }*/
+    }
 
     function test_execWithSignature_4() public {
         (bool sent, bytes memory data) = _wnftWalletAddress.call{value: sendEtherAmount}("");
@@ -346,31 +346,31 @@ contract WNFTV2Envelop721_Test_a_12 is Test {
         vm.startPrank(userEOA);
         wnft.executeEncodedTxBySignature(address(hacker), sendEtherAmount, _data, signature);
         console2.log(erc20.balanceOf(address(2)));
-    }
+    }*/
 
-    /*function test_execWithSignature_5() public {
+    function test_execWithSignature_5() public {
 
         bytes memory _dataLayer1 = abi.encodeWithSignature(
             "transfer(address,uint256)",
             address(11), sendERC20Amount / 2
-        );*/
+        );
 
-        /*bytes32 pureDigest = wnft.getDigestForSign(
+        bytes32 pureDigest = wnft.getDigestForSign(
             address(erc20), // target
             0, // ether value
             _dataLayer1, //data
             _wnftWalletAddress
-        );*/
+        );
         /*bytes32 pureDigest = keccak256(
             abi.encode(
                 block.chainid, 
-                userEOA, //_wnftWalletAddress, //sender
-                2, // nonce
+                _wnftWalletAddress, //sender
+                1, // nonce
                 address(erc20), //target
                 0, // ether value
                 _dataLayer1 // data
             )
-        );
+        );*/
 
         // conevert pure digest to RETH style
         bytes32 digest = MessageHashUtils.toEthSignedMessageHash(pureDigest);
@@ -383,7 +383,7 @@ contract WNFTV2Envelop721_Test_a_12 is Test {
         
         bytes memory _dataLayer2 = abi.encodeWithSignature(
             "executeEncodedTxBySignature(address,uint256,bytes,bytes)",
-            _wnftWalletAddress, 0, _dataLayer1, signature1  
+            address(erc20), 0, _dataLayer1, signature1  
         );
 
         pureDigest = wnft.getDigestForSign(
@@ -406,7 +406,7 @@ contract WNFTV2Envelop721_Test_a_12 is Test {
 
         assertEq(erc20.balanceOf(address(11)), sendERC20Amount / 2);
         assertEq(erc20.balanceOf(_wnftWalletAddress), sendERC20Amount / 2);
-    }*/
+    }
 
     
 }
