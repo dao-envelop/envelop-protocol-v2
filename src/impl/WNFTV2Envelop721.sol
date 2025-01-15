@@ -468,7 +468,7 @@ contract WNFTV2Envelop721 is
         internal 
         virtual
         view 
-    {
+    {   
         (address signer,,) = ECDSA.tryRecover(
             _restoreDigestWasSigned(_target, _value, _data, msg.sender), 
             _signature
