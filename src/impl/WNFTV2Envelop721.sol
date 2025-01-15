@@ -74,7 +74,7 @@ contract WNFTV2Envelop721 is
   
     event EnvelopWrappedV2(
         address indexed creator, 
-        uint256 indexed wnftTkenId, 
+        uint256 indexed wnftTokenId, 
         bytes32  indexed rules,
         bytes data
     );
