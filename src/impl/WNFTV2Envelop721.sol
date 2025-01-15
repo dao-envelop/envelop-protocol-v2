@@ -192,12 +192,22 @@ contract WNFTV2Envelop721 is
             $.wnftData.rules = bytes2(uint16(uint256(_init.hashedParams[0])));
         }
         
+        // Time lock set up
+        //_init.numberParams[0] - timestamp for timelock 
         if (_init.numberParams.length  >  0) {
            $.wnftData.locks.push(ET.Lock(0x00, _init.numberParams[0]));
         }
-        emit EnvelopWrappedV2(_init.creator, TOKEN_ID,  $.wnftData.rules, "");
+        __WNFTV2Envelop721_init_unchained_posthook(_init, $);
         
     }
+
+    function __WNFTV2Envelop721_init_unchained_posthook(
+        InitParams calldata _init,
+        WNFTV2Envelop721Storage storage _st
+    ) internal virtual {
+        emit EnvelopWrappedV2(_init.creator, TOKEN_ID,  _st.wnftData.rules, "");
+    } 
+
     ////////////////////////////////////////////////////////////////////////
     
     /**

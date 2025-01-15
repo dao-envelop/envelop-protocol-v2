@@ -36,7 +36,7 @@ contract WNFTV2Index_Test_a_01 is Test {
     
     function test_create_legacy() public {
         //add timelock
-        uint256[] memory numberParams = new uint256[](1);
+        uint256[] memory numberParams = new uint256[](2);
         numberParams[0] = block.timestamp + 10000;
 
         WNFTV2Envelop721.InitParams memory initData = WNFTV2Envelop721.InitParams(

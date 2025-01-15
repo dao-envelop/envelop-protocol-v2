@@ -10,6 +10,7 @@ import  "../src/EnvelopWNFTFactory.sol";
 import {MockERC721} from "../src/mock/MockERC721.sol";
 import {MockERC20} from "../src/mock/MockERC20.sol";
 import "../src/impl/WNFTV2Envelop721.sol";
+import {ReentrancyAttacker3} from "../src/mock/ReentrancyAttacker3.sol";
 
 // Address:     0x7EC0BF0a4D535Ea220c6bD961e352B752906D568
 // Private key: 0x1bbde125e133d7b485f332b8125b891ea2fbb6a957e758db72e6539d46e2cd71
@@ -33,8 +34,6 @@ contract WNFTV2Envelop721_Test_m_01 is Test {
     uint256 public constant botEOA_PRIVKEY = 0x1bbde125e133d7b485f332b8125b891ea2fbb6a957e758db72e6539d46e2cd71;
     address public constant adminEOA = 0x4b664eD07D19d0b192A037Cfb331644cA536029d;
     address public constant userEOA  = 0xd7DE4B1214bFfd5C3E9Fb8A501D1a7bF18569882;
-    uint64  public constant BOT_TG_ID = 111111111;
-    uint64  public constant USER_TG_ID = 222222222;
     
 
     event Log(string message);
@@ -116,6 +115,56 @@ contract WNFTV2Envelop721_Test_m_01 is Test {
         );
         assertEq(erc20.balanceOf(userEOA), sendERC20Amount / 2);
         assertEq(wnft.getCurrentNonceForAddress(userEOA), 1);
+    }
+
+
+    function test_execWithSignature_Reentrancy() public {
+        WNFTV2Envelop721.InitParams memory initData = WNFTV2Envelop721.InitParams(
+            address(this),
+            'Envelop',
+            'ENV',
+            'https://api.envelop.is/',
+            new address[](0),
+            new bytes32[](0),
+            new uint256[](0),
+            ""
+        );
+
+        //vm.prank(address(this));
+        address payable _wnftWalletAddress = payable(impl_native.createWNFTonFactory(initData));
+        WNFTV2Envelop721 wnft = WNFTV2Envelop721(_wnftWalletAddress);
+        wnft.setSignerStatus(botEOA, true); //set trusted signer
+
+        (bool sent, bytes memory data) = _wnftWalletAddress.call{value: sendEtherAmount * 10}("");
+
+        bytes memory _data = "";
+        ReentrancyAttacker3 hacker = new ReentrancyAttacker3(_wnftWalletAddress);
+
+        // prepare signature
+        bytes32 pureDigest = wnft.getDigestForSign(
+            address(hacker), // target
+            sendEtherAmount, // ether value
+            "", //data
+            address(hacker)
+        );
+        // convert pure digest to RETH style
+        bytes32 digest = MessageHashUtils.toEthSignedMessageHash(pureDigest);
+
+        bytes memory signature;
+        
+        // sign
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(botEOA_PRIVKEY, digest);
+        signature = abi.encodePacked(r,s,v);
+
+        hacker.setSignature(signature);
+
+        vm.startPrank(userEOA);
+        hacker.claimEther(sendEtherAmount);
+        
+        //console2.log(erc20.balanceOf(address(2)));
+        //vm.startPrank(userEOA);
+        //wnft.executeEncodedTxBySignature(address(hacker), sendEtherAmount, _data, signature);
+        console2.log(address(hacker).balance);
     }
 
     

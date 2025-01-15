@@ -91,9 +91,10 @@ contract WNFTV2Index_Test_m_01 is Test  {
             'https://api.envelop.is/',
             new address[](0),
             new bytes32[](0),
-            new uint256[](0),
+            new uint256[](2),
             ""
-            );
+        );
+        initData.numberParams[1] = 255;
 
         // using method with salt
         bytes memory _data = abi.encodeWithSignature(
