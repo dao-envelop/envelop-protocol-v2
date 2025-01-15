@@ -47,7 +47,6 @@ contract WNFTV2Index is WNFTV2Envelop721 {
         } else {
             emit EnvelopWrappedV2(_init.creator, TOKEN_ID,  _st.wnftData.rules, "");    
         }
-        
     } 
 
     function createWNFTonFactory(InitParams memory _init) 

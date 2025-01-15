@@ -85,7 +85,9 @@ contract WNFTV2Envelop721 is
     );
 
     modifier ifUnlocked() {
-        _checkLocks();
+        WNFTV2Envelop721Storage storage $ = _getWNFTV2Envelop721Storage();
+        ET.Lock[] memory lck = $.wnftData.locks;
+        _checkLocks(lck);
         _;
     }
 
@@ -406,13 +408,11 @@ contract WNFTV2Envelop721 is
     // 0x00 - TimeLock
     // 0x01 - TransferFeeLock   - UNSUPPORTED IN THIS IMPLEMENATION
     // 0x02 - Personal Collateral count Lock check  - UNSUPPORTED IN THIS IMPLEMENATION
-    function _checkLocks() internal virtual {
-        WNFTV2Envelop721Storage storage $ = _getWNFTV2Envelop721Storage();
-        ET.Lock[] memory lck = $.wnftData.locks;
-        for (uint256 i = 0; i < lck.length; ++ i) {
-            if (lck[i].lockType == 0x00) {
+    function _checkLocks(ET.Lock[] memory _locksArray) internal virtual {
+        for (uint256 i = 0; i < _locksArray.length; ++ i) {
+            if (_locksArray[i].lockType == 0x00) {
                 require(
-                    lck[i].param <= block.timestamp,
+                    _locksArray[i].param <= block.timestamp,
                     "TimeLock error"
                 );
             }
