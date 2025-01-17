@@ -84,6 +84,8 @@ contract WNFTV2Envelop721 is
         bytes2 newRules
     );
 
+    event EnvelopChangeSignerStatus(address indexed signer, bool status);
+
     modifier ifUnlocked() {
         WNFTV2Envelop721Storage storage $ = _getWNFTV2Envelop721Storage();
         ET.Lock[] memory lck = $.wnftData.locks;
@@ -326,6 +328,7 @@ contract WNFTV2Envelop721 is
          require(_address != address(0), "No Zero Addresses");
          WNFTV2Envelop721Storage storage $ = _getWNFTV2Envelop721Storage();
          $.trustedSigners[_address] = _status;
+         emit EnvelopChangeSignerStatus(_address, _status);
     }
     ////////////////////////////////////////////////////////////////////////////
     /////                    GETTERS                                       /////
