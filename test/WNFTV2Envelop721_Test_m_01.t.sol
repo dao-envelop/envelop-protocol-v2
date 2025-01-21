@@ -159,12 +159,17 @@ contract WNFTV2Envelop721_Test_m_01 is Test {
         hacker.setSignature(signature);
 
         vm.startPrank(userEOA);
+
+        assertEq(0, address(hacker).balance);
+
+        vm.expectRevert(Address.FailedInnerCall.selector);
         hacker.claimEther(sendEtherAmount);
         
+        assertEq(0, address(hacker).balance);
         //console2.log(erc20.balanceOf(address(2)));
         //vm.startPrank(userEOA);
         //wnft.executeEncodedTxBySignature(address(hacker), sendEtherAmount, _data, signature);
-        console2.log(address(hacker).balance);
+        //console2.log(address(hacker).balance);
     }
 
     

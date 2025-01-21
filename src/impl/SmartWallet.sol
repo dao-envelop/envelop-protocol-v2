@@ -11,6 +11,7 @@ abstract contract SmartWallet is
     ERC1155HolderUpgradeable 
 {
 
+    error DifferentArraysLength(uint256 arr1, uint256 arr2);
     event EtherBalanceChanged(
         uint256 indexed balanceBefore, 
         uint256 indexed balanceAfter, 
@@ -78,7 +79,14 @@ abstract contract SmartWallet is
         fixEtherBalance
         returns (bytes[] memory r) 
     {
-    
+        if (_targetArray.length != _valueArray.length) {
+            revert DifferentArraysLength(_targetArray.length, _valueArray.length);
+        }
+
+        if (_targetArray.length != _dataArray.length) {
+            revert DifferentArraysLength(_targetArray.length, _dataArray.length);
+        }
+        
         r = new bytes[](_dataArray.length);
         for (uint256 i = 0; i < _dataArray.length; ++ i){
             if (keccak256( _dataArray[i]) == keccak256(bytes(""))) {

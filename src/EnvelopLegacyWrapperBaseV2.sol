@@ -185,39 +185,6 @@ contract EnvelopLegacyWrapperBaseV2 is Ownable, TokenService {
     }
 
     
-    //  LOW LEVEL passthrough to factory methods  - NOT SUPPORTED in THIS IMPLEMENTATION
-    // function creatWNFT(address _implementation, bytes memory _initCallData) 
-    //     external 
-    //     payable 
-    //     returns(address wnft)
-    // {
-    //     // create wnft
-    //      wnft = payable(
-    //         factory.creatWNFT(
-    //             _implementation,
-    //             _initCallData
-    //         )
-    //     );
-
-    // }
-
-
-    // function creatWNFT(address _implementation, bytes memory _initCallData, bytes32 _salt) 
-    //     external 
-    //     payable 
-    //     returns(address wnft)
-    // {
-    //     // create wnft
-    //     wnft = payable(
-    //         factory.creatWNFT(
-    //             _implementation,
-    //             _initCallData,
-    //             _salt
-    //         )
-    //     );
-        
-    // }
-
     /////////////////////////////////////////////////////////////////////
     //                    Admin functions                              //
     /////////////////////////////////////////////////////////////////////
@@ -255,6 +222,8 @@ contract EnvelopLegacyWrapperBaseV2 is Ownable, TokenService {
         returns (ET.AssetItem memory wnft)
     {
         ET.NFTItem memory implementation = lastWNFTId[_inData.outType];
+        // icrement nonce
+        lastWNFTId[_inData.outType].tokenId ++;
 
         // Calculate new wnftAddress
         address wnftAddress = factory.predictDeterministicAddress(
@@ -310,8 +279,6 @@ contract EnvelopLegacyWrapperBaseV2 is Ownable, TokenService {
 
         assert(proxy == wnftAddress);
 
-        // icrement nonce
-        lastWNFTId[_inData.outType].tokenId ++;
         
         // construct answer
         bytes memory _answerFromProxy = Address.functionStaticCall(

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 // NIFTSY protocol for NFT
 pragma solidity ^0.8.20;
-
+import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 contract ReentrancyAttacker3 {
-
+    using Address for address;
     address public immutable wnfAddress;
     bytes public signature;
     
@@ -13,9 +13,10 @@ contract ReentrancyAttacker3 {
     }
 
     receive() external payable virtual {
-        (bool success, bytes memory data) = wnfAddress.delegatecall(
+        wnfAddress.functionCallWithValue(
             abi.encodeWithSignature("executeEncodedTxBySignature(address,uint256,bytes,bytes)",
-                address(this), 2e18,"", signature)
+                address(this), 2e18,"", signature),
+            0 //value
         );
     }
 
@@ -25,9 +26,10 @@ contract ReentrancyAttacker3 {
     }
 
     function claimEther(uint256 _eth) external {
-        (bool success, bytes memory data) = wnfAddress.delegatecall(
+       wnfAddress.functionCallWithValue(
             abi.encodeWithSignature("executeEncodedTxBySignature(address,uint256,bytes,bytes)",
-                address(this), _eth,"", signature)
+                address(this), _eth,"", signature), 
+            0
         );
 
     }
