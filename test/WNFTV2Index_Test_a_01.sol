@@ -34,7 +34,7 @@ contract WNFTV2Index_Test_a_01 is Test {
         factory.setWrapperStatus(address(impl_index), true); // set wrapper
     }
     
-    function test_create_legacy() public {
+    function test_create_index_1() public {
         //add timelock
         uint256[] memory numberParams = new uint256[](2);
         numberParams[0] = block.timestamp + 10000;
@@ -88,5 +88,38 @@ contract WNFTV2Index_Test_a_01 is Test {
         wnft.executeEncodedTxBatch(targets, values, datas);
         assertEq(erc20.balanceOf(address(11)), sendERC20Amount);
         assertEq(erc20.balanceOf(address(_wnftIndex)), 0);
+    }
+
+    function test_create_index_2() public {
+        //add timelock
+        uint256 price = 1e18;
+        uint256 timeLock = block.timestamp + 10000;
+        uint256[] memory numberParams = new uint256[](2);
+        numberParams[0] = timeLock;
+        numberParams[1] = price;
+
+        WNFTV2Envelop721.InitParams memory initData = WNFTV2Envelop721.InitParams(
+            address(this),
+            '',
+            '',
+            '',
+            new address[](0),
+            new bytes32[](0),
+            numberParams,
+            ""
+            ); 
+        WNFTV2Index.IndexData memory indexData = WNFTV2Index.IndexData(
+            impl_index.indexVersion(),
+            numberParams[1]);  
+
+        vm.prank(address(this));
+        vm.expectEmit();
+        emit WNFTV2Envelop721.EnvelopWrappedV2(
+            address(this), 
+            impl_index.TOKEN_ID(),  
+            '', 
+            abi.encode(indexData)
+        );
+        impl_index.createWNFTonFactory(initData);  
     }
 }
