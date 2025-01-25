@@ -64,7 +64,7 @@ contract TestTxScript is Script, Objects {
         console2.log("Chain id: %s", vm.toString(block.chainid));
         console2.log(
             "Deployer address: %s, "
-            "\n native balnce %s",
+            "\n native balance %s",
             msg.sender, msg.sender.balance
         );
 
