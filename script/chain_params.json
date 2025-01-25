@@ -9,24 +9,24 @@
         ]
     }, 
 
-    "5":{
-        "wl_items": [
-            "0x376e8EA664c2E770E1C45ED423F62495cB63392D",
-            "0x11fE4B6AE13d2a6055C8D9cF65c55bac32B5d844",
-            "0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6"
-        ]
-    },
-
     "56":{
         "chain_name": "BSC Mainnet",
         "need_test_tx": "true",
-        "wl_items": [
-            "0x7728cd70b3dD86210e2bd321437F448231B81733", 
-            "0x1af3f329e8be154074d8769d1ffa4ee058b1dbc3", 
-            "0x55d398326f99059fF775485246999027B3197955", 
-            "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d", 
-            "0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56"
-        ]
+        "erc20":[
+            "0x7728cd70b3dD86210e2bd321437F448231B81733"
+        ],
+        "trusted_signers_list":[
+            "0x7EC0BF0a4D535Ea220c6bD961e352B752906D568",
+            "0x4b664eD07D19d0b192A037Cfb331644cA536029d"
+        ],
+          "factory": "0xBDb5201565925AE934A5622F0E7091aFFceed5EB",
+          "myshch_factory": "0xf58208676a7b5a604df41ca25b5310f3cc997bF3",
+          "wrapper": "0x21c23bA0ec49c9440CD259cCB48ff9D06CD16522",
+          "impl_legacy": "0x653bce4d7A6CF5C4FdbBD5fc6B2bB41c8eAFC56A",
+          "impl_native": "0x22bBBE241464AB67c9B4F0881fA45F7f2d26870F",
+          "impl_myshch": "0x9C10eD902Ae7fD997D92eeD7535849f204b727b7",
+          "impl_index": "0x28466e3e92CB6FB292618D0faEbB49624f4d6f0C",
+          "impl_erc20": "0x7A3c8F45b809078da58d17fb6Cd059334622838F"
     },
 
     "97":{
@@ -54,7 +54,8 @@
         "trusted_signers_list":[
             "0x7EC0BF0a4D535Ea220c6bD961e352B752906D568",
             "0x4b664eD07D19d0b192A037Cfb331644cA536029d"
-        ]
+        ],                 
+        "myshch_factory": "0x0000000000000000000000000000000000000000"
     },
 
     "42161":{
@@ -105,13 +106,15 @@
             "0x7EC0BF0a4D535Ea220c6bD961e352B752906D568",
             "0x4b664eD07D19d0b192A037Cfb331644cA536029d"
         ],
-          "factory": "0x7F3f876463e3f70634823be78F6f55E01720A068",
-          "wrapper": "0xC193FCee2D1f9583Dc96c0642A05F401776CbAe9",
-          "impl_legacy": "0xAe7B1d62440f357C3793d11417c7fE9201047940",
-          "impl_native": "0x0FC315F110e8E6e4b23017cDF27C71c805FeC7D0",
-          "impl_myshch": "0x2FA7EEd6850019E93c22e6294B6b9a798f6A66fc",
-          "impl_index": "0xBD69C7374cF9daC6b94B4386f56f58A4DefBF72c",
-          "impl_erc20": "0x6178438A0BB1c6002B585a670AAa0f8c4D8b0aed"
+            "factory": "0xa9A9B9d76c5449dCB4fF1B74E023bF3f6F8a30cf",
+            "myshch_factory": "0x7ECc5c8B285555db8Fa37E3eD86D05E1bE01Fe73",
+            "wrapper": "0x0d8D18aB6ac0de433209DC9C23b3C5031e381480",
+            "impl_legacy": "0xAe7B1d62440f357C3793d11417c7fE9201047940",
+            "impl_native": "0xAcF48aa264fc4b2B890F0b132049E09620eBb826",
+            "impl_myshch": "0xE4D5b0232293E7663FFb63b34234C11AAd88a201",
+            "impl_index": "0x36013ECf61dBA5EAB01E4551360600440107b70D",
+            "impl_erc20": "0x6178438A0BB1c6002B585a670AAa0f8c4D8b0aed"
+
     },
 
     "168587773": {
