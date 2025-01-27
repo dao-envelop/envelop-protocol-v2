@@ -1,0 +1,55 @@
+{
+  "transactions": [
+    {
+      "hash": null,
+      "transactionType": "CALL",
+      "contractName": "MyShchFactory",
+      "contractAddress": "0xf58208676a7b5a604df41ca25b5310f3cc997bf3",
+      "function": "setSignerStatus(address,bool)",
+      "arguments": [
+        "0x7EC0BF0a4D535Ea220c6bD961e352B752906D568",
+        "true"
+      ],
+      "transaction": {
+        "from": "0x13b9cbcb46ad79878af8c9faa835bee19b977d3d",
+        "to": "0xf58208676a7b5a604df41ca25b5310f3cc997bf3",
+        "gas": "0xfabb",
+        "value": "0x0",
+        "input": "0x8d0abcda0000000000000000000000007ec0bf0a4d535ea220c6bd961e352b752906d5680000000000000000000000000000000000000000000000000000000000000001",
+        "nonce": "0x14",
+        "chainId": "0x38"
+      },
+      "additionalContracts": [],
+      "isFixedGasLimit": false
+    },
+    {
+      "hash": null,
+      "transactionType": "CALL",
+      "contractName": "MyShchFactory",
+      "contractAddress": "0xf58208676a7b5a604df41ca25b5310f3cc997bf3",
+      "function": "setSignerStatus(address,bool)",
+      "arguments": [
+        "0x4b664eD07D19d0b192A037Cfb331644cA536029d",
+        "true"
+      ],
+      "transaction": {
+        "from": "0x13b9cbcb46ad79878af8c9faa835bee19b977d3d",
+        "to": "0xf58208676a7b5a604df41ca25b5310f3cc997bf3",
+        "gas": "0xfabb",
+        "value": "0x0",
+        "input": "0x8d0abcda0000000000000000000000004b664ed07d19d0b192a037cfb331644ca536029d0000000000000000000000000000000000000000000000000000000000000001",
+        "nonce": "0x15",
+        "chainId": "0x38"
+      },
+      "additionalContracts": [],
+      "isFixedGasLimit": false
+    }
+  ],
+  "receipts": [],
+  "libraries": [],
+  "pending": [],
+  "returns": {},
+  "timestamp": 1737989623,
+  "chain": 56,
+  "commit": "3fc134a"
+}

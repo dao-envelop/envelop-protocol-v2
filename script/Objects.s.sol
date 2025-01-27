@@ -229,7 +229,7 @@ abstract contract Objects is Script{
         }
         implementations.push(address(impl_index));
 
-        // ERC20 moock
+        // ERC20 moock and template
         if (p.impl_erc20 == address(0)) {
             if (!onlyInstance) {
                 impl_erc20 = new CustomERC20();    
@@ -250,6 +250,7 @@ abstract contract Objects is Script{
             myshch_factory = MyShchFactory(p.myshch_factory);
         }
         //vm.stopBroadcast();
+        console2.log("Instances ready....");
 
     }
 
@@ -296,10 +297,11 @@ abstract contract Objects is Script{
         console2.log("impl_erc20 = CustomERC20.at('%s')", address(impl_erc20));
         console2.log("```");
 
+        console2.log("********* Use strings below for update chain_params.json\n");
         console2.log("```json");
         console2.log("\"factory\": \"%s\",", address(factory));
         console2.log("\"myshch_factory\": \"%s\",", address(myshch_factory));
-        console2.log("\"wrapper\": \"%s\",", address(wrapper));
+        console2.log("\"legacy_wrapper\": \"%s\",", address(wrapper));
         console2.log("\"impl_legacy\": \"%s\",", address(impl_legacy));
         console2.log("\"impl_native\": \"%s\",", address(impl_native));
         console2.log("\"impl_myshch\": \"%s\",", address(impl_myshch));
