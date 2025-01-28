@@ -29,7 +29,7 @@ contract WNFTV2Envelop721_Test_a_wNFTMaker is Test  {
     MockERC20 public erc20_2;
     MockERC1155 public erc1155;
     EnvelopWNFTFactory public factory;
-    WNFTV2Envelop721 public impl_legacy;
+    WNFTV2Envelop721 public impl_native;
     EnvelopLegacyWrapperBaseV2 public wrapper;
 
 
@@ -37,8 +37,8 @@ contract WNFTV2Envelop721_Test_a_wNFTMaker is Test  {
     function setUp() public {
         erc721 = new MockERC721('Mock ERC721', 'ERC');
         factory = new EnvelopWNFTFactory();
-        impl_legacy = new WNFTV2Envelop721(address(factory));
-        factory.setWrapperStatus(address(impl_legacy), true); // set wrapper
+        impl_native = new WNFTV2Envelop721(address(factory));
+        factory.setWrapperStatus(address(impl_native), true); // set wrapper
         erc20_1 = new MockERC20('Mock ERC20', 'ERC20');
         erc20_2 = new MockERC20('Mock ERC20', 'ERC20');
         erc1155 = new MockERC1155('https://bunny.com');
@@ -57,7 +57,9 @@ contract WNFTV2Envelop721_Test_a_wNFTMaker is Test  {
             );
 
         vm.prank(address(this));
-        address payable _wnftWallet = payable(impl_legacy.createWNFTonFactory(initData));
+        // create master wallet
+        // from 599 address
+        address payable _wnftWallet = payable(impl_native.createWNFTonFactory(initData));
 
         WNFTV2Envelop721 wnft = WNFTV2Envelop721(_wnftWallet);
         erc20_1.transfer(_wnftWallet, sendEtherAmount);
@@ -72,8 +74,8 @@ contract WNFTV2Envelop721_Test_a_wNFTMaker is Test  {
         bytes[] memory dataArray = new bytes[](6);
         uint256[] memory values = new uint256[](6);
 
-        targets[0] = address(impl_legacy);
-        targets[1] = address(impl_legacy);
+        targets[0] = address(impl_native);
+        targets[1] = address(impl_native);
         targets[2] = address(erc20_1);
         targets[3] = address(erc20_1);
         targets[4] = address(erc20_2);
@@ -103,30 +105,31 @@ contract WNFTV2Envelop721_Test_a_wNFTMaker is Test  {
         }
         
         // calc child wallet addresses
-        bytes32 salt = keccak256(abi.encode(address(impl_legacy), impl_legacy.nonce() + 1));
-        address calcW1 = factory.predictDeterministicAddress(address(impl_legacy), salt);
-        salt = keccak256(abi.encode(address(impl_legacy), impl_legacy.nonce() + 2));
-        address calcW2 = factory.predictDeterministicAddress(address(impl_legacy), salt);
+        bytes32 salt = keccak256(abi.encode(address(impl_native), impl_native.nonce() + 1));
+        address calcW1 = factory.predictDeterministicAddress(address(impl_native), salt);
+        salt = keccak256(abi.encode(address(impl_native), impl_native.nonce() + 2));
+        address calcW2 = factory.predictDeterministicAddress(address(impl_native), salt);
 
         dataArray[0] = _data;
         dataArray[1] = _data;
         dataArray[2] = abi.encodeWithSignature(
             "transfer(address,uint256)",
-            calcW1,sendEtherAmount / 2
+            calcW1,sendERC20Amount / 2
         );
         dataArray[3] = abi.encodeWithSignature(
             "transfer(address,uint256)",
-            calcW2,sendEtherAmount / 2
+            calcW2,sendERC20Amount / 2
         );
         dataArray[4] = abi.encodeWithSignature(
             "transfer(address,uint256)",
-            calcW1,sendEtherAmount
+            calcW1,sendERC20Amount
         );
         dataArray[5] = abi.encodeWithSignature(
             "transfer(address,uint256)",
-            calcW2,sendEtherAmount
+            calcW2,sendERC20Amount
         );
 
+        // from 599 address
         bytes[] memory result = wnft.executeEncodedTxBatch(targets, values, dataArray);
 
         // get child wallet adresses from output
@@ -143,11 +146,6 @@ contract WNFTV2Envelop721_Test_a_wNFTMaker is Test  {
         assertEq(erc20_1.balanceOf(w2), sendEtherAmount / 2);
         assertEq(erc20_2.balanceOf(w1), sendEtherAmount);
         assertEq(erc20_2.balanceOf(w2), sendEtherAmount);
-
-        bytes memory dd = abi.encodeWithSignature(
-            "transfer(address,uint256)",
-            0x5992Fe461F81C8E0aFFA95b831E50e9b3854BA0E,10000000000000000000);
-        console2.logBytes(dd);
     }
 
     

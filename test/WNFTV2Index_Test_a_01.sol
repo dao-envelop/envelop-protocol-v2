@@ -91,7 +91,7 @@ contract WNFTV2Index_Test_a_01 is Test {
     }
 
     function test_create_index_2() public {
-        //add timelock
+        //add timelock + price
         uint256 price = 1e18;
         uint256 timeLock = block.timestamp + 10000;
         uint256[] memory numberParams = new uint256[](2);
