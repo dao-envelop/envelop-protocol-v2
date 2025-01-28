@@ -9,9 +9,11 @@ $ forge script script/Deploy.s.sol:DeployScript --rpc-url sepolia  --account thr
 $ # Test Tx Script
 $ forge script script/Deploy.s.sol:TestTxScript --rpc-url sepolia  --account three --sender 0x97ba7778dD9CE27bD4953c136F3B3b7b087E14c1 --broadcast --verify  --etherscan-api-key $ETHERSCAN_TOKEN 
 
-$ forge script script/DeployMyshchSet.s.sol:DeployMyshchSetScript --rpc-url sepolia  --account three --sender 0x97ba7778dD9CE27bD4953c136F3B3b7b087E14c1 --broadcast --verify  --etherscan-api-key $ETHERSCAN_TOKEN --priority-gas-price 30000
+$ # MyShch Check & Init Signers Script
+$ forge script script/MyShchInit.s.sol:MyShchInit --rpc-url sepolia  --account three --sender 0x97ba7778dD9CE27bD4953c136F3B3b7b087E14c1 --broadcast 
 
-$ forge script script/DeployMyshchSet.s.sol:TestTxScript --rpc-url sepolia  --account three --sender 0x97ba7778dD9CE27bD4953c136F3B3b7b087E14c1 --broadcast --verify  --etherscan-api-key $ETHERSCAN_TOKEN --priority-gas-price 30000
+$ # MyShch create wallet with signature
+$ forge script script/MyShchInit.s.sol:TestTxScript --rpc-url sepolia  --account three --sender 0x97ba7778dD9CE27bD4953c136F3B3b7b087E14c1 --broadcast 
 
 $ forge verify-contract 0xa9A9B9d76c5449dCB4fF1B74E023bF3f6F8a30cf  ./src/EnvelopWNFTFactory.sol:EnvelopWNFTFactory  --verifier-api-key $ETHERSCAN_TOKEN --num-of-optimizations 200 --compiler-version 0.8.28
 
@@ -31,6 +33,11 @@ $ #Deploy
 $ forge script script/Deploy.s.sol:DeployScript --rpc-url bnb_smart_chain  --account env_deploy_2025 --sender 0x13B9cBcB46aD79878af8c9faa835Bee19B977D3D --broadcast --verify  --etherscan-api-key $BSCSCAN_TOKEN 
 
 $ # Test Tx Script
-$ forge script script/Deploy.s.sol:TestTxScript --rpc-url bnb_smart_chain  --account env_deploy_2025 --broadcast --verify  --etherscan-api-key $BSCSCAN_TOKEN 
+$ forge script script/Deploy.s.sol:TestTxScript --rpc-url bnb_smart_chain  --account env_deploy_2025 --sender 0x13B9cBcB46aD79878af8c9faa835Bee19B977D3D --broadcast --verify  --etherscan-api-key $BSCSCAN_TOKEN 
 
+$ # MyShch Check & Init Signers Script
+$ forge script script/MyShchInit.s.sol:MyShchInit --rpc-url bnb_smart_chain  --account env_deploy_2025 --sender 0x13B9cBcB46aD79878af8c9faa835Bee19B977D3D --broadcast 
+
+$ # MyShch create wallet with signature
+$ forge script script/MyShchInit.s.sol:TestTxScript --rpc-url bnb_smart_chain  --account env_deploy_2025 --sender 0x13B9cBcB46aD79878af8c9faa835Bee19B977D3D --broadcast --verify  --etherscan-api-key $BSCSCAN_TOKEN 
 ```

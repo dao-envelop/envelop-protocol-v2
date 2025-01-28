@@ -26,7 +26,7 @@ import "../src/impl/CustomERC20.sol";
 // Address:     0x6F9aaAaD96180b3D6c71Fbbae2C1c5d5193A64EC
 // Private key: 0xae8fe3985898986377b19cc6bdbb76723470552e95e4d028d2dae2691ab9c65d
 
-
+/// DERRICATED ///
 contract DeployMyshchSetScript is Script {
     using stdJson for string;
 
