@@ -113,14 +113,14 @@ contract WNFTMakerScript is Script, Objects {
         salt = keccak256(abi.encode(address(impl_index), impl_index.nonce() + 2));
         address calcW2 = factory.predictDeterministicAddress(address(impl_index), salt);
 
-        /*vm.startBroadcast();
+        vm.startBroadcast();
         // 0. make approve 
         //bytes memory result = master.executeEncodedTx(target, value, _data);
 
         // 1. call transaction batch - with swap
         // from 599 address
         bytes[] memory result = master.executeEncodedTxBatch(targets, values, dataArray);
-        vm.stopBroadcast();*/
+        vm.stopBroadcast();
 
         // get child wallet adresses from output
         address payable w1 =  payable(abi.decode(result[0],
