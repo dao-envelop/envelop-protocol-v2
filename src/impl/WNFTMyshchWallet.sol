@@ -18,8 +18,8 @@ import "./WNFTV2Envelop721.sol";
 contract WNFTMyshchWallet is WNFTV2Envelop721 
 {
 
-    uint256 public constant PERMANENT_TX_COST = 50000; // 0
-    uint256 public immutable PERCENT_DENOMINATOR = 10000;
+    uint256 public constant PERMANENT_TX_COST = 50_000; // 0
+    uint256 public immutable PERCENT_DENOMINATOR = 10_000;
     uint256 public immutable FEE_PERCENT;
 
 
