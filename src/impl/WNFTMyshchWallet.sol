@@ -26,8 +26,9 @@ contract WNFTMyshchWallet is WNFTV2Envelop721
     struct WNFTMyshchWalletStorage {
         mapping(address => bool) approvedRelayer;
     }
-
-    uint256 public gasLeftOnStart; // Move to private struct
+    
+    /// https://docs.soliditylang.org/en/latest/contracts.html#transient-storage
+    uint256 transient public gasLeftOnStart; // Move to private struct
     
     modifier onlyApproved() {
         _onlyApproved(msg.sender);
@@ -118,11 +119,12 @@ contract WNFTMyshchWallet is WNFTV2Envelop721
         super._executeEncodedTx(_target, 0, _data);
         refundAmount = IMyshchWalletwNFT(_receiver).getRefund();
         Address.sendValue(payable(msg.sender), refundAmount);
-        // we cant use  fixEtherBalance because this address balance
+       
+       // we cant use  fixEtherBalance because this address balance
         // has equal balance before and after this transaction       
         _emitWrapper(
-           ethBalanceOnStart + refundAmount, 
-           ethBalanceOnStart
+           ethBalanceOnStart, 
+           ethBalanceOnStart + refundAmount
         ); 
     }
 
@@ -142,7 +144,7 @@ contract WNFTMyshchWallet is WNFTV2Envelop721
         fixEtherBalance
     returns (uint256 send) 
     {
-        send = (PERMANENT_TX_COST + gasLeftOnStart - gasleft()) * tx.gasprice;
+        send = (PERMANENT_TX_COST + gasLeftOnStart - gasleft()) * 1;
         if (FEE_PERCENT > 0 ){
             send += send * FEE_PERCENT / (100 * PERCENT_DENOMINATOR); 
         }
