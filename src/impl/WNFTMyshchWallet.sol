@@ -28,7 +28,7 @@ contract WNFTMyshchWallet is WNFTV2Envelop721
     }
     
     /// https://docs.soliditylang.org/en/latest/contracts.html#transient-storage
-    uint256 transient public gasLeftOnStart; // Move to private struct
+    uint256 transient public gasLeftOnStart; 
     
     modifier onlyApproved() {
         _onlyApproved(msg.sender);
