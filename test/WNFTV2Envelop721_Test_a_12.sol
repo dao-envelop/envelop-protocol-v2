@@ -87,7 +87,8 @@ contract WNFTV2Envelop721_Test_a_12 is Test {
         wnft.setSignerStatus(botEOA, true); //set trusted signer
     }
     
-    /*function test_execWithSignature_1() public {
+    // different cases of signature using 
+    function test_execWithSignature_1() public {
         bytes32 pureDigest = wnft.getDigestForSign(
             address(erc20), // target
             0, // ether value
@@ -97,7 +98,7 @@ contract WNFTV2Envelop721_Test_a_12 is Test {
             ), //data
             userEOA
         );
-        // conevert pure digest to RETH style
+        // convert pure digest to RETH style
         bytes32 digest = MessageHashUtils.toEthSignedMessageHash(pureDigest);
 
         vm.deal(userEOA, sendEtherAmount);
@@ -110,7 +111,7 @@ contract WNFTV2Envelop721_Test_a_12 is Test {
         assertEq(erc20.balanceOf(userEOA), 0);
         assertEq(wnft.getCurrentNonceForAddress(userEOA), 0);
         
-        // use non owned signature - expect revert
+        // use non owned signature - expect revert!
         vm.startPrank(address(1));
         vm.expectRevert();
         wnft.executeEncodedTxBySignature(
@@ -124,7 +125,7 @@ contract WNFTV2Envelop721_Test_a_12 is Test {
         );
 
         vm.startPrank(userEOA);
-        // Execute from other adress with signature
+        // Execute from other address with signature -success!
         wnft.executeEncodedTxBySignature(
             address(erc20), // target
             0, // ether value
@@ -139,7 +140,7 @@ contract WNFTV2Envelop721_Test_a_12 is Test {
 
         // try to use signature second time - expect revert
         vm.startPrank(userEOA);
-        // Execute from other adress with signature 
+        // Execute with used signature - expect revert!  
         vm.expectRevert();
         wnft.executeEncodedTxBySignature(
             address(erc20), // target
@@ -151,9 +152,10 @@ contract WNFTV2Envelop721_Test_a_12 is Test {
             botSignature
         );
 
-        // prepare data mismatching with signature - expect revert
+        // prepare data mismatching with signature - expect revert!
         // use old pureDigest
-        // conevert pure digest to RETH style
+        // convert pure digest to RETH style
+        // data of digest and executeEncodedTx are mismatched
         digest = MessageHashUtils.toEthSignedMessageHash(pureDigest);
     
         // sign
@@ -174,6 +176,7 @@ contract WNFTV2Envelop721_Test_a_12 is Test {
         );
     }
 
+    // check updating of nonce - after two calls
     function test_execWithSignature_2() public {
         bytes32 pureDigest = wnft.getDigestForSign(
             address(erc20), // target
@@ -195,7 +198,7 @@ contract WNFTV2Envelop721_Test_a_12 is Test {
         botSignature = abi.encodePacked(r,s,v);
     
         vm.startPrank(userEOA);
-        // Execute from other adress with signature
+        // Execute from other address with signature
         wnft.executeEncodedTxBySignature(
             address(erc20), // target
             0, // ether value
@@ -226,7 +229,7 @@ contract WNFTV2Envelop721_Test_a_12 is Test {
         botSignature = abi.encodePacked(r,s,v);
         
         vm.startPrank(userEOA);
-        // Execute from other adress with signature
+        // Execute from other address with signature
         wnft.executeEncodedTxBySignature(
             address(erc20), // target
             0, // ether value
@@ -240,6 +243,8 @@ contract WNFTV2Envelop721_Test_a_12 is Test {
         assertEq(wnft.getCurrentNonceForAddress(userEOA), 2);
     }
 
+    // two digest (unused) with different nonces
+    // try to use second signature before the first - expect revert
     function test_execWithSignature_3() public {
         // prepare first signature
         bytes32 pureDigest = keccak256(
@@ -285,7 +290,7 @@ contract WNFTV2Envelop721_Test_a_12 is Test {
 
         vm.startPrank(userEOA);
         vm.expectRevert();
-        // Execute from other adress with signature2
+        // Execute from other adress with signature2 - expect revert!
         wnft.executeEncodedTxBySignature(
             address(erc20), // target
             0, // ether value
@@ -297,6 +302,7 @@ contract WNFTV2Envelop721_Test_a_12 is Test {
         );
     }
 
+    // call executeEncodedTx with call executeEncodedTx inside data 
     function test_execTX_1() public {
         
         bytes memory _dataLayer1 = abi.encodeWithSignature(
@@ -315,8 +321,9 @@ contract WNFTV2Envelop721_Test_a_12 is Test {
 
         assertEq(erc20.balanceOf(address(11)), sendERC20Amount / 2);
         assertEq(erc20.balanceOf(_wnftWalletAddress), sendERC20Amount / 2);
-    }*/
+    }
 
+    // reentrancy attack - attacker gets eth and try to take from wallet erc20 tokens using of current signature
     function test_execWithSignature_4() public {
         (bool sent, bytes memory data) = _wnftWalletAddress.call{value: sendEtherAmount}("");
         bytes memory _data = "";
@@ -327,7 +334,7 @@ contract WNFTV2Envelop721_Test_a_12 is Test {
         bytes32 pureDigest = wnft.getDigestForSign(
             address(hacker), // target
             sendEtherAmount, // ether value
-            "", //data
+            _data, //data
             userEOA
         );
         // convert pure digest to RETH style
@@ -341,13 +348,17 @@ contract WNFTV2Envelop721_Test_a_12 is Test {
         signature = abi.encodePacked(r,s,v);
 
         hacker.setSignature(signature);
+
+        assertEq(erc20.balanceOf(_wnftWalletAddress), sendERC20Amount);
         
-        console2.log(erc20.balanceOf(address(2)));
+        assertEq(erc20.balanceOf(address(2)), 0); // check receiver erc20 balance before attack
         vm.startPrank(userEOA);
         wnft.executeEncodedTxBySignature(address(hacker), sendEtherAmount, _data, signature);
-        console2.log(erc20.balanceOf(address(2)));
+        assertEq(erc20.balanceOf(address(2)), 0); // check receiver erc20 balance after attack
+        assertEq(erc20.balanceOf(_wnftWalletAddress), sendERC20Amount);
     }
 
+    // call executeEncodedTxBySignature with call executeEncodedTxBySignature inside data 
     function test_execWithSignature_5() public {
 
         bytes memory _dataLayer1 = abi.encodeWithSignature(
@@ -361,16 +372,6 @@ contract WNFTV2Envelop721_Test_a_12 is Test {
             _dataLayer1, //data
             _wnftWalletAddress
         );
-        /*bytes32 pureDigest = keccak256(
-            abi.encode(
-                block.chainid, 
-                _wnftWalletAddress, //sender
-                1, // nonce
-                address(erc20), //target
-                0, // ether value
-                _dataLayer1 // data
-            )
-        );*/
 
         // conevert pure digest to RETH style
         bytes32 digest = MessageHashUtils.toEthSignedMessageHash(pureDigest);

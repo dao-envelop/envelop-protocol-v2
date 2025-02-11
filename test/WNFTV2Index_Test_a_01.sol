@@ -90,6 +90,7 @@ contract WNFTV2Index_Test_a_01 is Test {
         assertEq(erc20.balanceOf(address(_wnftIndex)), 0);
     }
 
+    // check price and timelock in emit
     function test_create_index_2() public {
         //add timelock + price
         uint256 price = 1e18;
