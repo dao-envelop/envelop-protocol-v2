@@ -18,7 +18,7 @@ import "../src/impl/WNFTV2Envelop721.sol";
 // owner of admin wnft wallet call function
 // user wnft wallet gets erc20 tokens and send eth for tx
 
-contract WNFTMyshchWallet_Test_a_01 is Test {
+contract WNFTMyshchWallet_Test_m_01 is Test {
     
     event Log(string message);
 
