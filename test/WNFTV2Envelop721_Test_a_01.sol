@@ -12,10 +12,7 @@ import "../src/impl/SmartWallet.sol";
 //import "../src/impl/Singleton721.sol";
 //import {ET} from "../src/utils/LibET.sol";
 
-// spender of wnft withdraw eth from collateral
-// check eth events
-// try to unWrap - user is not owner and does not have allowance - revert
-// try to unWrap - user has allowance
+
 contract WNFTV2Envelop721_Test_a_01 is Test {
     
     event Log(string message);
@@ -34,6 +31,7 @@ contract WNFTV2Envelop721_Test_a_01 is Test {
         
     }
     
+    // spender of wnft wallet withdraws eth from wallet
     function test_create_wNFT() public {
         bytes2 rule = 0x0000;
         WNFTV2Envelop721.InitParams memory initData = WNFTV2Envelop721.InitParams(
@@ -80,14 +78,14 @@ contract WNFTV2Envelop721_Test_a_01 is Test {
     }
 
     // unsupported rules
-    /*function test_checkRules() public {
+    function test_checkRules() public {
         bytes32 rule = bytes32(abi.encode(7));
         bytes32 calcRule = bytes32(abi.encode(3));
         console2.logBytes(bytes.concat(rule));
         console2.logBytes2(bytes2(calcRule));
         console2.logBytes32(bytes32(abi.encode(7)));
         console2.logBytes32(bytes32(abi.encode(3)));
-        /*console2.logBytes2(impl_legacy.SUPPORTED_RULES());
+        console2.logBytes2(impl_legacy.SUPPORTED_RULES());
         bytes32[] memory hashedParams = new bytes32[](1);
         hashedParams[0] = rule;
         WNFTV2Envelop721.InitParams memory initData = WNFTV2Envelop721.InitParams(
@@ -104,8 +102,5 @@ contract WNFTV2Envelop721_Test_a_01 is Test {
             abi.encodeWithSelector(WNFTV2Envelop721.RuleSetNotSupported.selector, calcRule)
         );
         address payable _wnftWallet = payable(impl_legacy.createWNFTonFactory(initData));
-        console2.logBool(impl_legacy.isValidRules(bytes2(rule)));
-        console2.logBool(impl_legacy.checkRule(bytes2(rule), impl_legacy.SUPPORTED_RULES()));
-        console2.logBytes2(impl_legacy.check(bytes2(rule)));
-    }*/
+    }
 }

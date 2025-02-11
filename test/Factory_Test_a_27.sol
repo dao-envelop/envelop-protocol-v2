@@ -50,10 +50,8 @@ contract Factory_Test_a_27 is Test  {
         );
     }
     
-    // call transferFrom wnft via executeEncodedTx
-    // call removeCollateral via executeEncodedTx
-    // call unWrap wnft via executeEncodedTx
-    function test_executeEncodedTx() public {
+    // reentrancy attack 
+    function test_reentrancy() public {
         uint256 tokenId = 0;
         ET.AssetItem memory original_nft = ET.AssetItem(ET.Asset(ET.AssetType.ERC721, address(erc721)),tokenId,0);
         EnvelopLegacyWrapperBaseV2.INData memory inData = EnvelopLegacyWrapperBaseV2.INData(
@@ -80,6 +78,7 @@ contract Factory_Test_a_27 is Test  {
 
         bytes memory _data = "";
 
+        // make attack - send eth to address and address will take wnft from owner
         vm.startPrank(address(1));
         wnft.setApprovalForAll(_wnftWallet, true);
         wnft.setApprovalForAll(address(hacker), true);
@@ -87,7 +86,7 @@ contract Factory_Test_a_27 is Test  {
         vm.stopPrank();
         
 
-        console2.log(address(100).balance);
+        console2.log(address(hacker).balance);
         console2.log(wnft.ownerOf(1));
     }
 }
