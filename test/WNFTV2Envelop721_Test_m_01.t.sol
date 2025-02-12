@@ -172,6 +172,4 @@ contract WNFTV2Envelop721_Test_m_01 is Test {
         //wnft.executeEncodedTxBySignature(address(hacker), sendEtherAmount, _data, signature);
         //console2.log(address(hacker).balance);
     }
-
-    
 }
