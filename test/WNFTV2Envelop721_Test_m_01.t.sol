@@ -162,7 +162,8 @@ contract WNFTV2Envelop721_Test_m_01 is Test {
 
         assertEq(0, address(hacker).balance);
 
-        vm.expectRevert(Address.FailedInnerCall.selector);
+        vm.expectPartialRevert(WNFTV2Envelop721.UnexpectedSigner.selector);
+        //vm.expectRevert();
         hacker.claimEther(sendEtherAmount);
         
         assertEq(0, address(hacker).balance);

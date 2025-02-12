@@ -37,3 +37,8 @@ $ forge script script/GetStorageSlot.s.sol:GetStorageSlot
 git clone  git@github.com:dao-envelop/envelop-protocol-v2.git 
 git submodule update --init --recursive
 ```
+
+### Update dependencies
+```shell
+forge update
+```
