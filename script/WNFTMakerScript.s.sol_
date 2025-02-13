@@ -13,7 +13,7 @@ contract WNFTMakerScript is Script, Objects {
     using stdJson for string;
     function run() public {
 
-        address owner = 0x5992Fe461F81C8E0aFFA95b831E50e9b3854BA0E;
+        //address owner = 0x5992Fe461F81C8E0aFFA95b831E50e9b3854BA0E;
         address router = 0x89b8AA89FDd0507a99d334CBe3C808fAFC7d850E;
         address payable zero = payable(0x0000000000000000000000000000000000000000);
         address usdt_address = 0x55d398326f99059fF775485246999027B3197955;
