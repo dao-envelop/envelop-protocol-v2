@@ -11,15 +11,29 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 // Deploy and init acions
 contract WNFTMakerScript is Script, Objects {
     using stdJson for string;
+
+    struct ParamsForMaker {
+            address owner;  
+            address router; 
+            address payable zero;
+            address usdt_address;
+            address usdc_address;
+            uint256 amount_to_swap;
+            address factory_address;
+            address payable impl_index_address;
+            address payable master_address;
+    }
+
     function run() public {
+        
+        ParamsForMaker memory p;
 
-        address owner = 0x5992Fe461F81C8E0aFFA95b831E50e9b3854BA0E;
-        address router = 0x89b8AA89FDd0507a99d334CBe3C808fAFC7d850E;
-        address payable zero = payable(0x0000000000000000000000000000000000000000);
-        address usdt_address = 0x55d398326f99059fF775485246999027B3197955;
-        address usdc_address = 0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d;
-
-        uint256 amount_to_swap = 11e17;
+        p.owner = 0x5992Fe461F81C8E0aFFA95b831E50e9b3854BA0E;
+        p.router = 0x89b8AA89FDd0507a99d334CBe3C808fAFC7d850E;
+        p.zero = payable(0x0000000000000000000000000000000000000000);
+        p.usdt_address = 0x55d398326f99059fF775485246999027B3197955;
+        p.usdc_address = 0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d;
+        p.amount_to_swap = 11e17;
 
          // for sepolia chain
         /*string memory params_json_file = vm.readFile(string.concat(vm.projectRoot(), "/script/chain_params.json"));
@@ -33,16 +47,16 @@ contract WNFTMakerScript is Script, Objects {
         address factory_address = params_json_file.readAddress(key);*/
 
         // for bsc
-        address payable impl_index_address = payable(0x28466e3e92CB6FB292618D0faEbB49624f4d6f0C);
-        address factory_address = 0xBDb5201565925AE934A5622F0E7091aFFceed5EB;
+        p.impl_index_address = payable(0x28466e3e92CB6FB292618D0faEbB49624f4d6f0C);
+        p.factory_address = 0xBDb5201565925AE934A5622F0E7091aFFceed5EB;
 
 
-        WNFTV2Index impl_index = WNFTV2Index(impl_index_address);
-        EnvelopWNFTFactory factory = EnvelopWNFTFactory(factory_address);
+        WNFTV2Index impl_index = WNFTV2Index(p.impl_index_address);
+        EnvelopWNFTFactory factory = EnvelopWNFTFactory(p.factory_address);
 
 
         WNFTV2Envelop721.InitParams memory initData = WNFTV2Envelop721.InitParams(
-            owner,
+            p.owner,
             'Envelop V2 Smart Index',
             'ENVELOPV2',
             'https://api.envelop.is/wallet',
@@ -61,25 +75,24 @@ contract WNFTMakerScript is Script, Objects {
         vm.stopBroadcast();*/
 
         // define master wallet
-        address payable master_address;
         console2.log('chain_id=', block.chainid);
         if (block.chainid == 56) {
-            master_address = payable(0x8d1454F9ac6363e20664C1AE29bF47C38a354f25);
+            p.master_address = payable(0x8d1454F9ac6363e20664C1AE29bF47C38a354f25);
         } else if  (block.chainid == 11155111) {
-            master_address = payable(0x952aa40B73CceCf866c25D4f42fBBDbc35164002);
+            p.master_address = payable(0x952aa40B73CceCf866c25D4f42fBBDbc35164002);
         } else {
-            master_address = zero;
+            p.master_address = p.zero;
         }
 
-        WNFTV2Index master = WNFTV2Index(master_address); // sepolia master wallet address
+        WNFTV2Index master = WNFTV2Index(p.master_address); // sepolia master wallet address
 
         // prepare batch of transactions
 
         // 0. make approve for router
-        address target = usdt_address;
+        address target = p.usdt_address;
         bytes memory _data = abi.encodeWithSignature(
             "approve(address,uint256)",
-            router,amount_to_swap
+            p.router,p.amount_to_swap
         );
         uint256 value = 0;
 
@@ -91,7 +104,7 @@ contract WNFTMakerScript is Script, Objects {
 
         targets[0] = address(impl_index);
         targets[1] = address(impl_index);
-        targets[2] = router;
+        targets[2] = p.router;
 
         values[0] = 0;
         values[1] = 0;
@@ -140,18 +153,18 @@ contract WNFTMakerScript is Script, Objects {
         address[] memory targets1 = new address[](4);
         bytes[] memory dataArray1 = new bytes[](4);
         uint256[] memory values1 = new uint256[](4);
-        targets1[0] = usdc_address;
-        targets1[1] = usdc_address;
+        targets1[0] = p.usdc_address;
+        targets1[1] = p.usdc_address;
         targets1[2] = index_address1;
         targets1[3] = index_address2;
 
         dataArray1[0] = abi.encodeWithSignature(
             "transfer(address,uint256)",
-            index_address1,IERC20(usdc_address).balanceOf(master_address)/2
+            index_address1,IERC20(p.usdc_address).balanceOf(p.master_address)/2
         );
         dataArray1[1] = abi.encodeWithSignature(
             "transfer(address,uint256)",
-            index_address2,IERC20(usdc_address).balanceOf(master_address)/2
+            index_address2,IERC20(p.usdc_address).balanceOf(p.master_address)/2
         );
         dataArray1[2] = "";
         dataArray1[3] = "";
