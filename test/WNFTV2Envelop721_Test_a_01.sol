@@ -98,9 +98,16 @@ contract WNFTV2Envelop721_Test_a_01 is Test {
             new uint256[](0),
             ""
             );
-        vm.expectRevert(
-            abi.encodeWithSelector(WNFTV2Envelop721.RuleSetNotSupported.selector, calcRule)
-        );
+                
+        /// Bellow is commented because in base WNFTV2Envelop721 inmplementation
+        /// we enable user to set any rule. But only No_Transfer rule  checked in this 
+        /// implementation.
+        /// It is possible to overide `_isValidRules(bytes2 _rules)` in inheritors to
+        /// implement custom logic
+
+        // vm.expectRevert(
+        //     abi.encodeWithSelector(WNFTV2Envelop721.RuleSetNotSupported.selector, calcRule)
+        // );
         address payable _wnftWallet = payable(impl_legacy.createWNFTonFactory(initData));
     }
 }

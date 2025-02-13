@@ -430,6 +430,11 @@ contract WNFTV2Envelop721 is
         isSet =_rule == (_rule & _wNFTrules);
     }
 
+    /**
+     * In base WNFTV2Envelop721 inmplementation we enable user to set any rule.
+     *  It is possible to overide `_isValidRules(bytes2 _rules)` in inheritors to
+     *  implement custom logic
+    */
     function _isValidRules(bytes2 _rules) internal pure virtual returns (bool ok) {
         if (!_checkRule(_rules, SUPPORTED_RULES)) {
             revert RuleSetNotSupported(_rules & SUPPORTED_RULES ^ _rules); //  return 1 in UNsupported digits

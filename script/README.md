@@ -1,11 +1,25 @@
 ## Deployments
-!!! For use cli below don't forget set appropriate variables in `.env` (see Development section) 
+
+`chain_params.json` - contains settings for all scripts.  
+`explorers.json` - contains scanner's base URL  
+`Objects.s.sol` - abstarct conatrct in this file implements all param's load logic, deploy & instantionate logic
+and print. So th base flow  is:
+1. Implement all logic in `Objects.s.sol`, set params in `chain_params.json`.
+2. Run `Deploy.s.sol`. Take output for fill `chain_params.json`.
+3. Then  run test scripts (see examples below) or run script with specific tasks (i.e. `MyShchInit.s.sol`)  
+
+To deploy full contract set please use `Deploy.s.sol`. Before deploy yo can check saved 
+configuration with `CheckChainParam.s.sol`.  
+
+!!! For use cli below don't forget set appropriate variables in `.env` from root folder (see Development section)  
 ### Sepolia
 ```shell
 # Use for check chain_paarms  config
 $ forge script script/CheckChainParam.s.sol:CheckChainParam --rpc-url sepolia
 
+$ # Full set deployment
 $ forge script script/Deploy.s.sol:DeployScript --rpc-url sepolia  --account three --sender 0x97ba7778dD9CE27bD4953c136F3B3b7b087E14c1 --broadcast --verify  --etherscan-api-key $ETHERSCAN_TOKEN 
+
 $ # Test Tx Script
 $ forge script script/Deploy.s.sol:TestTxScript --rpc-url sepolia  --account three --sender 0x97ba7778dD9CE27bD4953c136F3B3b7b087E14c1 --broadcast --verify  --etherscan-api-key $ETHERSCAN_TOKEN 
 

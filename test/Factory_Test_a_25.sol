@@ -82,6 +82,9 @@ contract Factory_Test_a_25 is Test  {
         hackERC20.setFailSender(_wnftWallet);
 
         vm.prank(address(1));
+        // In V2 wnft holder always has ability of 'manual' transfer
+        // any asseta from wNFT. 
+        vm.expectRevert();
         wnft.unWrap(collateral);
     }
 }

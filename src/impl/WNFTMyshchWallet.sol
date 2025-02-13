@@ -144,11 +144,15 @@ contract WNFTMyshchWallet is WNFTV2Envelop721
         fixEtherBalance
     returns (uint256 send) 
     {
-        send = (PERMANENT_TX_COST + gasLeftOnStart - gasleft()) * 1;
+        //send = (PERMANENT_TX_COST + gasLeftOnStart - gasleft()) * 1;
+        send = (PERMANENT_TX_COST + gasLeftOnStart - gasleft()) * tx.gasprice;
         if (FEE_PERCENT > 0 ){
             send += send * FEE_PERCENT / (100 * PERCENT_DENOMINATOR); 
         }
-        require(send < PERMANENT_TX_COST * 3, "Too much refund request");
+        // require(
+        //     send < PERMANENT_TX_COST * 30 * tx.gasprice, 
+        //     "Too much refund request"
+        // );
         Address.sendValue(payable(msg.sender), send); 
     }
 

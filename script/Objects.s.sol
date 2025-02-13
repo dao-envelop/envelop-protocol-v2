@@ -52,6 +52,11 @@ abstract contract Objects is Script{
     address[] implementations; 
 
     string public params_json_file = vm.readFile(string.concat(vm.projectRoot(), "/script/chain_params.json"));
+ 
+    string public params_json_file2 = vm.readFile(string.concat(vm.projectRoot(), "/script/explorers.json"));
+    string public explorer_url = params_json_file2.readString(
+        string.concat(".", vm.toString(block.chainid))
+    );
 
     EnvelopWNFTFactory factory;
     MyShchFactory myshch_factory;
@@ -260,12 +265,12 @@ abstract contract Objects is Script{
         //string memory path = string.concat(vm.projectRoot(), "/script/explorers.json");
         //string memory json = vm.readFile(path);
         //params_path = string.concat(vm.projectRoot(), "/script/explorers.json");
-        params_json_file = vm.readFile(string.concat(vm.projectRoot(), "/script/explorers.json"));
+        // params_json_file = vm.readFile(string.concat(vm.projectRoot(), "/script/explorers.json"));
         
-        console2.log("Chain id: %s", vm.toString(block.chainid));
-        string memory explorer_url = params_json_file.readString(
-            string.concat(".", vm.toString(block.chainid))
-        );
+        // console2.log("Chain id: %s", vm.toString(block.chainid));
+        // string memory explorer_url = params_json_file.readString(
+        //     string.concat(".", vm.toString(block.chainid))
+        // );
         
         console2.log("\n**EnvelopWNFTFactory**  ");
         console2.log("https://%s/address/%s#code\n", explorer_url, address(factory));

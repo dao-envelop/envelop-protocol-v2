@@ -69,9 +69,6 @@ contract MyShchInit is Script, Objects {
         /// Just get deployed instances 
         //vm.startBroadcast();
         deployOrInstances(true);
-        //vm.stopBroadcast();
-
-       // prettyPrint(); 
         
         // ///  Init ///
         console2.log("Check & Init transactions....");
@@ -84,6 +81,15 @@ contract MyShchInit is Script, Objects {
                 console2.log("Trusted signer added: %s", lp.trusted_signers_list[i]); 
             }
         }
+
+        // Check current wnft implementation and set new if need
+        address[] memory impl721array = myshch_factory.getImplementationHistory(); 
+        if (impl721array[impl721array.length - 1] != address(impl_myshch)) {
+            myshch_factory.newImplementation(address(impl_myshch));
+            console2.log("New 721 implementation added: %s", address(impl_myshch)); 
+            console2.log("\n**WNFTMyshchWallet** ");
+            console2.log("https://%s/address/%s#code\n", explorer_url, address(impl_myshch));
+        } 
         vm.stopBroadcast();
         console2.log("Initialisation finished");
     }
