@@ -147,6 +147,7 @@ contract WNFTMakerScript is Script, Objects {
         console2.log('child wallet 1 = ', w1);
         console2.log('child wallet 2 = ', w2);
 
+        // use this code for next action
         // 2. transfer assets from master to indexes
         /*address payable index_address1 = payable(0x61d9aFFa2f76fa83Fd8cA890Cc00Ee6c286bD502);
         address payable index_address2 = payable(0x153A2c68FB748Ca01b99E5146e81443aa1dEE295);
