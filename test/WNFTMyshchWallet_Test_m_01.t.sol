@@ -67,7 +67,7 @@ contract WNFTMyshchWallet_Test_m_01 is Test {
         address[] memory addrs2 = new address[](1);
         addrs2[0] = _wnftWallet1;  // add relayer
         uint256[] memory np =  new uint256[](2);
-        np[1] = 10_000;
+        np[1] = 20_000;
 
         initData = WNFTV2Envelop721.InitParams(
             address(1), // user address
@@ -125,7 +125,7 @@ contract WNFTMyshchWallet_Test_m_01 is Test {
         console2.log("UserWallet: %s, value:%s", _wnftWallet2, balances[2].before);
         //console2.log(_wnftWallet2.balance);
         //vm.prank(address(2));
-        uint256 gas_price = 1;
+        uint256 gas_price = 1e9;
         vm.txGasPrice(gas_price);
         wnftBot.erc20TransferWithRefund(address(erc20), address(wnftUser), sendERC20Amount);
         VmSafe.Gas memory gasInfo = vm.lastCallGas();

@@ -176,6 +176,11 @@ contract WNFTMyshchWallet is WNFTV2Envelop721
          return $.approvedRelayer[_relayer];
     }
 
+    function getRelayerFee() external view returns(uint256) {
+         WNFTMyshchWalletStorage storage $ = _getWNFTMyshchWalletStorage();
+         return $.relayerFeePercent;
+    }
+
 
     ////////////////////////////////////////////////////////////////
     //    ******************* internals ***********************   //
