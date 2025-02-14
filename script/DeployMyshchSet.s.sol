@@ -120,7 +120,7 @@ contract DeployMyshchSetScript is Script {
         CustomERC20 impl_erc20;
 
         if (p.impl_myshch == address(0)) {
-            impl_myshch = new WNFTMyshchWallet(address(0),0);    
+            impl_myshch = new WNFTMyshchWallet(address(0));    
             console2.log("Deploying implementation: %s", vm.toString(address(impl_myshch)));
         } else {
             impl_myshch = WNFTMyshchWallet(payable(p.impl_myshch));

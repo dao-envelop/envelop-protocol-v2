@@ -6,6 +6,8 @@ remappings = [
     "@openzeppelin/=lib/openzeppelin-contracts/",
     "@Uopenzeppelin/=lib/openzeppelin-contracts-upgradeable.git/"
 ]
+optimizer = true
+optimizer_runs = 200
 
 optimizer = true
 optimizer_runs = 200

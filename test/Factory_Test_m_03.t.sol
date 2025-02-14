@@ -48,7 +48,7 @@ contract Factory_Test_m_03 is Test {
         console2.log("Tx sender: %s, balance: s%, gasleft %s", msg.sender, msg.sender.balance, gasleft());
         erc20 = new MockERC20("Name of Mock", "MMM");
         factory = new EnvelopWNFTFactory();
-        impl_myshch = new WNFTMyshchWallet(address(factory), FEE);
+        impl_myshch = new WNFTMyshchWallet(address(factory));
         impl_native = new WNFTV2Envelop721(address(factory));
         factory.setWrapperStatus(address(this), true); // set wrapper
         factory.setWrapperStatus(address(impl_myshch), true); // set wrapper
