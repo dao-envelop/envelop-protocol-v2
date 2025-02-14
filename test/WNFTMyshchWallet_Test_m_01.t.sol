@@ -21,6 +21,11 @@ import "../src/impl/WNFTV2Envelop721.sol";
 contract WNFTMyshchWallet_Test_m_01 is Test {
     
     event Log(string message);
+    
+    struct Bal {
+        uint256 before;
+        uint256 afterb;
+    }
 
     uint256 public sendEtherAmount = 1e18;
     uint256 public sendERC20Amount = 3e18;
@@ -31,13 +36,14 @@ contract WNFTMyshchWallet_Test_m_01 is Test {
 
     address payable _wnftWallet1;  // bot
     address payable _wnftWallet2; // user
-
+    
+    Bal[] balances;
     receive() external payable virtual {}
     
     function setUp() public {
         erc721 = new MockERC721('Mock ERC721', 'ERC');
         factory = new EnvelopWNFTFactory();
-        impl_myshch = new WNFTMyshchWallet(address(factory), 0);
+        impl_myshch = new WNFTMyshchWallet(address(factory));
         factory.setWrapperStatus(address(impl_myshch), true); // set wrapper
         erc20 = new MockERC20('Mock ERC20', 'ERC20');
 
@@ -60,6 +66,9 @@ contract WNFTMyshchWallet_Test_m_01 is Test {
         // create user wnft wallet
         address[] memory addrs2 = new address[](1);
         addrs2[0] = _wnftWallet1;  // add relayer
+        uint256[] memory np =  new uint256[](2);
+        np[1] = 10_000;
+
         initData = WNFTV2Envelop721.InitParams(
             address(1), // user address
             'Envelop User',
@@ -67,7 +76,7 @@ contract WNFTMyshchWallet_Test_m_01 is Test {
             'https://api.envelop.is/',
             addrs2,
             new bytes32[](0),
-            new uint256[](0),
+            np,
             ""
         );
         //vm.prank(address(this));
@@ -76,10 +85,22 @@ contract WNFTMyshchWallet_Test_m_01 is Test {
     }
     
     function test_transfer_with_refund() public {
+
+        
+
         
         WNFTMyshchWallet wnftBot = WNFTMyshchWallet(_wnftWallet1);
         WNFTMyshchWallet wnftUser = WNFTMyshchWallet(_wnftWallet2);
-
+        
+        // this balance
+        balances.push(Bal(
+            address(this).balance, 0 // before after
+        ));
+        
+        // bot balance 
+        balances.push(Bal(
+           _wnftWallet1.balance, 0 // before after
+        ));
         // send erc20 to wnft wallet
         erc20.transfer(address(wnftBot), sendERC20Amount);
         
@@ -91,15 +112,39 @@ contract WNFTMyshchWallet_Test_m_01 is Test {
         vm.deal(_wnftWallet2, sendEtherAmount);
         //_wnftWallet2.transfer(sendEtherAmount);
         //console2.log(address(2).balance);
-        console2.log("UserWallet: %s, value:%s", _wnftWallet2, _wnftWallet2.balance);
+        
+        // user balance
+        balances.push(Bal(
+            _wnftWallet2.balance, 0 // before after
+        ));
+
+        // user balance
+        balances.push(Bal(
+            msg.sender.balance, 0 // before after
+        ));
+        console2.log("UserWallet: %s, value:%s", _wnftWallet2, balances[2].before);
         //console2.log(_wnftWallet2.balance);
         //vm.prank(address(2));
-        //vm.txGasPrice(2);
+        uint256 gas_price = 1;
+        vm.txGasPrice(gas_price);
         wnftBot.erc20TransferWithRefund(address(erc20), address(wnftUser), sendERC20Amount);
         VmSafe.Gas memory gasInfo = vm.lastCallGas();
-        console2.log(gasInfo.gasTotalUsed);
+        console2.log("Gas used: %s", gasInfo.gasTotalUsed);
+        balances[0].afterb =  address(this).balance;
+        balances[1].afterb =  _wnftWallet1.balance;
+        balances[2].afterb =  _wnftWallet2.balance;
+        balances[3].afterb =  msg.sender.balance;
         //console2.log(address(2).balance);
-        console2.log(_wnftWallet2.balance);
+        
+        for (uint256 i = 0; i < balances.length; ++ i) {
+            console2.log("Index: %s, before: %s", i, balances[i].before);
+            console2.log("Index: %s, after : %s", i, balances[i].afterb);
+        }
+        // console2.log(_wnftWallet2.balance);
+        // console2.log(balances[3].afterb);
+        // console2.log(balances[3].afterb);
+        assertGt(balances[0].afterb - balances[0].before, gasInfo.gasTotalUsed * gas_price);
+        assertGt(balances[2].before - balances[2].afterb, gasInfo.gasTotalUsed * gas_price);
     }
 
     // function test_check_setGasCheckPoint() public {

@@ -215,7 +215,7 @@ abstract contract Objects is Script{
 
         if (p.impl_myshch == address(0)) {
             if (!onlyInstance) {
-                impl_myshch = new WNFTMyshchWallet(address(factory),0);    
+                impl_myshch = new WNFTMyshchWallet(address(factory));    
                 //factory.setWrapperStatus(address(impl_myshch), true); // set wrapper
             }
         } else {
@@ -259,7 +259,7 @@ abstract contract Objects is Script{
 
     }
 
-    function prettyPrint() internal {
+    function prettyPrint() internal view {
         ///////// Pretty printing ////////////////
         
         //string memory path = string.concat(vm.projectRoot(), "/script/explorers.json");

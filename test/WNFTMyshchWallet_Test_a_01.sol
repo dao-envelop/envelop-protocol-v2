@@ -37,7 +37,7 @@ contract WNFTMyshchWallet_Test_a_01 is Test {
     function setUp() public {
         erc721 = new MockERC721('Mock ERC721', 'ERC');
         factory = new EnvelopWNFTFactory();
-        impl_myshch = new WNFTMyshchWallet(address(factory), 0);
+        impl_myshch = new WNFTMyshchWallet(address(factory));
         factory.setWrapperStatus(address(impl_myshch), true); // set wrapper
         erc20 = new MockERC20('Mock ERC20', 'ERC20');
 

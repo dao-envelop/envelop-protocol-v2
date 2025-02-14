@@ -42,7 +42,7 @@ contract MyShchFactory_Test_a_01 is Test {
     
     function setUp() public {
         erc721 = new MockERC721('Mock ERC721', 'ERC');
-        impl_myshch = new WNFTMyshchWallet(address(0), 0);
+        impl_myshch = new WNFTMyshchWallet(address(0));
         factory = new MyShchFactory(address(impl_myshch));
         factory.setSignerStatus(address(1), true); // address(1) is trusted address
         erc20 = new MockERC20('Mock ERC20', 'ERC20');

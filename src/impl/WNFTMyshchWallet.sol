@@ -18,13 +18,13 @@ import "./WNFTV2Envelop721.sol";
 contract WNFTMyshchWallet is WNFTV2Envelop721 
 {
 
-    uint256 public constant PERMANENT_TX_COST = 50_000; // 0
-    uint256 public immutable PERCENT_DENOMINATOR = 10_000;
-    uint256 public immutable FEE_PERCENT;
+    uint256 public constant PERMANENT_TX_COST = 43_000; // 0
+    uint256 public constant PERCENT_DENOMINATOR = 10_000;
 
 
     struct WNFTMyshchWalletStorage {
         mapping(address => bool) approvedRelayer;
+        uint256 relayerFeePercent;
     }
     
     /// https://docs.soliditylang.org/en/latest/contracts.html#transient-storage
@@ -52,11 +52,9 @@ contract WNFTMyshchWallet is WNFTV2Envelop721
         }
     }
     ///////////////////////////////////////////////////////
-    constructor(address _defaultFactory, uint256 _feePercent) 
+    constructor(address _defaultFactory) 
         WNFTV2Envelop721(_defaultFactory)
     {
-       require(_feePercent < 2 * PERCENT_DENOMINATOR, "Fee cant be more");
-       FEE_PERCENT = _feePercent;
     }
 
         
@@ -65,7 +63,10 @@ contract WNFTMyshchWallet is WNFTV2Envelop721
     ////////////////////////////////////////////////////////////////////////  
     // In This implementation next params are supported:
     // WNFTV2Envelop721 hashedParams[0] - rules
+    
     // WNFTV2Envelop721 numberParams[0] - simpleTimeLock
+    // WNFTV2Envelop721 numberParams[1] - relayerFee
+    
     // WNFTMyshchWallet addrParams[0] - default relayer
   
     function initialize(
@@ -92,8 +93,14 @@ contract WNFTMyshchWallet is WNFTV2Envelop721
         WNFTMyshchWalletStorage storage $ = _getWNFTMyshchWalletStorage();
         // in this param relayer wnft address could be passed
         if (_init.addrParams.length  >  0) {
-            $.approvedRelayer[_init.addrParams[0]] = true;   
+            $.approvedRelayer[_init.addrParams[0]] = true;
         }
+
+        // Relayer Fee set
+        if (_init.numberParams.length  >  1) {
+            $.relayerFeePercent = _init.numberParams[1];   
+        }
+
         
     }
     ////////////////////////////////////////////////////////////////////////
@@ -144,16 +151,12 @@ contract WNFTMyshchWallet is WNFTV2Envelop721
         fixEtherBalance
     returns (uint256 send) 
     {
-        //send = (PERMANENT_TX_COST + gasLeftOnStart - gasleft()) * 1;
-        send = (PERMANENT_TX_COST + gasLeftOnStart - gasleft()) * tx.gasprice;
-        if (FEE_PERCENT > 0 ){
-            send += send * FEE_PERCENT / (100 * PERCENT_DENOMINATOR); 
-        }
-        // require(
-        //     send < PERMANENT_TX_COST * 30 * tx.gasprice, 
-        //     "Too much refund request"
-        // );
-        Address.sendValue(payable(msg.sender), send); 
+        send = (PERMANENT_TX_COST + _getGasDiff(gasLeftOnStart)) * tx.gasprice;
+        require(
+            send < PERMANENT_TX_COST * 3 * tx.gasprice, 
+            "Too much refund request"
+        );
+        Address.sendValue(payable(msg.sender), send + _getFeeAmount(send)); 
     }
 
     function setRelayerStatus(address _relayer, bool _status) 
@@ -177,6 +180,14 @@ contract WNFTMyshchWallet is WNFTV2Envelop721
     ////////////////////////////////////////////////////////////////
     //    ******************* internals ***********************   //
     ////////////////////////////////////////////////////////////////
+    function _getGasDiff(uint256 _was) internal view returns (uint256 diff) {
+        diff = _was - gasleft();
+    }
+
+    function _getFeeAmount(uint256 _in) internal view returns(uint256 fee){
+        WNFTMyshchWalletStorage storage $ = _getWNFTMyshchWalletStorage();
+        fee = (_in * $.relayerFeePercent) / (100 * PERCENT_DENOMINATOR); 
+    }
 
     function  _onlyApproved(address _sender) internal view virtual {
         address currOwner = ownerOf(TOKEN_ID);
