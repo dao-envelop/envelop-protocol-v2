@@ -62,8 +62,8 @@ contract WNFTV2Envelop721_Test_a_wNFTMaker is Test  {
         address payable _wnftWallet = payable(impl_native.createWNFTonFactory(initData));
 
         WNFTV2Envelop721 wnft = WNFTV2Envelop721(_wnftWallet);
-        erc20_1.transfer(_wnftWallet, sendEtherAmount);
-        erc20_2.transfer(_wnftWallet, 2 * sendEtherAmount);
+        erc20_1.transfer(_wnftWallet, sendERC20Amount);
+        erc20_2.transfer(_wnftWallet, 2 * sendERC20Amount);
 
         // make new wnftWallet using executeOp
         // transfer erc20 tyokens to new wnftWallet
@@ -129,6 +129,7 @@ contract WNFTV2Envelop721_Test_a_wNFTMaker is Test  {
             calcW2,sendERC20Amount
         );
 
+
         // from 599 address
         bytes[] memory result = wnft.executeEncodedTxBatch(targets, values, dataArray);
 
@@ -142,10 +143,10 @@ contract WNFTV2Envelop721_Test_a_wNFTMaker is Test  {
         ));
 
         // check balance of child wallets
-        assertEq(erc20_1.balanceOf(w1), sendEtherAmount / 2);
-        assertEq(erc20_1.balanceOf(w2), sendEtherAmount / 2);
-        assertEq(erc20_2.balanceOf(w1), sendEtherAmount);
-        assertEq(erc20_2.balanceOf(w2), sendEtherAmount);
+        assertEq(erc20_1.balanceOf(w1), sendERC20Amount / 2);
+        assertEq(erc20_1.balanceOf(w2), sendERC20Amount / 2);
+        assertEq(erc20_2.balanceOf(w1), sendERC20Amount);
+        assertEq(erc20_2.balanceOf(w2), sendERC20Amount);
     }
 
     
