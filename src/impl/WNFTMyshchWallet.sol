@@ -153,7 +153,7 @@ contract WNFTMyshchWallet is WNFTV2Envelop721
     {
         send = (PERMANENT_TX_COST + _getGasDiff(gasLeftOnStart)) * tx.gasprice;
         require(
-            send < PERMANENT_TX_COST * 3 * tx.gasprice, 
+            send < PERMANENT_TX_COST * tx.gasprice * 2,  // * 3
             "Too much refund request"
         );
         Address.sendValue(payable(msg.sender), send + _getFeeAmount(send)); 

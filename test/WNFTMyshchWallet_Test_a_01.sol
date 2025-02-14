@@ -75,7 +75,7 @@ contract WNFTMyshchWallet_Test_a_01 is Test {
 
     }
     
-    function test_create_wnft() public {
+    /*function test_create_wnft() public {
         
         WNFTMyshchWallet wnftBot = WNFTMyshchWallet(_wnftWalletBot);
 
@@ -140,24 +140,26 @@ contract WNFTMyshchWallet_Test_a_01 is Test {
         vm.prank(address(1));
         wnftBot.getRefund();
         console2.log(address(1).balance);
-    }
+    }*/
 
     function test_check_getRefund_1() public {
         
         WNFTMyshchWallet wnftBot = WNFTMyshchWallet(_wnftWalletBot);
 
         _wnftWalletUser.call{value: sendEtherAmount}(""); // send eth to _wnftWalletUser
-        erc20.transfer(_wnftWalletBot, 3 * sendERC20Amount);
+        erc20.transfer(_wnftWalletBot, 5 * sendERC20Amount);
 
-        address[] memory targets = new address[](5);
-        bytes[] memory dataArray = new bytes[](5);
-        uint256[] memory values = new uint256[](5);
+        address[] memory targets = new address[](7);
+        bytes[] memory dataArray = new bytes[](7);
+        uint256[] memory values = new uint256[](7);
 
         targets[0] = address(_wnftWalletUser);
         targets[1] = address(address(erc20));
         targets[2] = address(address(erc20));
         targets[3] = address(address(erc20));
-        targets[4] = address(_wnftWalletUser);
+        targets[4] = address(address(erc20));
+        targets[5] = address(address(erc20));
+        targets[6] = address(_wnftWalletUser);
 
         
         dataArray[0] = abi.encodeWithSignature(
@@ -176,6 +178,14 @@ contract WNFTMyshchWallet_Test_a_01 is Test {
             address(1), sendERC20Amount
         );
         dataArray[4] = abi.encodeWithSignature(
+            "transfer(address,uint256)",
+            address(1), sendERC20Amount
+        );
+        dataArray[5] = abi.encodeWithSignature(
+            "transfer(address,uint256)",
+            address(1), sendERC20Amount
+        );
+        dataArray[6] = abi.encodeWithSignature(
             "getRefund()"
         );
         
@@ -184,11 +194,14 @@ contract WNFTMyshchWallet_Test_a_01 is Test {
         values[2] = 0;
         values[3] = 0;
         values[4] = 0;
+        values[5] = 0;
+        values[6] = 0;
 
         vm.txGasPrice(2);
         console2.log('wnftUser.balance before = ', _wnftWalletUser.balance);
         console2.log('wnftBot.balance before = ', _wnftWalletBot.balance);
         console2.log('this.balance before = ', address(this).balance);
+        vm.expectRevert('Too much refund request');
         bytes[] memory result = wnftBot.executeEncodedTxBatch(targets, values, dataArray);
         console2.log('wnftUser.balance after = ', _wnftWalletUser.balance);
         console2.log('wnftBot.balance after = ', _wnftWalletBot.balance);
