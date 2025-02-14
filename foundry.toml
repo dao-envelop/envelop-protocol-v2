@@ -7,6 +7,9 @@ remappings = [
     "@Uopenzeppelin/=lib/openzeppelin-contracts-upgradeable.git/"
 ]
 
+optimizer = true
+optimizer_runs = 200
+
 fs_permissions = [
     { access = "read", path = "./script/"}, 
     { access = "read", path = "/home/max_siz/.brownie/accounts/"},

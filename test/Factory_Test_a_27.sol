@@ -78,7 +78,7 @@ contract Factory_Test_a_27 is Test  {
 
         bytes memory _data = "";
 
-        // make attack - send eth to address and address will take wnft from owner
+        // do attack - send eth to address and address will take wnft from owner
         vm.startPrank(address(1));
         wnft.setApprovalForAll(_wnftWallet, true);
         wnft.setApprovalForAll(address(hacker), true);
