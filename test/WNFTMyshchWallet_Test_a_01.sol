@@ -29,8 +29,8 @@ contract WNFTMyshchWallet_Test_a_01 is Test {
     EnvelopWNFTFactory public factory;
     WNFTMyshchWallet public impl_myshch;
 
-    address payable _wnftWallet1;
-    address payable _wnftWallet2;
+    address payable _wnftWalletBot;
+    address payable _wnftWalletUser;
 
     receive() external payable virtual {}
     
@@ -55,11 +55,11 @@ contract WNFTMyshchWallet_Test_a_01 is Test {
         );
 
         vm.prank(address(this));
-        _wnftWallet1 = payable(impl_myshch.createWNFTonFactory(initData));
+        _wnftWalletBot = payable(impl_myshch.createWNFTonFactory(initData));
 
         // create user wnft wallet
         address[] memory addrs2 = new address[](1);
-        addrs2[0] = _wnftWallet1;  // add relayer
+        addrs2[0] = _wnftWalletBot;  // add relayer
         initData = WNFTV2Envelop721.InitParams(
             address(1), // user address
             'Envelop',
@@ -71,74 +71,127 @@ contract WNFTMyshchWallet_Test_a_01 is Test {
             ""
         );
         vm.prank(address(this));
-        _wnftWallet2 = payable(impl_myshch.createWNFTonFactory(initData));
+        _wnftWalletUser = payable(impl_myshch.createWNFTonFactory(initData));
 
     }
     
     function test_create_wnft() public {
         
-        WNFTMyshchWallet wnft1 = WNFTMyshchWallet(_wnftWallet1);
+        WNFTMyshchWallet wnftBot = WNFTMyshchWallet(_wnftWalletBot);
 
         // send erc20 to wnft wallet
-        erc20.transfer(_wnftWallet1, sendERC20Amount);
+        erc20.transfer(_wnftWalletBot, sendERC20Amount);
         
-        //WNFTMyshchWallet wnft2 = WNFTMyshchWallet(_wnftWallet2);
+        //WNFTMyshchWallet wnftUser = WNFTMyshchWallet(_wnftWalletUser);
 
-        wnft1.setApprovalForAll(address(2), true);
+        wnftBot.setApprovalForAll(address(2), true);
 
         //send eth to user wnft wallet
-        _wnftWallet2.transfer(sendEtherAmount);
+        _wnftWalletUser.transfer(sendEtherAmount);
         console2.log(address(2).balance);
-        console2.log(_wnftWallet2.balance);
+        console2.log(_wnftWalletUser.balance);
         vm.prank(address(2));
         vm.txGasPrice(2);
-        wnft1.erc20TransferWithRefund(address(erc20), _wnftWallet2, sendERC20Amount);
+        wnftBot.erc20TransferWithRefund(address(erc20), _wnftWalletUser, sendERC20Amount);
         VmSafe.Gas memory gasInfo = vm.lastCallGas();
         console2.log(gasInfo.gasTotalUsed);
         console2.log(address(2).balance);
-        console2.log(_wnftWallet2.balance);
+        console2.log(_wnftWalletUser.balance);
     }
 
     function test_check_setGasCheckPoint() public {
         
-        WNFTMyshchWallet wnft1 = WNFTMyshchWallet(_wnftWallet1);
+        WNFTMyshchWallet wnftBot = WNFTMyshchWallet(_wnftWalletBot);
 
         vm.expectRevert("Only for approved relayer");
-        wnft1.setGasCheckPoint();
+        wnftBot.setGasCheckPoint();
 
-        wnft1.setRelayerStatus(address(this), true);
-        wnft1.setGasCheckPoint();
-        assertGt(wnft1.gasLeftOnStart(),0);
+        wnftBot.setRelayerStatus(address(this), true);
+        wnftBot.setGasCheckPoint();
+        assertGt(wnftBot.gasLeftOnStart(),0);
 
         vm.prank(address(1));
         vm.expectRevert('Only for wNFT owner');
-        wnft1.setRelayerStatus(address(1), true);
+        wnftBot.setRelayerStatus(address(1), true);
     }
 
     function test_check_getRefund() public {
         
-        WNFTMyshchWallet wnft1 = WNFTMyshchWallet(_wnftWallet1);
+        WNFTMyshchWallet wnftBot = WNFTMyshchWallet(_wnftWalletBot);
 
         vm.expectRevert("Only for approved relayer");
-        wnft1.getRefund();
+        wnftBot.getRefund();
 
-        wnft1.setRelayerStatus(address(1), true);
-        assertEq(wnft1.getRelayerStatus(address(1)), true);
+        wnftBot.setRelayerStatus(address(1), true);
+        assertEq(wnftBot.getRelayerStatus(address(1)), true);
         vm.prank(address(1));
-        wnft1.setGasCheckPoint();
-        assertGt(wnft1.gasLeftOnStart(),0);
+        wnftBot.setGasCheckPoint();
+        assertGt(wnftBot.gasLeftOnStart(),0);
 
         vm.prank(address(1));
         vm.txGasPrice(2);
         vm.expectRevert();
-        wnft1.getRefund();
+        wnftBot.getRefund();
 
-        _wnftWallet1.transfer(sendEtherAmount);
+        _wnftWalletBot.transfer(sendEtherAmount);
 
         console2.log(address(1).balance);
         vm.txGasPrice(2);
         vm.prank(address(1));
-        wnft1.getRefund();
+        wnftBot.getRefund();
         console2.log(address(1).balance);
+    }
+
+    function test_check_getRefund_1() public {
+        
+        WNFTMyshchWallet wnftBot = WNFTMyshchWallet(_wnftWalletBot);
+
+        _wnftWalletUser.call{value: sendEtherAmount}(""); // send eth to _wnftWalletUser
+        erc20.transfer(_wnftWalletBot, 3 * sendERC20Amount);
+
+        address[] memory targets = new address[](5);
+        bytes[] memory dataArray = new bytes[](5);
+        uint256[] memory values = new uint256[](5);
+
+        targets[0] = address(_wnftWalletUser);
+        targets[1] = address(address(erc20));
+        targets[2] = address(address(erc20));
+        targets[3] = address(address(erc20));
+        targets[4] = address(_wnftWalletUser);
+
+        
+        dataArray[0] = abi.encodeWithSignature(
+            "setGasCheckPoint()"
+        );
+        dataArray[1] = abi.encodeWithSignature(
+            "transfer(address,uint256)",
+            address(1), sendERC20Amount
+        );
+        dataArray[2] = abi.encodeWithSignature(
+            "transfer(address,uint256)",
+            address(1), sendERC20Amount
+        );
+        dataArray[3] = abi.encodeWithSignature(
+            "transfer(address,uint256)",
+            address(1), sendERC20Amount
+        );
+        dataArray[4] = abi.encodeWithSignature(
+            "getRefund()"
+        );
+        
+        values[0] = 0;
+        values[1] = 0;
+        values[2] = 0;
+        values[3] = 0;
+        values[4] = 0;
+
+        vm.txGasPrice(2);
+        console2.log('wnftUser.balance before = ', _wnftWalletUser.balance);
+        console2.log('wnftBot.balance before = ', _wnftWalletBot.balance);
+        console2.log('this.balance before = ', address(this).balance);
+        bytes[] memory result = wnftBot.executeEncodedTxBatch(targets, values, dataArray);
+        console2.log('wnftUser.balance after = ', _wnftWalletUser.balance);
+        console2.log('wnftBot.balance after = ', _wnftWalletBot.balance);
+        console2.log('this.balance after = ', address(this).balance);
     }
 }
