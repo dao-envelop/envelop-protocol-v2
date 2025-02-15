@@ -45,7 +45,7 @@ contract WNFTV2Envelop721 is
           "(address,string,string,string,address[],bytes32[],uint256[],bytes)"
         ")";
     
-    bytes2  public constant SUPPORTED_RULES = 0xffff; // All rules are suupported. But implemented onky No_Transfer
+    bytes2  public constant SUPPORTED_RULES = 0xffff; // All rules are suupported. But implemented only No_Transfer
         // #### Envelop ProtocolV1 Rules !!! NOT All support in this implementation V2
     // 15   14   13   12   11   10   9   8   7   6   5   4   3   2   1   0  <= Bit number(dec)
     // ------------------------------------------------------------------------------------  

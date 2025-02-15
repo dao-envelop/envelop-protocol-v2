@@ -24,6 +24,7 @@ contract WNFTMyshchWallet_Test_a_01 is Test {
 
     uint256 public sendEtherAmount = 1e18;
     uint256 public sendERC20Amount = 3e18;
+    uint8 gasPrice = 2;
     MockERC721 public erc721;
     MockERC20 public erc20;
     EnvelopWNFTFactory public factory;
@@ -75,8 +76,9 @@ contract WNFTMyshchWallet_Test_a_01 is Test {
 
     }
     
-    /*function test_create_wnft() public {
-        
+    // withdraw user's erc20 tokens
+    function test_erc20TransferWithRefund() public {
+
         WNFTMyshchWallet wnftBot = WNFTMyshchWallet(_wnftWalletBot);
 
         // send erc20 to wnft wallet
@@ -85,20 +87,27 @@ contract WNFTMyshchWallet_Test_a_01 is Test {
         //WNFTMyshchWallet wnftUser = WNFTMyshchWallet(_wnftWalletUser);
 
         wnftBot.setApprovalForAll(address(2), true);
+        _wnftWalletUser.transfer(sendEtherAmount); // send eth to user wnft wallet
 
-        //send eth to user wnft wallet
-        _wnftWalletUser.transfer(sendEtherAmount);
-        console2.log(address(2).balance);
-        console2.log(_wnftWalletUser.balance);
-        vm.prank(address(2));
-        vm.txGasPrice(2);
+        uint256 userWalletBalanceBefore = _wnftWalletUser.balance;
+        uint256 botWalletBalanceBefore = _wnftWalletBot.balance;
+        uint256 userBalanceBefore = address(2).balance;
+
+        vm.prank(address(2)); // like bot owner
+
+        vm.txGasPrice(gasPrice);
         wnftBot.erc20TransferWithRefund(address(erc20), _wnftWalletUser, sendERC20Amount);
-        VmSafe.Gas memory gasInfo = vm.lastCallGas();
-        console2.log(gasInfo.gasTotalUsed);
-        console2.log(address(2).balance);
-        console2.log(_wnftWalletUser.balance);
+        //VmSafe.Gas memory gasInfo = vm.lastCallGas();
+
+        uint256 userWalletBalanceAfter = _wnftWalletUser.balance;
+        uint256 botWalletBalanceAfter = _wnftWalletBot.balance;
+        uint256 userBalanceAfter = address(2).balance;
+        assertGt(userBalanceAfter, impl_myshch.PERMANENT_TX_COST() * gasPrice + userBalanceBefore);
+        assertGt(userWalletBalanceBefore, impl_myshch.PERMANENT_TX_COST() * gasPrice + userWalletBalanceAfter);
+        assertEq(botWalletBalanceAfter, botWalletBalanceBefore);
     }
 
+    // check setGasCheckPoint permissions
     function test_check_setGasCheckPoint() public {
         
         WNFTMyshchWallet wnftBot = WNFTMyshchWallet(_wnftWalletBot);
@@ -115,6 +124,7 @@ contract WNFTMyshchWallet_Test_a_01 is Test {
         wnftBot.setRelayerStatus(address(1), true);
     }
 
+    // check getRefund permissions
     function test_check_getRefund() public {
         
         WNFTMyshchWallet wnftBot = WNFTMyshchWallet(_wnftWalletBot);
@@ -135,14 +145,13 @@ contract WNFTMyshchWallet_Test_a_01 is Test {
 
         _wnftWalletBot.transfer(sendEtherAmount);
 
-        console2.log(address(1).balance);
         vm.txGasPrice(2);
         vm.prank(address(1));
         wnftBot.getRefund();
-        console2.log(address(1).balance);
-    }*/
+    }
 
-    function test_check_getRefund_1() public {
+    // bot tries to withdraw more ethers
+    function test_check_bot_attack() public {
         
         WNFTMyshchWallet wnftBot = WNFTMyshchWallet(_wnftWalletBot);
 
@@ -198,13 +207,7 @@ contract WNFTMyshchWallet_Test_a_01 is Test {
         values[6] = 0;
 
         vm.txGasPrice(2);
-        console2.log('wnftUser.balance before = ', _wnftWalletUser.balance);
-        console2.log('wnftBot.balance before = ', _wnftWalletBot.balance);
-        console2.log('this.balance before = ', address(this).balance);
         vm.expectRevert('Too much refund request');
         bytes[] memory result = wnftBot.executeEncodedTxBatch(targets, values, dataArray);
-        console2.log('wnftUser.balance after = ', _wnftWalletUser.balance);
-        console2.log('wnftBot.balance after = ', _wnftWalletBot.balance);
-        console2.log('this.balance after = ', address(this).balance);
     }
 }
