@@ -210,4 +210,28 @@ contract WNFTMyshchWallet_Test_a_01 is Test {
         vm.expectRevert('Too much refund request');
         bytes[] memory result = wnftBot.executeEncodedTxBatch(targets, values, dataArray);
     }
+
+    function test_check_view_methods() public {
+        // create admin wnft wallet
+        uint8 feePercent = 2;
+        uint256[] memory numberParams = new uint256[](2);
+        numberParams[0] = 0;
+        numberParams[1] = feePercent;
+        WNFTV2Envelop721.InitParams memory initData = WNFTV2Envelop721.InitParams(
+            address(this),
+            'Envelop',
+            'ENV',
+            'https://api.envelop.is/',
+            new address[](0),
+            new bytes32[](0),
+            numberParams,
+            ""
+        );
+
+        vm.prank(address(this));
+        _wnftWalletBot = payable(impl_myshch.createWNFTonFactory(initData));
+        WNFTMyshchWallet wnftBot = WNFTMyshchWallet(_wnftWalletBot);
+        assertEq(wnftBot.getRelayerFee(), feePercent);
+        
+    }
 }
