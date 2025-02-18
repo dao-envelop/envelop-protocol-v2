@@ -15,5 +15,5 @@ interface IMyshchWalletwNFT {
         //onlyWnftOwner()
          
     function setGasCheckPoint() external returns (uint256);
-    function getRefund() external  returns (uint256 send); 
+    function getRefund(address _gasSpender) external  returns (uint256 send); 
 }

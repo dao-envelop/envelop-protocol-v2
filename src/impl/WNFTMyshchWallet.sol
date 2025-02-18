@@ -105,8 +105,6 @@ contract WNFTMyshchWallet is WNFTV2Envelop721
     }
     ////////////////////////////////////////////////////////////////////////
 
-    
-
     function erc20TransferWithRefund(
         address _target,
         address _receiver,
@@ -116,23 +114,13 @@ contract WNFTMyshchWallet is WNFTV2Envelop721
         onlyWnftOwner
         returns(uint256 refundAmount)          
     {
-        uint256 ethBalanceOnStart = address(this).balance;
         IMyshchWalletwNFT(_receiver).setGasCheckPoint();
-        //uint256 gasBefore = gasleft();
         bytes memory _data = abi.encodeWithSignature(
             "transfer(address,uint256)",
             _receiver, _amount
         );
         super._executeEncodedTx(_target, 0, _data);
-        refundAmount = IMyshchWalletwNFT(_receiver).getRefund();
-        Address.sendValue(payable(msg.sender), refundAmount);
-       
-       // we cant use  fixEtherBalance because this address balance
-        // has equal balance before and after this transaction       
-        _emitWrapper(
-           ethBalanceOnStart, 
-           ethBalanceOnStart + refundAmount
-        ); 
+        refundAmount = IMyshchWalletwNFT(_receiver).getRefund(msg.sender);
     }
 
 
@@ -145,7 +133,7 @@ contract WNFTMyshchWallet is WNFTV2Envelop721
         return gasLeftOnStart;
     }
 
-    function getRefund() 
+    function getRefund(address _gasSpender) 
         external
         onlyAprrovedRelayer
         fixEtherBalance
@@ -156,7 +144,7 @@ contract WNFTMyshchWallet is WNFTV2Envelop721
             send < PERMANENT_TX_COST * tx.gasprice * 2,  // * 3
             "Too much refund request"
         );
-        Address.sendValue(payable(msg.sender), send + _getFeeAmount(send)); 
+        Address.sendValue(payable(_gasSpender), send + _getFeeAmount(send)); 
     }
 
     function setRelayerStatus(address _relayer, bool _status) 

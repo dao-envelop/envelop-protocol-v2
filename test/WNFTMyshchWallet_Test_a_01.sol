@@ -130,7 +130,7 @@ contract WNFTMyshchWallet_Test_a_01 is Test {
         WNFTMyshchWallet wnftBot = WNFTMyshchWallet(_wnftWalletBot);
 
         vm.expectRevert("Only for approved relayer");
-        wnftBot.getRefund();
+        wnftBot.getRefund(msg.sender);
 
         wnftBot.setRelayerStatus(address(1), true);
         assertEq(wnftBot.getRelayerStatus(address(1)), true);
@@ -141,13 +141,13 @@ contract WNFTMyshchWallet_Test_a_01 is Test {
         vm.prank(address(1));
         vm.txGasPrice(2);
         vm.expectRevert();
-        wnftBot.getRefund();
+        wnftBot.getRefund(msg.sender);
 
         _wnftWalletBot.transfer(sendEtherAmount);
 
         vm.txGasPrice(2);
         vm.prank(address(1));
-        wnftBot.getRefund();
+        wnftBot.getRefund(msg.sender);
     }
 
     // bot tries to withdraw more ethers
@@ -195,7 +195,7 @@ contract WNFTMyshchWallet_Test_a_01 is Test {
             address(1), sendERC20Amount
         );
         dataArray[6] = abi.encodeWithSignature(
-            "getRefund()"
+            "getRefund(address)", msg.sender
         );
         
         values[0] = 0;
