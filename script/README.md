@@ -1,5 +1,4 @@
 ## Deployments
-
 `chain_params.json` - contains settings for all scripts.  
 `explorers.json` - contains scanner's base URL  
 `Objects.s.sol` - abstarct conatrct in this file implements all param's load logic, deploy & instantionate logic
@@ -18,7 +17,7 @@ configuration with `CheckChainParam.s.sol`.
 $ forge script script/CheckChainParam.s.sol:CheckChainParam --rpc-url sepolia
 
 $ # Full set deployment
-$ forge script script/Deploy.s.sol:DeployScript --rpc-url sepolia  --account three --sender 0x97ba7778dD9CE27bD4953c136F3B3b7b087E14c1 --broadcast --verify  --etherscan-api-key $ETHERSCAN_TOKEN 
+$ forge script script/Deploy.s.sol:DeployScript --rpc-url sepolia  --account three --sender 0x97ba7778dD9CE27bD4953c136F3B3b7b087E14c1 --broadcast --verify  --etherscan-api-key $ETHERSCAN_TOKEN --priority-gas-price 10000
 
 $ # Test Tx Script
 $ forge script script/Deploy.s.sol:TestTxScript --rpc-url sepolia  --account three --sender 0x97ba7778dD9CE27bD4953c136F3B3b7b087E14c1 --broadcast --verify  --etherscan-api-key $ETHERSCAN_TOKEN 

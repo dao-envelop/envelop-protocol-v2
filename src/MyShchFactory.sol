@@ -194,10 +194,13 @@ contract MyShchFactory is EnvelopWNFTFactory {
         wnft = _getAddressForNonce( _tgId, _nonce);
     }
 
+    function getImplementationHistory(AssetType _type) external view returns(address[] memory) {
+        return implementations[_type];
+    }
+
     function getImplementationHistory() external view returns(address[] memory) {
         return implementations[AssetType.ERC721];
     }
-
     
     /**
      * @dev Returns pure digest, without EIP-191 prefixing.

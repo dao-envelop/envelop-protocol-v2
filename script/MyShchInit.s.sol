@@ -99,10 +99,24 @@ contract MyShchInit is Script, Objects {
 contract TestTxScript is Script, Objects {
     using stdJson for string;
 
+    struct LocalParams {
+        address botWallet;
+        address payable customWallet;
+        CustomERC20 token20;
+        uint64 botId;
+        uint64 userTgId;
+
+    }
+
     //string params_json_file = vm.readFile(string.concat(vm.projectRoot(), "/script/explorers.json"));
     address public constant botEOA   = 0x4b664eD07D19d0b192A037Cfb331644cA536029d;
     uint256 public constant botEOA_PRIVKEY = 0x3480b19b170c5e63c0bdb18d08c4a99628194c7dceaf79e0e17431f4a5c7b1f2;
     
+    address public constant userEOA =  0x6F9aaAaD96180b3D6c71Fbbae2C1c5d5193A64EC;
+    uint256 public constant userEOA_PRIVKEY = 0xae8fe3985898986377b19cc6bdbb76723470552e95e4d028d2dae2691ab9c65d;
+    LocalParams lp;
+    
+
     function run() public {
         console2.log("Chain id: %s", vm.toString(block.chainid));
         console2.log(
@@ -114,38 +128,92 @@ contract TestTxScript is Script, Objects {
         getChainParams();
         deployOrInstances(true);
 
+        // Just check for new cheat code
+        // vm.rememberKey(userEOA_PRIVKEY);
+        // address[] memory eoaWallets = vm.getWallets();
+        // for (uint256 i = 0; i < eoaWallets.length; ++i){
+        //     console2.log("eoaWallets[%s]: %s ",i, eoaWallets[i]);     
+        // }
+        
+        
+        lp.botId = uint64(0);
+        lp.userTgId = uint64(22222);
+
         vm.startBroadcast();
+        // Topup user EOA
+        payable(userEOA).transfer(2e16);
+
+        // Add trusted signers
+        myshch_factory.setSignerStatus(msg.sender, true);
+        myshch_factory.setSignerStatus(botEOA, true);
+       
+        // Bot wnft wallet
+        // We dont need signature for mint wnft wallet to trusted address
+        // bytes memory botSignature;
+        // bytes32 digest =  MessageHashUtils.toEthSignedMessageHash(
+        //     myshch_factory.getDigestForSign(11111, myshch_factory.currentNonce(11111) + 1)
+        // );
+        // (uint8 v, bytes32 r, bytes32 s) = vm.sign(botEOA_PRIVKEY, digest);
+        // botSignature = abi.encodePacked(r,s,v);
+        (bool current, ) = myshch_factory.trustedSigners(botEOA);
+        if (current) {
+            lp.botWallet = myshch_factory.mintPersonalMSW(0, "");   
+            console2.log("MyShch bot  wallet created: %s ", lp.botWallet); 
+        } else {
+             console2.log("Signer address: %s is not trusted", botEOA); 
+        }
+        vm.stopBroadcast();
+        
+        
         // Users wnft wallet
+        vm.startBroadcast(userEOA_PRIVKEY);
         bytes memory botSignature;
         bytes32 digest =  MessageHashUtils.toEthSignedMessageHash(
             myshch_factory.getDigestForSign(22222, myshch_factory.currentNonce(22222) + 1)
         );
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(botEOA_PRIVKEY, digest);
         botSignature = abi.encodePacked(r,s,v);
-        (bool current, ) = myshch_factory.trustedSigners(botEOA);
+        (current, ) = myshch_factory.trustedSigners(botEOA);
         if (current) {
-            address mywallet = myshch_factory.mintPersonalMSW{value: 7000}(22222, botSignature);   
-            console2.log("MyShch wallet created: %s ", mywallet); 
+            lp.customWallet = payable(myshch_factory.mintPersonalMSW{value: 1e16}(22222, botSignature));   
+            console2.log("MyShch user wallet created: %s ", lp.customWallet); 
         } else {
              console2.log("Signer address: %s is not trusted", botEOA); 
         }
-        
 
-        // Custom ERC20
-        myshch_factory.newImplementation(MyShchFactory.AssetType.ERC20, address(impl_erc20));
-        MyShchFactory.InitDistributtion[] memory initDisrtrib = new MyShchFactory.InitDistributtion[](2);
-        initDisrtrib[0] = MyShchFactory.InitDistributtion(address(1), 100);
-        initDisrtrib[1] = MyShchFactory.InitDistributtion(address(2), 200);
-        address custom_20address = myshch_factory.createCustomERC20(
-            address(this),           // _creator,
-            "Custom ERC20 Name",     // name_,
-            "CUSTSYM",               // symbol_,
-            1_000_000e18,            // _totalSupply,
-            initDisrtrib             // _initialHolders
-        );
-        
+        WNFTMyshchWallet userWallet = WNFTMyshchWallet(lp.customWallet);
+        userWallet.setRelayerStatus(lp.botWallet, true);
         vm.stopBroadcast();
-        console2.log("Custom ERC20 token created: %s", custom_20address);
+        // transfer user wNFT wallet to fake address. It is does not matter
+        // in this test case
+        //userWallet.transferFrom(msg.sender, address(1), userWallet.TOKEN_ID());
+             
+        vm.startBroadcast();
+        // Custom ERC20
+        address[] memory erc20Impl = myshch_factory.getImplementationHistory(MyShchFactory.AssetType.ERC20);
+        if (erc20Impl[erc20Impl.length -1] != address(impl_erc20)) {
+            myshch_factory.newImplementation(MyShchFactory.AssetType.ERC20, address(impl_erc20));    
+        }
+        
+        MyShchFactory.InitDistributtion[] memory initDisrtrib = new MyShchFactory.InitDistributtion[](2);
+        initDisrtrib[0] = MyShchFactory.InitDistributtion(lp.botWallet, 10e18);
+        initDisrtrib[1] = MyShchFactory.InitDistributtion(address(2), 200);
+        lp.token20 = CustomERC20(
+            myshch_factory.createCustomERC20(
+                msg.sender,           // _creator,
+                "Custom ERC20 Name",     // name_,
+                "CUSTSYM",               // symbol_,
+                1_000_000e18,            // _totalSupply,
+                initDisrtrib             // _initialHolders
+            )
+        );
+        console2.log("Custom ERC20 token created: %s", address(lp.token20));
+        // Topup bot wallet
+        //lp.token20.transfer(lp.botWallet, lp.token20.balanceOf(address(this))/ 10);
+        WNFTMyshchWallet botWallet = WNFTMyshchWallet(payable(lp.botWallet));
+        botWallet.erc20TransferWithRefund(address(lp.token20), lp.customWallet, 1e18);
+        vm.stopBroadcast();
+        
         console2.log("Test tx finished");
     
     }
