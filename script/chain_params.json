@@ -110,13 +110,14 @@
         "status_to_set": "true",
         
         "factory": "0xa9A9B9d76c5449dCB4fF1B74E023bF3f6F8a30cf",
-         "myshch_factory": "0x24F15fC420ff0773F9e949c9cE3474A696e26608",
-         "legacy_wrapper": "0x0d8D18aB6ac0de433209DC9C23b3C5031e381480",
-         "impl_legacy": "0xAe7B1d62440f357C3793d11417c7fE9201047940",
-         "impl_native": "0xAcF48aa264fc4b2B890F0b132049E09620eBb826",
-         "impl_myshch": "0x7CDCBEa338ce3598F8caEFa6A3883f72395b9E3e",
-         "impl_index": "0x36013ECf61dBA5EAB01E4551360600440107b70D",
-         "impl_erc20": "0x6178438A0BB1c6002B585a670AAa0f8c4D8b0aed"
+        "myshch_factory": "0xd804c5ccaA9Bf0AcFa635151049e8f785cC0767E",
+        "legacy_wrapper": "0x0d8D18aB6ac0de433209DC9C23b3C5031e381480",
+        "impl_legacy": "0xAe7B1d62440f357C3793d11417c7fE9201047940",
+        "impl_native": "0xAcF48aa264fc4b2B890F0b132049E09620eBb826",
+        "impl_myshch": "0x70c651fB62e88faaCEdF6829A1A1a2EFb37AB79d",
+        "impl_index": "0x36013ECf61dBA5EAB01E4551360600440107b70D",
+        "impl_erc20": "0x6178438A0BB1c6002B585a670AAa0f8c4D8b0aed"
+
 
 
     },

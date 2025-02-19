@@ -173,6 +173,7 @@ contract TestTxScript is Script, Objects {
         );
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(botEOA_PRIVKEY, digest);
         botSignature = abi.encodePacked(r,s,v);
+        
         (current, ) = myshch_factory.trustedSigners(botEOA);
         if (current) {
             lp.customWallet = payable(myshch_factory.mintPersonalMSW{value: 1e16}(22222, botSignature));   
@@ -184,9 +185,7 @@ contract TestTxScript is Script, Objects {
         WNFTMyshchWallet userWallet = WNFTMyshchWallet(lp.customWallet);
         userWallet.setRelayerStatus(lp.botWallet, true);
         vm.stopBroadcast();
-        // transfer user wNFT wallet to fake address. It is does not matter
-        // in this test case
-        //userWallet.transferFrom(msg.sender, address(1), userWallet.TOKEN_ID());
+
              
         vm.startBroadcast();
         // Custom ERC20
@@ -210,8 +209,8 @@ contract TestTxScript is Script, Objects {
         console2.log("Custom ERC20 token created: %s", address(lp.token20));
         // Topup bot wallet
         //lp.token20.transfer(lp.botWallet, lp.token20.balanceOf(address(this))/ 10);
-        WNFTMyshchWallet botWallet = WNFTMyshchWallet(payable(lp.botWallet));
-        botWallet.erc20TransferWithRefund(address(lp.token20), lp.customWallet, 1e18);
+        // WNFTMyshchWallet botWallet = WNFTMyshchWallet(payable(lp.botWallet));
+        // botWallet.erc20TransferWithRefund(address(lp.token20), lp.customWallet, 1e18);
         vm.stopBroadcast();
         
         console2.log("Test tx finished");
