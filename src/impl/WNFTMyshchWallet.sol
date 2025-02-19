@@ -3,23 +3,20 @@
 
 pragma solidity ^0.8.28;
 
-// import "@Uopenzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
-//import "@Uopenzeppelin/contracts/token/ERC1155/utils/ERC1155HolderUpgradeable.sol";
 import "./Singleton721.sol";
-//import "../utils/LibET.sol";
-//import "../utils/TokenService.sol";
 import "../interfaces/IEnvelopV2wNFT.sol";
 import "../interfaces/IMyshchWalletwNFT.sol"; 
 import "./WNFTV2Envelop721.sol";
 
 /**
- * @dev Implementation of WNFT that partial compatible with Envelop V1
+ * @dev Implementation of WNFT for Myshch Ecosystem
  */
 contract WNFTMyshchWallet is WNFTV2Envelop721 
 {
 
-    uint256 public constant PERMANENT_TX_COST = 43_000; // 0
-    uint256 public constant PERCENT_DENOMINATOR = 10_000;
+    uint256 public constant PERMANENT_TX_COST = 43_000; 
+    uint256 public constant PERCENT_DENOMINATOR =  10_000;
+    uint256 public constant DEFAULT_RELAYER_FEE = 100_000; // 10% from network fee
 
 
     struct WNFTMyshchWalletStorage {
@@ -30,10 +27,6 @@ contract WNFTMyshchWallet is WNFTV2Envelop721
     /// https://docs.soliditylang.org/en/latest/contracts.html#transient-storage
     uint256 transient public gasLeftOnStart; 
     
-    modifier onlyApproved() {
-        _onlyApproved(msg.sender);
-        _;
-    }
     
     modifier onlyAprrovedRelayer() {
         _onlyAprrovedRelayer(msg.sender);
@@ -99,6 +92,8 @@ contract WNFTMyshchWallet is WNFTV2Envelop721
         // Relayer Fee set
         if (_init.numberParams.length  >  1) {
             $.relayerFeePercent = _init.numberParams[1];   
+        } else {
+            $.relayerFeePercent = DEFAULT_RELAYER_FEE;
         }
 
         
@@ -141,10 +136,11 @@ contract WNFTMyshchWallet is WNFTV2Envelop721
     {
         send = (PERMANENT_TX_COST + _getGasDiff(gasLeftOnStart)) * tx.gasprice;
         require(
-            send < PERMANENT_TX_COST * tx.gasprice * 2,  // * 3
+            send < PERMANENT_TX_COST * tx.gasprice * 2, 
             "Too much refund request"
         );
-        Address.sendValue(payable(_gasSpender), send + _getFeeAmount(send)); 
+        send += _getFeeAmount(send);
+        Address.sendValue(payable(_gasSpender), send); 
     }
 
     function setRelayerStatus(address _relayer, bool _status) 
@@ -164,7 +160,7 @@ contract WNFTMyshchWallet is WNFTV2Envelop721
          return $.approvedRelayer[_relayer];
     }
 
-    function getRelayerFee() external view returns(uint256) {
+    function getRelayerFeePercentPt() external view returns(uint256) {
          WNFTMyshchWalletStorage storage $ = _getWNFTMyshchWalletStorage();
          return $.relayerFeePercent;
     }
@@ -177,19 +173,9 @@ contract WNFTMyshchWallet is WNFTV2Envelop721
         diff = _was - gasleft();
     }
 
-    function _getFeeAmount(uint256 _in) internal view returns(uint256 fee){
+    function _getFeeAmount(uint256 _in) internal view virtual returns(uint256 fee){
         WNFTMyshchWalletStorage storage $ = _getWNFTMyshchWalletStorage();
         fee = (_in * $.relayerFeePercent) / (100 * PERCENT_DENOMINATOR); 
-    }
-
-    function  _onlyApproved(address _sender) internal view virtual {
-        address currOwner = ownerOf(TOKEN_ID);
-        require(
-            //currOwner == _sender ||
-            isApprovedForAll(currOwner, _sender) ||
-            getApproved(TOKEN_ID) == _sender,
-            "Only for apprved addresses"
-        );
     }
 
     function _onlyAprrovedRelayer(address _sender) internal view virtual {

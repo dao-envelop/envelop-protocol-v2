@@ -231,7 +231,7 @@ contract WNFTMyshchWallet_Test_a_01 is Test {
         vm.prank(address(this));
         _wnftWalletBot = payable(impl_myshch.createWNFTonFactory(initData));
         WNFTMyshchWallet wnftBot = WNFTMyshchWallet(_wnftWalletBot);
-        assertEq(wnftBot.getRelayerFee(), feePercent);
+        assertEq(wnftBot.getRelayerFeePercentPt(), feePercent);
         
     }
 }
