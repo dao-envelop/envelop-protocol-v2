@@ -108,9 +108,9 @@ contract WNFTV2Index_Test_m_01 is Test  {
         }
         
         // calc child wallet addresses
-        bytes32 salt = keccak256(abi.encode(address(impl_index), impl_index.nonce() + 1));
+        bytes32 salt = keccak256(abi.encode(address(impl_index), _wnftWallet, impl_index.nonce(_wnftWallet) + 1));
         address calcW1 = factory.predictDeterministicAddress(address(impl_index), salt);
-        salt = keccak256(abi.encode(address(impl_index), impl_index.nonce() + 2));
+        salt = keccak256(abi.encode(address(impl_index), _wnftWallet, impl_index.nonce(_wnftWallet) + 2));
         address calcW2 = factory.predictDeterministicAddress(address(impl_index), salt);
 
         dataArray[0] = _data;

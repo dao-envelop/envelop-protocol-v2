@@ -121,9 +121,9 @@ contract WNFTMakerScript is Script, Objects {
         dataArray[2] = hex"83bd37f9000155d398326f99059ff775485246999027b319795500018ac76a51cc950d9822d68b83fe1ad97b32cd580d08016345785d8a000008016340d27492d77000c49b0001C46785891bc0dc3A1b88a6ba39A78aB7f5850846000126eDaedAEB73365de1b6A9305E95dCC9b4635A5D00018d1454F9ac6363e20664C1AE29bF47C38a354f2500000000030102030022010100010200ff000000000000000000000000000000000000000026edaedaeb73365de1b6a9305e95dcc9b4635a5d55d398326f99059ff775485246999027b3197955000000000000000000000000000000000000000000000000";
 
         // calc child wallet addresses
-        bytes32 salt = keccak256(abi.encode(address(impl_index), impl_index.nonce() + 1));
+        bytes32 salt = keccak256(abi.encode(address(impl_index), pm.master_address, impl_index.nonce(pm.master_address) + 1));
         address calcW1 = factory.predictDeterministicAddress(address(impl_index), salt);
-        salt = keccak256(abi.encode(address(impl_index), impl_index.nonce() + 2));
+        salt = keccak256(abi.encode(address(impl_index), pm.master_address, impl_index.nonce(pm.master_address) + 2));
         address calcW2 = factory.predictDeterministicAddress(address(impl_index), salt);
 
         vm.startBroadcast();

@@ -37,7 +37,7 @@ contract Factory_Test_m_03 is Test {
     WNFTMyshchWallet public walletUser;
     WNFTV2Envelop721 public impl_native;
     MockERC20 public erc20;
-    uint256 public nonce;
+    //uint256 public nonce;
     uint256 public sendERC20Amount = 1e14;
     uint256 public constant FEE = 0;
     address constant SERV_OWNER = address(18);
@@ -144,12 +144,12 @@ contract Factory_Test_m_03 is Test {
     function test_createPredicted() public {
         address predictedwNFT1 = factory.predictDeterministicAddress(
             address(impl_native),
-            keccak256(abi.encode(impl_native, impl_native.nonce() + 1))
+            keccak256(abi.encode(impl_native, address(walletServ), impl_native.nonce(address(walletServ)) + 1))
         );
         
         address predictedwNFT2 = factory.predictDeterministicAddress(
             address(impl_native),
-            keccak256(abi.encode(impl_native, impl_native.nonce() + 2))
+            keccak256(abi.encode(impl_native, address(walletServ), impl_native.nonce(address(walletServ)) + 2))
         );
 
         erc20.transfer(predictedwNFT1, sendERC20Amount);

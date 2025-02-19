@@ -105,9 +105,9 @@ contract WNFTV2Envelop721_Test_a_wNFTMaker is Test  {
         }
         
         // calc child wallet addresses
-        bytes32 salt = keccak256(abi.encode(address(impl_native), impl_native.nonce() + 1));
+        bytes32 salt = keccak256(abi.encode(address(impl_native), _wnftWallet, impl_native.nonce(_wnftWallet) + 1));
         address calcW1 = factory.predictDeterministicAddress(address(impl_native), salt);
-        salt = keccak256(abi.encode(address(impl_native), impl_native.nonce() + 2));
+        salt = keccak256(abi.encode(address(impl_native), _wnftWallet, impl_native.nonce(_wnftWallet) + 2));
         address calcW2 = factory.predictDeterministicAddress(address(impl_native), salt);
 
         dataArray[0] = _data;

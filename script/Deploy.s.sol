@@ -103,7 +103,7 @@ contract TestTxScript is Script, Objects {
         // transfer ether
 
         // calc index wallet addresses
-        bytes32 salt = keccak256(abi.encode(address(impl_index), impl_index.nonce() + 1));
+        bytes32 salt = keccak256(abi.encode(address(impl_index), impl_index.nonce(msg.sender) + 1));
         address calcW1 = factory.predictDeterministicAddress(address(impl_index), salt);
 
         address[] memory targets = new address[](3);
