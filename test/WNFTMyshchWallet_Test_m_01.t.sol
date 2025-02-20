@@ -67,7 +67,7 @@ contract WNFTMyshchWallet_Test_m_01 is Test {
         address[] memory addrs2 = new address[](1);
         addrs2[0] = _wnftWallet1;  // add relayer
         uint256[] memory np =  new uint256[](2);
-        np[1] = 20_000;
+        //np[1] = 20_000;
 
         initData = WNFTV2Envelop721.InitParams(
             address(1), // user address
@@ -81,14 +81,9 @@ contract WNFTMyshchWallet_Test_m_01 is Test {
         );
         //vm.prank(address(this));
         _wnftWallet2 = payable(impl_myshch.createWNFTonFactory(initData));
-
     }
     
     function test_transfer_with_refund() public {
-
-        
-
-        
         WNFTMyshchWallet wnftBot = WNFTMyshchWallet(_wnftWallet1);
         WNFTMyshchWallet wnftUser = WNFTMyshchWallet(_wnftWallet2);
         

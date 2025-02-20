@@ -136,8 +136,9 @@ contract WNFTV2Envelop721_Test_m_01 is Test {
         wnft.setSignerStatus(botEOA, true); //set trusted signer
 
         (bool sent, bytes memory data) = _wnftWalletAddress.call{value: sendEtherAmount * 10}("");
-
-        bytes memory _data = "";
+        sent;
+        data;
+        //bytes memory _data = "";
         ReentrancyAttacker3 hacker = new ReentrancyAttacker3(_wnftWalletAddress);
 
         // prepare signature

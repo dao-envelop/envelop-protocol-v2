@@ -31,9 +31,9 @@ contract WNFTV2Envelop721 is
 
     
     struct WNFTV2Envelop721Storage {
-        ET.WNFT wnftData;
-        mapping(address => uint256) nonceForAddress;
-        mapping(address => bool) trustedSigners;
+        ET.WNFT wnftData;                            // Old(v1) style wNFT data
+        mapping(address => uint256) nonceForAddress; // Nonce for use   with `executeEncodedTxBySignature`
+        mapping(address => bool) trustedSigners;     // Signers for use with `executeEncodedTxBySignature`
         
     }
 
@@ -64,8 +64,9 @@ contract WNFTV2Envelop721 is
     //  +----+----+----+----+----+---+ 
     //      for use in extendings
     
-    // Out main storage because setter not supporrts delegate calls 
-    uint256 public nonce; // counter for createWNFTonFactory2
+    // Out of main storage because setter not supporrts delegate calls 
+    // This nonce for create proxy with deterministic addressese `createWNFTonFactory2`
+    mapping(address sender => uint256 nonce) public nonce;
 
     error WnftRuleViolation(bytes2 rule);
     error RuleSetNotSupported(bytes2 unsupportedRules);
@@ -155,7 +156,7 @@ contract WNFTV2Envelop721 is
         notDelegated 
         returns(address wnft) 
     {
-        bytes32 salt = keccak256(abi.encode(address(this), ++ nonce));
+        bytes32 salt = keccak256(abi.encode(address(this), msg.sender, ++ nonce[msg.sender]));
         wnft = IEnvelopWNFTFactory(FACTORY).createWNFT(
             address(this), 
             abi.encodeWithSignature(INITIAL_SIGN_STR, _init),
