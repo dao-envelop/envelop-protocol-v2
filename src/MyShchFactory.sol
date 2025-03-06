@@ -87,7 +87,7 @@ contract MyShchFactory is EnvelopWNFTFactory {
                 msg.sender, 
                 "MyshchWallet", 
                 "MSHW", 
-                "https://api.envelop.is",  //TODO  change  address
+                "https://api.envelop.is/msw/", 
                 addrParams,
                 hashedParams,
                 new uint256[](0),
@@ -126,7 +126,7 @@ contract MyShchFactory is EnvelopWNFTFactory {
                 _receivers[i], 
                 "MyshchWallet", 
                 "MSHW", 
-                "https://api.envelop.is",  //TODO  change  address
+                "https://api.envelop.is/msw/",
                 addrParams,
                 hashedParams,
                 new uint256[](0),
