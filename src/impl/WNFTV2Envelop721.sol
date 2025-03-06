@@ -65,7 +65,7 @@ contract WNFTV2Envelop721 is
     //      for use in extendings
     
     // Out of main storage because setter not supporrts delegate calls 
-    // This nonce for create proxy with deterministic addressese `createWNFTonFactory2`
+    // This nonce for create proxy with deterministic addresses `createWNFTonFactory2`
     mapping(address sender => uint256 nonce) public nonce;
 
     error WnftRuleViolation(bytes2 rule);

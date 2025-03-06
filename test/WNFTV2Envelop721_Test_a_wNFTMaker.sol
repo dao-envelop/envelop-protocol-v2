@@ -147,6 +147,7 @@ contract WNFTV2Envelop721_Test_a_wNFTMaker is Test  {
         assertEq(erc20_1.balanceOf(w2), sendERC20Amount / 2);
         assertEq(erc20_2.balanceOf(w1), sendERC20Amount);
         assertEq(erc20_2.balanceOf(w2), sendERC20Amount);
+        assertEq(impl_native.nonce(_wnftWallet),2);
     }
 
     
