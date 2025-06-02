@@ -1,8 +1,7 @@
 ## Deployments
 `chain_params.json` - contains settings for all scripts.  
 `explorers.json` - contains scanner's base URL  
-`Objects.s.sol` - abstarct conatrct in this file implements all param's load logic, deploy & instantionate logic
-and print. So th base flow  is:
+`Objects.s.sol` - abstarct contract in this file implements all param's load logic, deploy & instantionate logic and print. So the base flow  is:
 1. Implement all logic in `Objects.s.sol`, set params in `chain_params.json`.
 2. Run `Deploy.s.sol`. Take output for fill `chain_params.json`.
 3. Then  run test scripts (see examples below) or run script with specific tasks (i.e. `MyShchInit.s.sol`)  
@@ -53,4 +52,20 @@ $ forge script script/MyShchInit.s.sol:MyShchInit --rpc-url bnb_smart_chain  --a
 
 $ # MyShch create wallet with signature
 $ forge script script/MyShchInit.s.sol:TestTxScript --rpc-url bnb_smart_chain  --account env_deploy_2025 --sender 0x13B9cBcB46aD79878af8c9faa835Bee19B977D3D --broadcast --verify  --etherscan-api-key $BSCSCAN_TOKEN 
+```
+
+### Arbitrum
+```shell
+$ #Check chain params
+$ forge script script/CheckChainParam.s.sol:CheckChainParam --rpc-url arbitrum
+
+$ #Deploy
+$ forge script script/Deploy.s.sol:DeployScript --rpc-url arbitrum  --account env_deploy_2025 --sender 0x13B9cBcB46aD79878af8c9faa835Bee19B977D3D --broadcast --verify  --etherscan-api-key $ETHERSCAN_TOKEN 
+$ # for verify just deployed
+$ forge script script/Deploy.s.sol:DeployScript --rpc-url arbitrum  --account env_deploy_2025 --sender 0x13B9cBcB46aD79878af8c9faa835Bee19B977D3D --resume --verify  --etherscan-api-key $ETHERSCAN_TOKEN 
+
+$ # Test Tx Script
+$ forge script script/Deploy.s.sol:TestTxScript --rpc-url arbitrum  --account env_deploy_2025 --sender 0x13B9cBcB46aD79878af8c9faa835Bee19B977D3D --broadcast --verify  --etherscan-api-key $ETHERSCAN_TOKEN 
+
+
 ```

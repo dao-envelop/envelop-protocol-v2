@@ -61,13 +61,21 @@
 
     "42161":{
         "chain_name": "Arbitrum",
-        "event_reg": "0x33ec38185f213D6e75ba26F711ba309b8BcD211a", 
-        "wl_items": [
-            "", 
-            "", 
-            ""
-        ]
-    },
+        "need_test_tx": "true",
+        "erc20":[
+            "0x120e49d7ab1EDc0bFBF509Fa8566ca5b5dCAAd40"
+        ],
+        "trusted_signers_list":[
+        ],
+        "factory": "0xBDb5201565925AE934A5622F0E7091aFFceed5EB",
+        "myshch_factory": "0xf58208676a7b5a604df41ca25b5310f3cc997bF3",
+        "legacy_wrapper": "0x21c23bA0ec49c9440CD259cCB48ff9D06CD16522",
+        "impl_legacy": "0x653bce4d7A6CF5C4FdbBD5fc6B2bB41c8eAFC56A",
+        "impl_native": "0x22bBBE241464AB67c9B4F0881fA45F7f2d26870F",
+        "impl_myshch": "0x9C10eD902Ae7fD997D92eeD7535849f204b727b7",
+        "impl_index": "0x28466e3e92CB6FB292618D0faEbB49624f4d6f0C",
+        "impl_erc20": "0x7A3c8F45b809078da58d17fb6Cd059334622838F"
+        },
 
     "80001":{
         "wl_items": [

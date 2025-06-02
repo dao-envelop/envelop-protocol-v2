@@ -1,5 +1,6 @@
 # Compiler files
 cache/
+_cache/
 out/
 
 # Ignores development broadcast logs
