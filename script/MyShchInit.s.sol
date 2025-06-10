@@ -2,6 +2,7 @@
 pragma solidity ^0.8.21;
 
 import "./Objects.s.sol";
+import {Vm} from "forge-std/Vm.sol";
 
 // Address:     0x7EC0BF0a4D535Ea220c6bD961e352B752906D568
 // Private key: 0x1bbde125e133d7b485f332b8125b891ea2fbb6a957e758db72e6539d46e2cd71
@@ -112,8 +113,8 @@ contract TestTxScript is Script, Objects {
     address public constant botEOA   = 0x4b664eD07D19d0b192A037Cfb331644cA536029d;
     uint256 public constant botEOA_PRIVKEY = 0x3480b19b170c5e63c0bdb18d08c4a99628194c7dceaf79e0e17431f4a5c7b1f2;
     
-    address public constant userEOA =  0x6F9aaAaD96180b3D6c71Fbbae2C1c5d5193A64EC;
-    uint256 public constant userEOA_PRIVKEY = 0xae8fe3985898986377b19cc6bdbb76723470552e95e4d028d2dae2691ab9c65d;
+    //address public constant userEOA =  0x6F9aaAaD96180b3D6c71Fbbae2C1c5d5193A64EC;
+    //uint256 public constant userEOA_PRIVKEY = 0xae8fe3985898986377b19cc6bdbb76723470552e95e4d028d2dae2691ab9c65d;
     LocalParams lp;
     
 
@@ -139,9 +140,13 @@ contract TestTxScript is Script, Objects {
         lp.botId = uint64(0);
         lp.userTgId = uint64(22222);
 
+        Vm.Wallet memory userEOAWallet = vm.createWallet( 
+            uint256(keccak256(abi.encode(block.timestamp, vm.prompt("enter salt:"))))
+        );
+
         vm.startBroadcast();
         // Topup user EOA
-        payable(userEOA).transfer(2e16);
+        payable(userEOAWallet.addr).transfer(2e14);
 
         // Add trusted signers
         myshch_factory.setSignerStatus(msg.sender, true);
@@ -155,6 +160,7 @@ contract TestTxScript is Script, Objects {
         // );
         // (uint8 v, bytes32 r, bytes32 s) = vm.sign(botEOA_PRIVKEY, digest);
         // botSignature = abi.encodePacked(r,s,v);
+
         (bool current, ) = myshch_factory.trustedSigners(botEOA);
         if (current) {
             lp.botWallet = myshch_factory.mintPersonalMSW(0, "");   
@@ -166,7 +172,7 @@ contract TestTxScript is Script, Objects {
         
         
         // Users wnft wallet
-        vm.startBroadcast(userEOA_PRIVKEY);
+        vm.startBroadcast(userEOAWallet.privateKey);
         bytes memory botSignature;
         bytes32 digest =  MessageHashUtils.toEthSignedMessageHash(
             myshch_factory.getDigestForSign(22222, myshch_factory.currentNonce(22222) + 1)
@@ -176,7 +182,7 @@ contract TestTxScript is Script, Objects {
         
         (current, ) = myshch_factory.trustedSigners(botEOA);
         if (current) {
-            lp.customWallet = payable(myshch_factory.mintPersonalMSW{value: 1e16}(22222, botSignature));   
+            lp.customWallet = payable(myshch_factory.mintPersonalMSW{value: 1e14}(22222, botSignature));   
             console2.log("MyShch user wallet created: %s ", lp.customWallet); 
         } else {
              console2.log("Signer address: %s is not trusted", botEOA); 

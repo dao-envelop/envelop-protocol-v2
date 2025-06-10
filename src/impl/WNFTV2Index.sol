@@ -16,7 +16,7 @@ contract WNFTV2Index is WNFTV2Envelop721 {
     string constant nftName   = "Envelop wNFT V2 Index";
     string constant nftSymbol = "ENVELOPV2";
     string constant public BASE_INDEX_URI = "https://api.envelop.is/dindex/";
-    string constant public indexVersion = "2.0.1";
+    string constant public indexVersion = "2.0.2";
 
 
     struct IndexData {

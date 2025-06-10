@@ -21,12 +21,12 @@
         ],
         "status_to_set": "true",
           "factory": "0xBDb5201565925AE934A5622F0E7091aFFceed5EB",
-          "myshch_factory": "0xf58208676a7b5a604df41ca25b5310f3cc997bF3",
+          "myshch_factory": "0xC396a63A67B7F569f76FB41501Ddc577E895e0A6",
           "legacy_wrapper": "0x21c23bA0ec49c9440CD259cCB48ff9D06CD16522",
           "impl_legacy": "0x653bce4d7A6CF5C4FdbBD5fc6B2bB41c8eAFC56A",
-          "impl_native": "0x22bBBE241464AB67c9B4F0881fA45F7f2d26870F",
-          "impl_myshch": "0x9C10eD902Ae7fD997D92eeD7535849f204b727b7",
-          "impl_index": "0x28466e3e92CB6FB292618D0faEbB49624f4d6f0C",
+          "impl_native": "0xe738Cd578E1Adc6C7da7F0796775F4cEfb37D146",
+          "impl_myshch": "0xd97e06E6F23Bce9Cd2e32b090DA7308ee7D0a4D3",
+          "impl_index": "0x062858fdA4c60FEcCC662a05291EbED7C900D7E2",
           "impl_erc20": "0x7A3c8F45b809078da58d17fb6Cd059334622838F"
     },
 
@@ -71,9 +71,9 @@
         "myshch_factory": "0xf58208676a7b5a604df41ca25b5310f3cc997bF3",
         "legacy_wrapper": "0x21c23bA0ec49c9440CD259cCB48ff9D06CD16522",
         "impl_legacy": "0x653bce4d7A6CF5C4FdbBD5fc6B2bB41c8eAFC56A",
-        "impl_native": "0x22bBBE241464AB67c9B4F0881fA45F7f2d26870F",
-        "impl_myshch": "0x9C10eD902Ae7fD997D92eeD7535849f204b727b7",
-        "impl_index": "0x28466e3e92CB6FB292618D0faEbB49624f4d6f0C",
+        "impl_native": "0xC425A68df03764F648883b961eb982f087fe22ca",
+        "impl_myshch": "0xDAf75f915e648FBdE1017733B3E8998bBD29f0ba",
+        "impl_index": "0xcD88Cd5F96Ad232b9209b7452021284440520955",
         "impl_erc20": "0x7A3c8F45b809078da58d17fb6Cd059334622838F"
         },
 
@@ -121,9 +121,9 @@
         "myshch_factory": "0xd804c5ccaA9Bf0AcFa635151049e8f785cC0767E",
         "legacy_wrapper": "0x0d8D18aB6ac0de433209DC9C23b3C5031e381480",
         "impl_legacy": "0xAe7B1d62440f357C3793d11417c7fE9201047940",
-        "impl_native": "0xAcF48aa264fc4b2B890F0b132049E09620eBb826",
-        "impl_myshch": "0x70c651fB62e88faaCEdF6829A1A1a2EFb37AB79d",
-        "impl_index": "0x36013ECf61dBA5EAB01E4551360600440107b70D",
+        "impl_native": "0x8A910C12fC12cb32f1e9611978df60d0c1dD180B",
+        "impl_myshch": "0x6A25EC152f90A9eD327F7E7b32eD46223FC5E834",
+        "impl_index": "0x32452a25D664d4ccD781e082129Aa07CDB276D88",
         "impl_erc20": "0x6178438A0BB1c6002B585a670AAa0f8c4D8b0aed"
 
 

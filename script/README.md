@@ -42,16 +42,20 @@ $ cast send 0x7F3f876463e3f70634823be78F6f55E01720A068 "createCustomERC20(addres
 $ forge script script/CheckChainParam.s.sol:CheckChainParam --rpc-url bnb_smart_chain
 
 $ #Deploy
-$ forge script script/Deploy.s.sol:DeployScript --rpc-url bnb_smart_chain  --account env_deploy_2025 --sender 0x13B9cBcB46aD79878af8c9faa835Bee19B977D3D --broadcast --verify  --etherscan-api-key $BSCSCAN_TOKEN 
+$ forge script script/Deploy.s.sol:DeployScript --rpc-url bnb_smart_chain  --account env_deploy_2025 --sender 0x13B9cBcB46aD79878af8c9faa835Bee19B977D3D --broadcast --verify  --etherscan-api-key $ETHERSCAN_TOKEN 
+
+$ # for verify just deployed
+$ forge script script/Deploy.s.sol:DeployScript --rpc-url bnb_smart_chain  --account env_deploy_2025 --sender 0x13B9cBcB46aD79878af8c9faa835Bee19B977D3D --resume --verify  --etherscan-api-key $ETHERSCAN_TOKEN 
 
 $ # Test Tx Script
-$ forge script script/Deploy.s.sol:TestTxScript --rpc-url bnb_smart_chain  --account env_deploy_2025 --sender 0x13B9cBcB46aD79878af8c9faa835Bee19B977D3D --broadcast --verify  --etherscan-api-key $BSCSCAN_TOKEN 
+$ forge script script/Deploy.s.sol:TestTxScript --rpc-url bnb_smart_chain  --account env_deploy_2025 --sender 0x13B9cBcB46aD79878af8c9faa835Bee19B977D3D --broadcast --etherscan-api-key $ETHERSCAN_TOKEN 
 
 $ # MyShch Check & Init Signers Script
 $ forge script script/MyShchInit.s.sol:MyShchInit --rpc-url bnb_smart_chain  --account env_deploy_2025 --sender 0x13B9cBcB46aD79878af8c9faa835Bee19B977D3D --broadcast 
 
 $ # MyShch create wallet with signature
-$ forge script script/MyShchInit.s.sol:TestTxScript --rpc-url bnb_smart_chain  --account env_deploy_2025 --sender 0x13B9cBcB46aD79878af8c9faa835Bee19B977D3D --broadcast --verify  --etherscan-api-key $BSCSCAN_TOKEN 
+$ # MyShch create wallet with signature  - !!! Require to spent some native assset amount
+$ forge script script/MyShchInit.s.sol:TestTxScript --rpc-url bnb_smart_chain  --account env_deploy_2025 --sender 0x13B9cBcB46aD79878af8c9faa835Bee19B977D3D --broadcast  --etherscan-api-key $ETHERSCAN_TOKEN 
 ```
 
 ### Arbitrum
