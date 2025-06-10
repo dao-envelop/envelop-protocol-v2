@@ -10,9 +10,14 @@ import "./WNFTV2Envelop721.sol";
  * This contract initialization is more cheap
  */
 contract WNFTV2Index is WNFTV2Envelop721 {
+    using Strings for uint256;
+    using Strings for uint160;
+
     string constant nftName   = "Envelop wNFT V2 Index";
     string constant nftSymbol = "ENVELOPV2";
+    string constant public BASE_INDEX_URI = "https://api.envelop.is/dindex/";
     string constant public indexVersion = "2.0.1";
+
 
     struct IndexData {
         string version;
@@ -77,5 +82,22 @@ contract WNFTV2Index is WNFTV2Envelop721 {
 
     function symbol() public pure override returns (string memory) {
         return nftSymbol;
+    }
+
+    /**
+     * @dev Base URI for computing {tokenURI}. If set, the resulting URI for each
+     * token will be the concatenation of the `baseURI` and the `tokenId`. Empty
+     * by default, can be overridden in child contracts.
+     */
+    function _baseURI() internal view override virtual returns (string memory) {
+        return string(
+            abi.encodePacked(
+                BASE_INDEX_URI,
+                block.chainid.toString(),
+                "/",
+                uint160(address(this)).toHexString(),
+                "/"
+            )
+        );
     }
 }

@@ -83,7 +83,7 @@ contract WNFTV2Index_Test_m_01 is Test  {
         targets[4] = address(erc20_2);
         targets[5] = address(erc20_2);
 
-        // prepare data for deploying of child wallets
+        // prepare data for deploying of child wallets (indexes)
         initData = WNFTV2Envelop721.InitParams(
             address(1),
             'Envelop',
@@ -107,7 +107,7 @@ contract WNFTV2Index_Test_m_01 is Test  {
             values[i] = 0;    
         }
         
-        // calc child wallet addresses
+        // calc child wallet addresses (indexes)
         bytes32 salt = keccak256(abi.encode(address(impl_index), _wnftWallet, impl_index.nonce(_wnftWallet) + 1));
         address calcW1 = factory.predictDeterministicAddress(address(impl_index), salt);
         salt = keccak256(abi.encode(address(impl_index), _wnftWallet, impl_index.nonce(_wnftWallet) + 2));
@@ -134,7 +134,7 @@ contract WNFTV2Index_Test_m_01 is Test  {
 
         bytes[] memory result = wnft.executeEncodedTxBatch(targets, values, dataArray);
 
-        // get child wallet adresses from output
+        // get child wallet (index) adresses from output
         address payable w1 =  payable(abi.decode(result[0],
              (address)
         ));
@@ -158,7 +158,7 @@ contract WNFTV2Index_Test_m_01 is Test  {
             
             string(
                 abi.encodePacked(
-                    index1.DEFAULT_BASE_URI(),
+                    index1.BASE_INDEX_URI(),
                     block.chainid.toString(),
                     "/",
                     uint160(address(index1)).toHexString(),
