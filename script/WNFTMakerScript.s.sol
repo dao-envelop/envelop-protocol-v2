@@ -24,7 +24,7 @@ contract WNFTMakerScript is Script {
             address payable master_address;
     }
 
-    function getParams() internal returns (ParamsForMaker memory params){
+    function getParams() internal view returns (ParamsForMaker memory params){
 
         params.owner = 0x5992Fe461F81C8E0aFFA95b831E50e9b3854BA0E;
         params.router = 0x89b8AA89FDd0507a99d334CBe3C808fAFC7d850E;
@@ -48,12 +48,12 @@ contract WNFTMakerScript is Script {
         }
     }
 
-    function run() public {
+    function run() view public {
         
         ParamsForMaker memory pm = getParams();
 
-        WNFTV2Index impl_index = WNFTV2Index(pm.impl_index_address);
-        EnvelopWNFTFactory factory = EnvelopWNFTFactory(pm.factory_address);
+        //WNFTV2Index impl_index = WNFTV2Index(pm.impl_index_address);
+        //EnvelopWNFTFactory factory = EnvelopWNFTFactory(pm.factory_address);
 
 
         WNFTV2Envelop721.InitParams memory initData = WNFTV2Envelop721.InitParams(
@@ -82,12 +82,12 @@ contract WNFTMakerScript is Script {
         // prepare batch of transactions
 
         // 0. make approve for router
-        address target = pm.usdt_address;
-        bytes memory _data = abi.encodeWithSignature(
-            "approve(address,uint256)",
-            pm.router,pm.amount_to_swap
-        );
-        uint256 value = 0;
+        //address target = pm.usdt_address;
+        // bytes memory _data = abi.encodeWithSignature(
+        //     "approve(address,uint256)",
+        //     pm.router,pm.amount_to_swap
+        // );
+        //uint256 value = 0;
 
         // 1. create child wallets (indexes)
 
@@ -95,8 +95,8 @@ contract WNFTMakerScript is Script {
         bytes[] memory dataArray = new bytes[](3);
         uint256[] memory values = new uint256[](3);
 
-        targets[0] = address(impl_index);
-        targets[1] = address(impl_index);
+        targets[0] = pm.impl_index_address; //address(impl_index);
+        targets[1] = pm.impl_index_address; //address(impl_index);
         targets[2] = pm.router;
 
         values[0] = 0;
@@ -104,13 +104,19 @@ contract WNFTMakerScript is Script {
         values[2] = 0;
         
 
-        bytes memory _dataIndex = abi.encodeWithSignature(
-            "createWNFTonFactory2((address,string,string,string,address[],bytes32[],uint256[],bytes))",
-            initData
-        );
+        // bytes memory _dataIndex = abi.encodeWithSignature(
+        //     "createWNFTonFactory2((address,string,string,string,address[],bytes32[],uint256[],bytes))",
+        //     initData
+        // );
 
-        dataArray[0] = _dataIndex;
-        dataArray[1] = _dataIndex;
+        dataArray[0] = abi.encodeWithSignature(
+          "createWNFTonFactory2((address,string,string,string,address[],bytes32[],uint256[],bytes))",
+          initData
+        );
+        dataArray[1] = abi.encodeWithSignature(
+          "createWNFTonFactory2((address,string,string,string,address[],bytes32[],uint256[],bytes))",
+          initData
+        );
         dataArray[2] = hex"83bd37f9000155d398326f99059ff775485246999027b319795500018ac76a51cc950d9822d68b83fe1ad97b32cd580d08016345785d8a000008016340d27492d77000c49b0001C46785891bc0dc3A1b88a6ba39A78aB7f5850846000126eDaedAEB73365de1b6A9305E95dCC9b4635A5D00018d1454F9ac6363e20664C1AE29bF47C38a354f2500000000030102030022010100010200ff000000000000000000000000000000000000000026edaedaeb73365de1b6a9305e95dcc9b4635a5d55d398326f99059ff775485246999027b3197955000000000000000000000000000000000000000000000000";
 
         // calc child wallet addresses
@@ -142,23 +148,23 @@ contract WNFTMakerScript is Script {
 
         // use this code for next action
         // 2. transfer assets from master to indexes
-        address payable index_address1 = payable(0x61d9aFFa2f76fa83Fd8cA890Cc00Ee6c286bD502);
-        address payable index_address2 = payable(0x153A2c68FB748Ca01b99E5146e81443aa1dEE295);
+        //address payable index_address1 = payable(0x61d9aFFa2f76fa83Fd8cA890Cc00Ee6c286bD502);
+        //address payable index_address2 = payable(0x153A2c68FB748Ca01b99E5146e81443aa1dEE295);
         address[] memory targets1 = new address[](4);
         bytes[] memory dataArray1 = new bytes[](4);
         uint256[] memory values1 = new uint256[](4);
         targets1[0] = pm.usdc_address;
         targets1[1] = pm.usdc_address;
-        targets1[2] = index_address1;
-        targets1[3] = index_address2;
+        targets1[2] = payable(0x61d9aFFa2f76fa83Fd8cA890Cc00Ee6c286bD502);
+        targets1[3] = payable(0x153A2c68FB748Ca01b99E5146e81443aa1dEE295);
 
         dataArray1[0] = abi.encodeWithSignature(
             "transfer(address,uint256)",
-            index_address1,IERC20(pm.usdc_address).balanceOf(pm.master_address)/2
+            targets1[2],IERC20(pm.usdc_address).balanceOf(pm.master_address)/2
         );
         dataArray1[1] = abi.encodeWithSignature(
             "transfer(address,uint256)",
-            index_address2,IERC20(pm.usdc_address).balanceOf(pm.master_address)/2
+            targets1[3],IERC20(pm.usdc_address).balanceOf(pm.master_address)/2
         );
         dataArray1[2] = "";
         dataArray1[3] = "";
