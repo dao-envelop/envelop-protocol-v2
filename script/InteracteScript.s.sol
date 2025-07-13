@@ -34,7 +34,7 @@ contract InteracteScript is Script {
     EnvelopLegacyWrapperBaseV2 wrapper = EnvelopLegacyWrapperBaseV2(_wrapper);
 
     function run() public {
-        /*WNFTV2Envelop721.InitParams memory initData = WNFTV2Envelop721.InitParams(
+        WNFTV2Envelop721.InitParams memory initData = WNFTV2Envelop721.InitParams(
             owner,
             'Envelop',
             'ENV',
@@ -43,7 +43,7 @@ contract InteracteScript is Script {
             new bytes32[](0),
             new uint256[](0),
             ""
-            );*/
+            );
 
         //address[] memory addrs1 = new address[](0);
         /*address[] memory addrs1 = new address[](1);
@@ -61,9 +61,9 @@ contract InteracteScript is Script {
 
         vm.startBroadcast();
         //address payable _wnftWallet2 = payable(impl_myshch.createWNFTonFactory(initData));
-        //address payable _wnftWallet = payable(impl_native.createWNFTonFactory(initData));
+        address payable _wnftWallet = payable(impl_native.createWNFTonFactory(initData));
         //console2.log(_wnftWallet2);
-        address payable _wnftWallet2 = payable(0xA6BEfE30e866016Bf1Bb6cd6f1294bB8E96c8d1a);
+        //address payable _wnftWallet2 = payable(0xA6BEfE30e866016Bf1Bb6cd6f1294bB8E96c8d1a);
         //address payable _wnftWalletLegacy = payable(0x6ce103d9241825b1B99355C45e8883d05eE6Bd9A);
 
         //1 IERC20(0x5dB9f4C9239345308614604e69258C0bba9b437f).transfer(_wnftWallet, 1e18);
@@ -72,13 +72,13 @@ contract InteracteScript is Script {
         require(success, "Failed to send Ether");*/
 
 
-        WNFTMyshchWallet wnft = WNFTMyshchWallet(_wnftWallet2);
+        /*WNFTMyshchWallet wnft = WNFTMyshchWallet(_wnftWallet2);
         //WNFTLegacy721 wnftLegacy = WNFTLegacy721(_wnftWalletLegacy);
         bytes memory _data = abi.encodeWithSignature(
             "transfer(address,uint256)",
             receiver, 1e18
         );
-        wnft.executeEncodedTx(niftsy, 0, _data);
+        wnft.executeEncodedTx(niftsy, 0, _data);*/
         /*3 bytes memory _data = "";
 
         wnft.executeEncodedTx(receiver, 1e15, _data);*/
