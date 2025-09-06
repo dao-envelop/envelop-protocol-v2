@@ -11,7 +11,6 @@ import "../src/impl/WNFTLegacy721.sol";
 import "../src/impl/WNFTMyshchWallet.sol";
 import "../src/EnvelopLegacyWrapperBaseV2.sol";
 
-
 contract InteracteScript is Script {
     using stdJson for string;
 
@@ -26,7 +25,6 @@ contract InteracteScript is Script {
     address payable receiver = payable(0xf315B9006C20913D6D8498BDf657E778d4Ddf2c4);
     address niftsy = 0x5dB9f4C9239345308614604e69258C0bba9b437f;
 
-    
     WNFTV2Envelop721 impl_native = WNFTV2Envelop721(nativeImpl);
     WNFTLegacy721 impl_legacy = WNFTLegacy721(legacyImpl);
     WNFTMyshchWallet impl_myshch = WNFTMyshchWallet(myshchImpl);
@@ -36,14 +34,14 @@ contract InteracteScript is Script {
     function run() public {
         WNFTV2Envelop721.InitParams memory initData = WNFTV2Envelop721.InitParams(
             owner,
-            'Envelop',
-            'ENV',
-            'https://api.envelop.is/metadata/',
+            "Envelop",
+            "ENV",
+            "https://api.envelop.is/metadata/",
             new address[](0),
             new bytes32[](0),
             new uint256[](0),
             ""
-            );
+        );
 
         //address[] memory addrs1 = new address[](0);
         /*address[] memory addrs1 = new address[](1);
@@ -67,10 +65,9 @@ contract InteracteScript is Script {
         //address payable _wnftWalletLegacy = payable(0x6ce103d9241825b1B99355C45e8883d05eE6Bd9A);
 
         //1 IERC20(0x5dB9f4C9239345308614604e69258C0bba9b437f).transfer(_wnftWallet, 1e18);
-        
+
         /*2 (bool success,) = _wnftWallet.call{value: 1000000000000000}("");
         require(success, "Failed to send Ether");*/
-
 
         /*WNFTMyshchWallet wnft = WNFTMyshchWallet(_wnftWallet2);
         //WNFTLegacy721 wnftLegacy = WNFTLegacy721(_wnftWalletLegacy);
@@ -106,7 +103,6 @@ contract InteracteScript is Script {
         WNFTLegacy721 wnftLegacy = WNFTLegacy721(_wnftWalletLegacy);
         console2.log(address(wnftLegacy));*/
 
-        
         /* 5 (bool success,) = (_wnftWalletLegacy).call{value: 1000000000000000}("");
         require(success, "Failed to send Ether");
 
@@ -124,6 +120,5 @@ contract InteracteScript is Script {
         wnftLegacy.unWrap(colls);*/
 
         vm.stopBroadcast();
-
     }
 }

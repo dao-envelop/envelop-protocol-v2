@@ -18,14 +18,11 @@ import "./Objects.s.sol";
 /// Deploy and init actions
 contract DeployScript is Script, Objects {
     using stdJson for string;
+
     function run() public {
         console2.log("Chain id: %s", vm.toString(block.chainid));
-        console2.log(
-            "Deployer address: %s, "
-            "\n native balnce %s",
-            msg.sender, msg.sender.balance
-        );
-         
+        console2.log("Deployer address: %s, " "\n native balnce %s", msg.sender, msg.sender.balance);
+
         getChainParams();
 
         //////////   Deploy   //////////////
@@ -33,21 +30,20 @@ contract DeployScript is Script, Objects {
         deployOrInstances(false);
         vm.stopBroadcast();
 
-        prettyPrint(); 
-        
-   
+        prettyPrint();
+
         // ///////// End of pretty printing ////////////////
-        
+
         // ///  Init ///
         console2.log("Init transactions....");
         vm.startBroadcast();
-        for (uint256 i = 0; i < implementations.length; ++ i){
+        for (uint256 i = 0; i < implementations.length; ++i) {
             // Check and set trusted wrappers
             if (!factory.trustedWrappers(implementations[i])) {
-                factory.setWrapperStatus(implementations[i], true); // set wrapper    
-            }   
+                factory.setWrapperStatus(implementations[i], true); // set wrapper
+            }
         }
-            
+
         vm.stopBroadcast();
         console2.log("Initialisation finished");
     }
@@ -58,26 +54,21 @@ contract TestTxScript is Script, Objects {
     using stdJson for string;
 
     //string params_json_file = vm.readFile(string.concat(vm.projectRoot(), "/script/explorers.json"));
-    
-    
+
     function run() public {
         console2.log("Chain id: %s", vm.toString(block.chainid));
-        console2.log(
-            "Deployer address: %s, "
-            "\n native balance %s",
-            msg.sender, msg.sender.balance
-        );
+        console2.log("Deployer address: %s, " "\n native balance %s", msg.sender, msg.sender.balance);
 
         getChainParams();
         deployOrInstances(true);
         vm.startBroadcast();
-        
-        // Create Smart wallet test 
+
+        // Create Smart wallet test
         WNFTV2Envelop721.InitParams memory initData = WNFTV2Envelop721.InitParams(
             msg.sender,
-            'Envelop V2 Smart Wallet',
-            'ENVELOPV2',
-            'https://api.envelop.is/wallet',
+            "Envelop V2 Smart Wallet",
+            "ENVELOPV2",
+            "https://api.envelop.is/wallet",
             new address[](0),
             new bytes32[](0),
             new uint256[](0),
@@ -87,11 +78,10 @@ contract TestTxScript is Script, Objects {
         address payable _wnftWalletAddress = payable(impl_native.createWNFTonFactory(initData));
 
         WNFTV2Index wnftWallet = WNFTV2Index(_wnftWalletAddress);
-        
+
         // Topup Smart wallet test
-        for (uint256 i = 0; i < p.erc20mock.length; ++ i) {
+        for (uint256 i = 0; i < p.erc20mock.length; ++i) {
             IERC20(p.erc20mock[i]).transfer(_wnftWalletAddress, 1e18);
-            
         }
         _wnftWalletAddress.call{value: 3e14}("");
 
@@ -116,63 +106,35 @@ contract TestTxScript is Script, Objects {
 
         // prepare data for deploying of child wallets
         initData = WNFTV2Envelop721.InitParams(
-            msg.sender,
-            '',
-            '',
-            '',
-            new address[](0),
-            new bytes32[](0),
-            new uint256[](2),
-            ""
-            );
+            msg.sender, "", "", "", new address[](0), new bytes32[](0), new uint256[](2), ""
+        );
 
         // using method with salt
         bytes memory _data = abi.encodeWithSignature(
-            "createWNFTonFactory2((address,string,string,string,address[],bytes32[],uint256[],bytes))",
-            initData
+            "createWNFTonFactory2((address,string,string,string,address[],bytes32[],uint256[],bytes))", initData
         );
 
-       
-        values[0] = 0;    
-        values[1] = 0;    
-        values[2] = 16;            
-       
+        values[0] = 0;
+        values[1] = 0;
+        values[2] = 16;
 
         dataArray[0] = _data;
-        dataArray[1] = abi.encodeWithSignature(
-            "transfer(address,uint256)",
-            calcW1, 2e14
-        );
-       
+        dataArray[1] = abi.encodeWithSignature("transfer(address,uint256)", calcW1, 2e14);
+
         dataArray[2] = "";
 
         bytes[] memory result = wnftWallet.executeEncodedTxBatch(targets, values, dataArray);
 
         // get child wallet adresses from output
-        address payable w1 =  payable(abi.decode(result[0],
-             (address)
-        ));
+        address payable w1 = payable(abi.decode(result[0], (address)));
 
         vm.stopBroadcast();
 
         params_json_file = vm.readFile(string.concat(vm.projectRoot(), "/script/explorers.json"));
-        string memory explorer_url = params_json_file.readString(
-            string.concat(".", vm.toString(block.chainid))
-        );
+        string memory explorer_url = params_json_file.readString(string.concat(".", vm.toString(block.chainid)));
 
-        console2.log(
-            "Deployed index contract:"
-            "\n https://%s/address/%s#code\n",
-            explorer_url, w1
-        );
+        console2.log("Deployed index contract:" "\n https://%s/address/%s#code\n", explorer_url, w1);
 
-        console2.log(
-            "from Envelop Smart Wallet:"
-            "\n https://%s/address/%s#code\n",
-            explorer_url, _wnftWalletAddress
-        );
-
-    
+        console2.log("from Envelop Smart Wallet:" "\n https://%s/address/%s#code\n", explorer_url, _wnftWalletAddress);
     }
-
 }

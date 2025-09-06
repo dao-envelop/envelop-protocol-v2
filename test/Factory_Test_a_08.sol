@@ -15,7 +15,6 @@ import "../src/impl/WNFTLegacy721.sol";
 
 // make approve
 contract Factory_Test_a_08 is Test {
-    
     event Log(string message);
 
     uint256 public sendEtherAmount = 1e18;
@@ -27,39 +26,40 @@ contract Factory_Test_a_08 is Test {
     WNFTLegacy721 public impl_legacy;
 
     receive() external payable virtual {}
+
     function setUp() public {
-        erc721 = new MockERC721('Mock ERC721', 'ERC721');
-        erc1155 = new MockERC1155('api.envelop.is');
-        erc20 = new MockERC20('Mock ERC20', 'ERC20');
+        erc721 = new MockERC721("Mock ERC721", "ERC721");
+        erc1155 = new MockERC1155("api.envelop.is");
+        erc20 = new MockERC20("Mock ERC20", "ERC20");
         factory = new EnvelopWNFTFactory();
         impl_legacy = new WNFTLegacy721();
         factory.setWrapperStatus(address(this), true); // set wrapper
     }
-    
+
     function test_create_legacy() public {
         bytes memory initCallData = abi.encodeWithSignature(
             impl_legacy.INITIAL_SIGN_STR(),
-            address(this), // creator and owner 
-            "LegacyWNFTNAME", 
-            "LWNFT", 
-            "https://api.envelop.is" ,
+            address(this), // creator and owner
+            "LegacyWNFTNAME",
+            "LWNFT",
+            "https://api.envelop.is",
             //new ET.WNFT[](1)[0]
             ET.WNFT(
-                ET.AssetItem(ET.Asset(ET.AssetType.EMPTY, address(0)),0,0), // inAsset
-                new ET.AssetItem[](0),   // collateral
-                address(0), //unWrapDestination 
+                ET.AssetItem(ET.Asset(ET.AssetType.EMPTY, address(0)), 0, 0), // inAsset
+                new ET.AssetItem[](0), // collateral
+                address(0), //unWrapDestination
                 new ET.Fee[](0), // fees
                 new ET.Lock[](0), // locks
                 new ET.Royalty[](0), // royalties
-                0x0105   //bytes2
-            ) 
-        );    
+                0x0105 //bytes2
+            )
+        );
 
         address payable _wnftWallet = payable(factory.createWNFT(address(impl_legacy), initCallData));
         assertNotEq(_wnftWallet, address(impl_legacy));
 
         WNFTLegacy721 wnft = WNFTLegacy721(_wnftWallet);
-        
+
         // by owner
         wnft.approveHiden(address(10), impl_legacy.TOKEN_ID());
 
@@ -70,35 +70,34 @@ contract Factory_Test_a_08 is Test {
         uint256 amount = 10;
         erc1155.mint(address(1), tokenId, amount);
         vm.prank(address(1));
-        erc1155.safeTransferFrom(address(1), _wnftWallet, tokenId, amount, '');
+        erc1155.safeTransferFrom(address(1), _wnftWallet, tokenId, amount, "");
         (bool sent, bytes memory data) = _wnftWallet.call{value: sendEtherAmount}("");
-        // suppress solc warnings 
+        // suppress solc warnings
         sent;
         data;
 
-
         // check remove collateral by spender
         vm.prank(address(10));
-        ET.AssetItem memory collateral = ET.AssetItem(ET.Asset(ET.AssetType.NATIVE, address(0)),0,sendEtherAmount);
+        ET.AssetItem memory collateral = ET.AssetItem(ET.Asset(ET.AssetType.NATIVE, address(0)), 0, sendEtherAmount);
         wnft.removeCollateral(collateral, address(2));
         assertEq(address(2).balance, sendEtherAmount);
         assertEq(address(_wnftWallet).balance, 0);
 
         vm.prank(address(10));
-        collateral = ET.AssetItem(ET.Asset(ET.AssetType.ERC20, address(erc20)),0,sendERC20Amount / 4);
+        collateral = ET.AssetItem(ET.Asset(ET.AssetType.ERC20, address(erc20)), 0, sendERC20Amount / 4);
         wnft.removeCollateral(collateral, address(2));
         assertEq(erc20.balanceOf(address(2)), sendERC20Amount / 4);
         assertEq(erc20.balanceOf(_wnftWallet), sendERC20Amount * 3 / 4);
 
         vm.prank(address(10));
-        collateral = ET.AssetItem(ET.Asset(ET.AssetType.ERC721, address(erc721)),tokenId,0);
+        collateral = ET.AssetItem(ET.Asset(ET.AssetType.ERC721, address(erc721)), tokenId, 0);
         wnft.removeCollateral(collateral, address(2));
         assertEq(erc721.ownerOf(tokenId), address(2));
 
         vm.prank(address(10));
-        collateral = ET.AssetItem(ET.Asset(ET.AssetType.ERC1155, address(erc1155)),tokenId, amount / 2);
+        collateral = ET.AssetItem(ET.Asset(ET.AssetType.ERC1155, address(erc1155)), tokenId, amount / 2);
         wnft.removeCollateral(collateral, address(1));
         assertEq(erc1155.balanceOf(address(1), tokenId), amount / 2);
-        assertEq(erc1155.balanceOf( _wnftWallet, tokenId), amount / 2);
+        assertEq(erc1155.balanceOf(_wnftWallet, tokenId), amount / 2);
     }
 }

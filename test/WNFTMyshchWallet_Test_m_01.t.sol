@@ -19,9 +19,8 @@ import "../src/impl/WNFTV2Envelop721.sol";
 // user wnft wallet gets erc20 tokens and send eth for tx
 
 contract WNFTMyshchWallet_Test_m_01 is Test {
-    
     event Log(string message);
-    
+
     struct Bal {
         uint256 before;
         uint256 afterb;
@@ -34,26 +33,27 @@ contract WNFTMyshchWallet_Test_m_01 is Test {
     EnvelopWNFTFactory public factory;
     WNFTMyshchWallet public impl_myshch;
 
-    address payable _wnftWallet1;  // bot
+    address payable _wnftWallet1; // bot
     address payable _wnftWallet2; // user
-    
+
     Bal[] balances;
+
     receive() external payable virtual {}
-    
+
     function setUp() public {
-        erc721 = new MockERC721('Mock ERC721', 'ERC');
+        erc721 = new MockERC721("Mock ERC721", "ERC");
         factory = new EnvelopWNFTFactory();
         impl_myshch = new WNFTMyshchWallet(address(factory));
         factory.setWrapperStatus(address(impl_myshch), true); // set wrapper
-        erc20 = new MockERC20('Mock ERC20', 'ERC20');
+        erc20 = new MockERC20("Mock ERC20", "ERC20");
 
         // create admin wnft wallet
         address[] memory addrs1 = new address[](0);
         WNFTV2Envelop721.InitParams memory initData = WNFTV2Envelop721.InitParams(
             address(this),
-            'Envelop Bot',
-            'ENV',
-            'https://api.envelop.is/',
+            "Envelop Bot",
+            "ENV",
+            "https://api.envelop.is/",
             addrs1,
             new bytes32[](0),
             new uint256[](0),
@@ -65,15 +65,15 @@ contract WNFTMyshchWallet_Test_m_01 is Test {
 
         // create user wnft wallet
         address[] memory addrs2 = new address[](1);
-        addrs2[0] = _wnftWallet1;  // add relayer
-        uint256[] memory np =  new uint256[](2);
+        addrs2[0] = _wnftWallet1; // add relayer
+        uint256[] memory np = new uint256[](2);
         //np[1] = 20_000;
 
         initData = WNFTV2Envelop721.InitParams(
             address(1), // user address
-            'Envelop User',
-            'ENV',
-            'https://api.envelop.is/',
+            "Envelop User",
+            "ENV",
+            "https://api.envelop.is/",
             addrs2,
             new bytes32[](0),
             np,
@@ -82,23 +82,29 @@ contract WNFTMyshchWallet_Test_m_01 is Test {
         //vm.prank(address(this));
         _wnftWallet2 = payable(impl_myshch.createWNFTonFactory(initData));
     }
-    
+
     function test_transfer_with_refund() public {
         WNFTMyshchWallet wnftBot = WNFTMyshchWallet(_wnftWallet1);
         WNFTMyshchWallet wnftUser = WNFTMyshchWallet(_wnftWallet2);
-        
+
         // this balance
-        balances.push(Bal(
-            address(this).balance, 0 // before after
-        ));
-        
-        // bot balance 
-        balances.push(Bal(
-           _wnftWallet1.balance, 0 // before after
-        ));
+        balances.push(
+            Bal(
+                address(this).balance,
+                0 // before after
+            )
+        );
+
+        // bot balance
+        balances.push(
+            Bal(
+                _wnftWallet1.balance,
+                0 // before after
+            )
+        );
         // send erc20 to wnft wallet
         erc20.transfer(address(wnftBot), sendERC20Amount);
-        
+
         //WNFTMyshchWallet wnft2 = WNFTMyshchWallet(_wnftWallet2);
 
         //wnft1.setApprovalForAll(address(2), true);
@@ -107,16 +113,22 @@ contract WNFTMyshchWallet_Test_m_01 is Test {
         vm.deal(_wnftWallet2, sendEtherAmount);
         //_wnftWallet2.transfer(sendEtherAmount);
         //console2.log(address(2).balance);
-        
-        // user balance
-        balances.push(Bal(
-            _wnftWallet2.balance, 0 // before after
-        ));
 
         // user balance
-        balances.push(Bal(
-            msg.sender.balance, 0 // before after
-        ));
+        balances.push(
+            Bal(
+                _wnftWallet2.balance,
+                0 // before after
+            )
+        );
+
+        // user balance
+        balances.push(
+            Bal(
+                msg.sender.balance,
+                0 // before after
+            )
+        );
         console2.log("UserWallet: %s, value:%s", _wnftWallet2, balances[2].before);
         //console2.log(_wnftWallet2.balance);
         //vm.prank(address(2));
@@ -125,13 +137,13 @@ contract WNFTMyshchWallet_Test_m_01 is Test {
         wnftBot.erc20TransferWithRefund(address(erc20), address(wnftUser), sendERC20Amount);
         VmSafe.Gas memory gasInfo = vm.lastCallGas();
         console2.log("Gas used: %s", gasInfo.gasTotalUsed);
-        balances[0].afterb =  address(this).balance;
-        balances[1].afterb =  _wnftWallet1.balance;
-        balances[2].afterb =  _wnftWallet2.balance;
-        balances[3].afterb =  msg.sender.balance;
+        balances[0].afterb = address(this).balance;
+        balances[1].afterb = _wnftWallet1.balance;
+        balances[2].afterb = _wnftWallet2.balance;
+        balances[3].afterb = msg.sender.balance;
         //console2.log(address(2).balance);
-        
-        for (uint256 i = 0; i < balances.length; ++ i) {
+
+        for (uint256 i = 0; i < balances.length; ++i) {
             console2.log("Index: %s, before: %s", i, balances[i].before);
             console2.log("Index: %s, after : %s", i, balances[i].afterb);
         }
@@ -143,7 +155,7 @@ contract WNFTMyshchWallet_Test_m_01 is Test {
     }
 
     // function test_check_setGasCheckPoint() public {
-        
+
     //     WNFTMyshchWallet wnft1 = WNFTMyshchWallet(_wnftWallet1);
 
     //     vm.expectRevert("Only for approved relayer");
@@ -159,7 +171,7 @@ contract WNFTMyshchWallet_Test_m_01 is Test {
     // }
 
     // function test_check_getRefund() public {
-        
+
     //     WNFTMyshchWallet wnft1 = WNFTMyshchWallet(_wnftWallet1);
 
     //     vm.expectRevert("Only for approved relayer");

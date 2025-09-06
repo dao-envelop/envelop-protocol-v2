@@ -33,11 +33,12 @@ import {EnvelopLegacyWrapperBaseV2} from "../src/EnvelopLegacyWrapperBaseV2.sol"
 // Base logic is following
 // if address exists in  `chain_params.json` then no deployments will occure but only instance
 // All deploy actions  are always in inheritors
-abstract contract Objects is Script{
+abstract contract Objects is Script {
     using stdJson for string;
+
     struct Params {
-        address factory;  
-        address myshch_factory; 
+        address factory;
+        address myshch_factory;
         address legacy_wrapper;
         address impl_legacy;
         address impl_native;
@@ -49,14 +50,12 @@ abstract contract Objects is Script{
     }
 
     Params p;
-    address[] implementations; 
+    address[] implementations;
 
     string public params_json_file = vm.readFile(string.concat(vm.projectRoot(), "/script/chain_params.json"));
- 
+
     string public params_json_file2 = vm.readFile(string.concat(vm.projectRoot(), "/script/explorers.json"));
-    string public explorer_url = params_json_file2.readString(
-        string.concat(".", vm.toString(block.chainid))
-    );
+    string public explorer_url = params_json_file2.readString(string.concat(".", vm.toString(block.chainid)));
 
     EnvelopWNFTFactory factory;
     MyShchFactory myshch_factory;
@@ -64,102 +63,92 @@ abstract contract Objects is Script{
     WNFTLegacy721 impl_legacy;
     WNFTV2Envelop721 impl_native;
     WNFTMyshchWallet impl_myshch;
-    WNFTV2Index impl_index; 
+    WNFTV2Index impl_index;
     CustomERC20 impl_erc20;
 
     function getChainParams() internal {
         // Load json with chain params
-        
+
         string memory key;
-        
+
         console2.log("\n     **Network settings from file**  ");
         // Define constructor params
-        key = string.concat(".", vm.toString(block.chainid),".factory");
-        if (vm.keyExists(params_json_file, key)) 
-        {
+        key = string.concat(".", vm.toString(block.chainid), ".factory");
+        if (vm.keyExists(params_json_file, key)) {
             p.factory = params_json_file.readAddress(key);
         } else {
             p.factory = address(0);
         }
         console2.log("key: %s, value:%s", key, p.factory);
 
-        key = string.concat(".", vm.toString(block.chainid),".myshch_factory");
-        if (vm.keyExists(params_json_file, key)) 
-        {
+        key = string.concat(".", vm.toString(block.chainid), ".myshch_factory");
+        if (vm.keyExists(params_json_file, key)) {
             p.myshch_factory = params_json_file.readAddress(key);
         } else {
             p.myshch_factory = address(0);
         }
         console2.log("key: %s, value:%s", key, p.myshch_factory);
-        
-        key = string.concat(".", vm.toString(block.chainid),".legacy_wrapper");
-        if (vm.keyExists(params_json_file, key)) 
-        {
+
+        key = string.concat(".", vm.toString(block.chainid), ".legacy_wrapper");
+        if (vm.keyExists(params_json_file, key)) {
             p.legacy_wrapper = params_json_file.readAddress(key);
         } else {
             p.legacy_wrapper = address(0);
         }
         console2.log("key: %s, value:%s", key, p.legacy_wrapper);
-        
-        key = string.concat(".", vm.toString(block.chainid),".impl_legacy");
-        if (vm.keyExists(params_json_file, key)) 
-        {
+
+        key = string.concat(".", vm.toString(block.chainid), ".impl_legacy");
+        if (vm.keyExists(params_json_file, key)) {
             p.impl_legacy = params_json_file.readAddress(key);
         } else {
             p.impl_legacy = address(0);
         }
         console2.log("key: %s, value:%s", key, p.impl_legacy);
 
-        key = string.concat(".", vm.toString(block.chainid),".impl_native");
-        if (vm.keyExists(params_json_file, key)) 
-        {
+        key = string.concat(".", vm.toString(block.chainid), ".impl_native");
+        if (vm.keyExists(params_json_file, key)) {
             p.impl_native = params_json_file.readAddress(key);
         } else {
             p.impl_native = address(0);
         }
         console2.log("key: %s, value:%s", key, p.impl_native);
 
-        key = string.concat(".", vm.toString(block.chainid),".impl_myshch");
-        if (vm.keyExists(params_json_file, key)) 
-        {
+        key = string.concat(".", vm.toString(block.chainid), ".impl_myshch");
+        if (vm.keyExists(params_json_file, key)) {
             p.impl_myshch = params_json_file.readAddress(key);
         } else {
             p.impl_myshch = address(0);
         }
         console2.log("key: %s, value:%s", key, p.impl_myshch);
 
-        key = string.concat(".", vm.toString(block.chainid),".impl_index");
-        if (vm.keyExists(params_json_file, key)) 
-        {
+        key = string.concat(".", vm.toString(block.chainid), ".impl_index");
+        if (vm.keyExists(params_json_file, key)) {
             p.impl_index = params_json_file.readAddress(key);
         } else {
             p.impl_index = address(0);
         }
         console2.log("key: %s, value:%s", key, p.impl_index);
 
-        key = string.concat(".", vm.toString(block.chainid),".erc20");
-        if (vm.keyExists(params_json_file, key)) 
-        {
+        key = string.concat(".", vm.toString(block.chainid), ".erc20");
+        if (vm.keyExists(params_json_file, key)) {
             address[] memory aa = params_json_file.readAddressArray(key);
-            for (uint256 i = 0; i < aa.length; ++i ){
-                p.erc20mock.push(aa[i]);   
-                console2.log("erc20 mock: %s", aa[i]); 
+            for (uint256 i = 0; i < aa.length; ++i) {
+                p.erc20mock.push(aa[i]);
+                console2.log("erc20 mock: %s", aa[i]);
             }
         }
         console2.log("key: %s, length:%s", key, p.erc20mock.length);
 
-        key = string.concat(".", vm.toString(block.chainid),".impl_erc20");
-        if (vm.keyExists(params_json_file, key)) 
-        {
+        key = string.concat(".", vm.toString(block.chainid), ".impl_erc20");
+        if (vm.keyExists(params_json_file, key)) {
             p.impl_erc20 = params_json_file.readAddress(key);
         } else {
             p.impl_erc20 = address(0);
         }
         console2.log("key: %s, value:%s", key, p.impl_erc20);
 
-        key = string.concat(".", vm.toString(block.chainid),".need_test_tx");
-        if (vm.keyExists(params_json_file, key)) 
-        {
+        key = string.concat(".", vm.toString(block.chainid), ".need_test_tx");
+        if (vm.keyExists(params_json_file, key)) {
             p.need_test_tx = params_json_file.readBool(key);
         } else {
             p.need_test_tx = false;
@@ -171,42 +160,38 @@ abstract contract Objects is Script{
         //factory = EnvelopWNFTFactory(0x431Db5c6ce5D85A0BAa2198Aa7Aa0E65d37a25c8);
         if (p.factory == address(0)) {
             if (!onlyInstance) {
-                factory = new EnvelopWNFTFactory();    
+                factory = new EnvelopWNFTFactory();
             }
         } else {
             factory = EnvelopWNFTFactory(p.factory);
         }
 
-        if (p.legacy_wrapper == address(0)){
+        if (p.legacy_wrapper == address(0)) {
             if (!onlyInstance) {
-                wrapper = new EnvelopLegacyWrapperBaseV2(address(factory)); 
+                wrapper = new EnvelopLegacyWrapperBaseV2(address(factory));
                 factory.setWrapperStatus(address(wrapper), true); // set wrapper
             }
         } else {
-            wrapper = EnvelopLegacyWrapperBaseV2(p.legacy_wrapper);    
+            wrapper = EnvelopLegacyWrapperBaseV2(p.legacy_wrapper);
         }
         // push to this array for register on factory later
         implementations.push(address(wrapper));
-        
+
         if (p.impl_legacy == address(0)) {
             if (!onlyInstance) {
                 impl_legacy = new WNFTLegacy721();
-                wrapper.setWNFTId(
-                    ET.AssetType.ERC721, 
-                    address(impl_legacy), 
-                    impl_legacy.TOKEN_ID()
-                );
+                wrapper.setWNFTId(ET.AssetType.ERC721, address(impl_legacy), impl_legacy.TOKEN_ID());
             }
         } else {
             impl_legacy = WNFTLegacy721(payable(p.impl_legacy));
         }
-        
+
         if (p.impl_native == address(0)) {
             if (!onlyInstance) {
-                impl_native = new WNFTV2Envelop721(address(factory)); 
-               // if (!factory.trustedWrappers(address(impl_native))) {
-                    factory.setWrapperStatus(address(impl_native), true); // set wrapper    
-               // }   
+                impl_native = new WNFTV2Envelop721(address(factory));
+                // if (!factory.trustedWrappers(address(impl_native))) {
+                factory.setWrapperStatus(address(impl_native), true); // set wrapper
+                    // }
             }
         } else {
             impl_native = WNFTV2Envelop721(payable(p.impl_native));
@@ -215,7 +200,7 @@ abstract contract Objects is Script{
 
         if (p.impl_myshch == address(0)) {
             if (!onlyInstance) {
-                impl_myshch = new WNFTMyshchWallet(address(factory));    
+                impl_myshch = new WNFTMyshchWallet(address(factory));
                 //factory.setWrapperStatus(address(impl_myshch), true); // set wrapper
             }
         } else {
@@ -226,7 +211,7 @@ abstract contract Objects is Script{
 
         if (p.impl_index == address(0)) {
             if (!onlyInstance) {
-                impl_index = new WNFTV2Index(address(factory));    
+                impl_index = new WNFTV2Index(address(factory));
                 //factory.setWrapperStatus(address(impl_myshch), true); // set wrapper
             }
         } else {
@@ -237,7 +222,7 @@ abstract contract Objects is Script{
         // ERC20 moock and template
         if (p.impl_erc20 == address(0)) {
             if (!onlyInstance) {
-                impl_erc20 = new CustomERC20();    
+                impl_erc20 = new CustomERC20();
             }
         } else {
             impl_erc20 = CustomERC20(p.impl_erc20);
@@ -246,32 +231,28 @@ abstract contract Objects is Script{
         if (p.myshch_factory == address(0)) {
             if (!onlyInstance) {
                 myshch_factory = new MyShchFactory(address(impl_myshch));
-                myshch_factory.newImplementation(
-                    MyShchFactory.AssetType.ERC20, 
-                    address(impl_erc20)
-                );
+                myshch_factory.newImplementation(MyShchFactory.AssetType.ERC20, address(impl_erc20));
             }
         } else {
             myshch_factory = MyShchFactory(p.myshch_factory);
         }
         //vm.stopBroadcast();
         console2.log("Instances ready....");
-
     }
 
     function prettyPrint() internal view {
         ///////// Pretty printing ////////////////
-        
+
         //string memory path = string.concat(vm.projectRoot(), "/script/explorers.json");
         //string memory json = vm.readFile(path);
         //params_path = string.concat(vm.projectRoot(), "/script/explorers.json");
         // params_json_file = vm.readFile(string.concat(vm.projectRoot(), "/script/explorers.json"));
-        
+
         // console2.log("Chain id: %s", vm.toString(block.chainid));
         // string memory explorer_url = params_json_file.readString(
         //     string.concat(".", vm.toString(block.chainid))
         // );
-        
+
         console2.log("\n**EnvelopWNFTFactory**  ");
         console2.log("https://%s/address/%s#code\n", explorer_url, address(factory));
         console2.log("\n**MyShchFactory** ");
@@ -288,8 +269,6 @@ abstract contract Objects is Script{
         console2.log("https://%s/address/%s#code\n", explorer_url, address(impl_index));
         console2.log("\n**CustomERC20** ");
         console2.log("https://%s/address/%s#code\n", explorer_url, address(impl_erc20));
-        
-
 
         console2.log("```python");
         console2.log("factory = EnvelopWNFTFactory.at('%s')", address(factory));
@@ -314,6 +293,4 @@ abstract contract Objects is Script{
         console2.log("\"impl_erc20\": \"%s\"", address(impl_erc20));
         console2.log("```");
     }
-
 }
-

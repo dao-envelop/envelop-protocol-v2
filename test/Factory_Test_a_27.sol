@@ -16,10 +16,9 @@ import "../src/EnvelopLegacyWrapperBaseV2.sol";
 //import "../src/impl/Singleton721.sol";
 //import {ET} from "../src/utils/LibET.sol";
 
-
-contract Factory_Test_a_27 is Test  {
+contract Factory_Test_a_27 is Test {
     using Strings for uint160;
-    
+
     event Log(string message);
 
     uint256 public sendEtherAmount = 1e18;
@@ -33,42 +32,38 @@ contract Factory_Test_a_27 is Test  {
     EnvelopLegacyWrapperBaseV2 public wrapper;
     ReentrancyAttacker public hacker;
 
-
     receive() external payable virtual {}
+
     function setUp() public {
-        erc721 = new MockERC721('Mock ERC721', 'ERC721');
-        erc20 = new MockERC20('Mock ERC20', 'ERC20');
-        erc1155 = new MockERC1155('api.envelop.is');
+        erc721 = new MockERC721("Mock ERC721", "ERC721");
+        erc20 = new MockERC20("Mock ERC20", "ERC20");
+        erc1155 = new MockERC1155("api.envelop.is");
         factory = new EnvelopWNFTFactory();
         wrapper = new EnvelopLegacyWrapperBaseV2(address(factory));
         impl_legacy = new WNFTLegacy721();
         factory.setWrapperStatus(address(wrapper), true); // set wrapper
-        wrapper.setWNFTId(
-            ET.AssetType.ERC721, 
-            address(impl_legacy), 
-            impl_legacy.TOKEN_ID()
-        );
+        wrapper.setWNFTId(ET.AssetType.ERC721, address(impl_legacy), impl_legacy.TOKEN_ID());
     }
-    
-    // reentrancy attack 
+
+    // reentrancy attack
     function test_reentrancy() public {
         uint256 tokenId = 0;
-        ET.AssetItem memory original_nft = ET.AssetItem(ET.Asset(ET.AssetType.ERC721, address(erc721)),tokenId,0);
+        ET.AssetItem memory original_nft = ET.AssetItem(ET.Asset(ET.AssetType.ERC721, address(erc721)), tokenId, 0);
         EnvelopLegacyWrapperBaseV2.INData memory inData = EnvelopLegacyWrapperBaseV2.INData(
-                original_nft, // inAsset
-                address(1), //unWrapDestination
-                new ET.Fee[](0), // fees 
-                new ET.Lock[](0), // locks
-                new ET.Royalty[](0), // royalties
-                ET.AssetType.ERC721,
-                uint256(0),        
-                0x0000   //bytes2
-        ); 
-        
+            original_nft, // inAsset
+            address(1), //unWrapDestination
+            new ET.Fee[](0), // fees
+            new ET.Lock[](0), // locks
+            new ET.Royalty[](0), // royalties
+            ET.AssetType.ERC721,
+            uint256(0),
+            0x0000 //bytes2
+        );
+
         erc721.setApprovalForAll(address(wrapper), true);
         ET.AssetItem memory wnftAsset = wrapper.wrap{value: sendEtherAmount}(
             inData,
-            new ET.AssetItem[](0),   // collateral
+            new ET.AssetItem[](0), // collateral
             address(1)
         );
         address payable _wnftWallet = payable(wnftAsset.asset.contractAddress);
@@ -84,7 +79,6 @@ contract Factory_Test_a_27 is Test  {
         wnft.setApprovalForAll(address(hacker), true);
         wnft.executeEncodedTx(address(hacker), sendEtherAmount, _data);
         vm.stopPrank();
-        
 
         console2.log(address(hacker).balance);
         console2.log(wnft.ownerOf(1));

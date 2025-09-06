@@ -6,17 +6,15 @@ import "@Uopenzeppelin/contracts/token/ERC20/ERC20Upgradeable.sol";
 pragma solidity ^0.8.20;
 
 contract CustomERC20 is ERC20Upgradeable {
-
     struct InitDistributtion {
         address receiver;
         uint256 amount;
     }
 
-    string public constant INITIAL_SIGN_STR = 
-        "initialize(address,string,string,uint256,(address,uint256)[])";
+    string public constant INITIAL_SIGN_STR = "initialize(address,string,string,uint256,(address,uint256)[])";
 
     constructor() {
-      _disableInitializers();
+        _disableInitializers();
     }
 
     function initialize(
@@ -29,11 +27,10 @@ contract CustomERC20 is ERC20Upgradeable {
         __ERC20_init(name_, symbol_);
         _mint(_creator, _totalSupply);
         if (_initialHolders.length > 0) {
-            for (uint256 i = 0; i < _initialHolders.length; ++ i) {
+            for (uint256 i = 0; i < _initialHolders.length; ++i) {
                 _transfer(_creator, _initialHolders[i].receiver, _initialHolders[i].amount);
             }
         }
-
     }
 
     function burn(uint256 _amount) external {

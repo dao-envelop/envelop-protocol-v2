@@ -12,9 +12,7 @@ import "../src/impl/SmartWallet.sol";
 //import "../src/impl/Singleton721.sol";
 //import {ET} from "../src/utils/LibET.sol";
 
-
 contract WNFTV2Envelop721_Test_a_01 is Test {
-    
     event Log(string message);
 
     uint256 public sendEtherAmount = 1e18;
@@ -23,46 +21,46 @@ contract WNFTV2Envelop721_Test_a_01 is Test {
     WNFTV2Envelop721 public impl_legacy;
 
     receive() external payable virtual {}
+
     function setUp() public {
-        erc721 = new MockERC721('Mock ERC721', 'ERC');
+        erc721 = new MockERC721("Mock ERC721", "ERC");
         factory = new EnvelopWNFTFactory();
         impl_legacy = new WNFTV2Envelop721(address(factory));
         factory.setWrapperStatus(address(impl_legacy), true); // set wrapper
-        
     }
-    
+
     // spender of wnft wallet withdraws eth from wallet
     function test_create_wNFT() public {
         bytes2 rule = 0x0000;
         WNFTV2Envelop721.InitParams memory initData = WNFTV2Envelop721.InitParams(
             address(1),
-            'Envelop',
-            'ENV',
-            'https://api.envelop.is/',
+            "Envelop",
+            "ENV",
+            "https://api.envelop.is/",
             new address[](0),
             new bytes32[](0),
             new uint256[](0),
             ""
-            );
+        );
 
         vm.prank(address(1));
         address payable _wnftWallet = payable(impl_legacy.createWNFTonFactory(initData));
 
         assertNotEq(_wnftWallet, address(impl_legacy));
-        
+
         // send eth to wnft wallet
         vm.prank(address(this));
         vm.expectEmit();
         emit SmartWallet.EtherReceived(sendEtherAmount, sendEtherAmount, address(this));
         (bool sent, bytes memory data) = _wnftWallet.call{value: sendEtherAmount}("");
-        // suppress solc warnings 
+        // suppress solc warnings
         sent;
         data;
         assertEq(address(_wnftWallet).balance, sendEtherAmount);
-        
+
         WNFTV2Envelop721 wnft = WNFTV2Envelop721(_wnftWallet);
         assertEq(wnft.wnftInfo(impl_legacy.TOKEN_ID()).rules, rule);
-        
+
         vm.prank(address(1));
         wnft.setApprovalForAll(address(2), true);
 
@@ -71,10 +69,9 @@ contract WNFTV2Envelop721_Test_a_01 is Test {
         data = "";
         vm.expectEmit();
         emit SmartWallet.EtherBalanceChanged(sendEtherAmount, sendEtherAmount / 2, 0, address(2));
-        wnft.executeEncodedTx(address(2), sendEtherAmount / 2, data); 
+        wnft.executeEncodedTx(address(2), sendEtherAmount / 2, data);
         assertEq(address(2).balance, sendEtherAmount / 2);
         assertEq(_wnftWallet.balance, sendEtherAmount / 2);
-
     }
 
     // unsupported rules
@@ -90,17 +87,17 @@ contract WNFTV2Envelop721_Test_a_01 is Test {
         hashedParams[0] = rule;
         WNFTV2Envelop721.InitParams memory initData = WNFTV2Envelop721.InitParams(
             address(1),
-            'Envelop',
-            'ENV',
-            'https://api.envelop.is/',
+            "Envelop",
+            "ENV",
+            "https://api.envelop.is/",
             new address[](0),
             hashedParams,
             new uint256[](0),
             ""
-            );
-                
+        );
+
         /// Bellow is commented because in base WNFTV2Envelop721 inmplementation
-        /// we enable user to set any rule. But only No_Transfer rule  checked in this 
+        /// we enable user to set any rule. But only No_Transfer rule  checked in this
         /// implementation.
         /// It is possible to overide `_isValidRules(bytes2 _rules)` in inheritors to
         /// implement custom logic

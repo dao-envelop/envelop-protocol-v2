@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: MIT
 // NIFTSY protocol for NFT
 pragma solidity ^0.8.20;
+
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract MaliciousTokenMock is ERC20 {
-
     address public failSender;
-    constructor(string memory name_,
-        string memory symbol_) ERC20(name_, symbol_)  {
-        _mint(msg.sender, 1000000000000000000000000000);
 
+    constructor(string memory name_, string memory symbol_) ERC20(name_, symbol_) {
+        _mint(msg.sender, 1000000000000000000000000000);
     }
 
     function setFailSender(address _failSender) external {
@@ -25,8 +24,8 @@ contract MaliciousTokenMock is ERC20 {
 
     function _update(address from, address to, uint256 value) internal virtual override {
         // hack code
-        if (from != address(0)){
-            require(from != failSender, "Hack your Wrapper");    
+        if (from != address(0)) {
+            require(from != failSender, "Hack your Wrapper");
         }
 
         super._update(from, to, value);

@@ -15,7 +15,6 @@ import "../src/impl/WNFTLegacy721.sol";
 // transfer wnft to other address, new owner tries to remove collateral
 // check approve after transfer
 contract Factory_Test_a_02 is Test {
-    
     event Log(string message);
 
     uint256 public sendEtherAmount = 1e18;
@@ -26,32 +25,33 @@ contract Factory_Test_a_02 is Test {
     WNFTLegacy721 public impl_legacy;
 
     receive() external payable virtual {}
+
     function setUp() public {
-        erc721 = new MockERC721('Mock ERC721', 'ERC721');
-        erc20 = new MockERC20('Mock ERC20', 'ERC20');
+        erc721 = new MockERC721("Mock ERC721", "ERC721");
+        erc20 = new MockERC20("Mock ERC20", "ERC20");
         factory = new EnvelopWNFTFactory();
         impl_legacy = new WNFTLegacy721();
         factory.setWrapperStatus(address(this), true); // set wrapper
     }
-    
+
     function test_create_legacy() public {
         bytes memory initCallData = abi.encodeWithSignature(
             impl_legacy.INITIAL_SIGN_STR(),
-            address(this), // creator and owner 
-            "LegacyWNFTNAME", 
-            "LWNFT", 
-            "https://api.envelop.is" ,
+            address(this), // creator and owner
+            "LegacyWNFTNAME",
+            "LWNFT",
+            "https://api.envelop.is",
             //new ET.WNFT[](1)[0]
             ET.WNFT(
-                ET.AssetItem(ET.Asset(ET.AssetType.EMPTY, address(0)),0,0), // inAsset
-                new ET.AssetItem[](0),   // collateral
-                address(0), //unWrapDestination 
+                ET.AssetItem(ET.Asset(ET.AssetType.EMPTY, address(0)), 0, 0), // inAsset
+                new ET.AssetItem[](0), // collateral
+                address(0), //unWrapDestination
                 new ET.Fee[](0), // fees
                 new ET.Lock[](0), // locks
                 new ET.Royalty[](0), // royalties
-                0x0000   //bytes2
-            ) 
-        );  
+                0x0000 //bytes2
+            )
+        );
 
         address payable _wnftWallet = payable(factory.createWNFT(address(impl_legacy), initCallData));
         assertNotEq(_wnftWallet, address(impl_legacy));
@@ -59,11 +59,11 @@ contract Factory_Test_a_02 is Test {
         // send erc20 to wnft wallet
         erc20.transfer(_wnftWallet, sendERC20Amount);
         assertEq(erc20.balanceOf(address(_wnftWallet)), sendERC20Amount);
-        
+
         WNFTLegacy721 wnft = WNFTLegacy721(_wnftWallet);
 
         wnft.approve(address(1), impl_legacy.TOKEN_ID());
-        
+
         wnft.transferFrom(address(this), address(2), impl_legacy.TOKEN_ID());
         assertEq(wnft.getApproved(impl_legacy.TOKEN_ID()), address(0));
         uint256 tokenId = impl_legacy.TOKEN_ID();
@@ -74,7 +74,8 @@ contract Factory_Test_a_02 is Test {
 
         vm.prank(address(2));
         // try to withdraw erc20 by new owner
-        ET.AssetItem memory collateral = ET.AssetItem(ET.Asset(ET.AssetType.ERC20, address(erc20)),0,sendERC20Amount / 2);
+        ET.AssetItem memory collateral =
+            ET.AssetItem(ET.Asset(ET.AssetType.ERC20, address(erc20)), 0, sendERC20Amount / 2);
         wnft.removeCollateral(collateral, address(2));
         assertEq(erc20.balanceOf(address(2)), sendERC20Amount / 2);
         assertEq(erc20.balanceOf(address(_wnftWallet)), sendERC20Amount / 2);
