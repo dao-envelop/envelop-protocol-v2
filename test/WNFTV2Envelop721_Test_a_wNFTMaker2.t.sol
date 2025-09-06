@@ -16,9 +16,9 @@ import "../src/EnvelopLegacyWrapperBaseV2.sol";
 //import {ET} from "../src/utils/LibET.sol";
 
 // add collateral to wnft (erc721, erc1155) and withdraw
-contract WNFTV2Envelop721_Test_a_wNFTMaker2 is Test  {
+contract WNFTV2Envelop721_Test_a_wNFTMaker2 is Test {
     using Strings for uint160;
-    
+
     event Log(string message);
 
     uint256 public sendEtherAmount = 1e18;
@@ -32,29 +32,29 @@ contract WNFTV2Envelop721_Test_a_wNFTMaker2 is Test  {
     WNFTV2Envelop721 public impl_native;
     EnvelopLegacyWrapperBaseV2 public wrapper;
 
-
     receive() external payable virtual {}
+
     function setUp() public {
-        erc721 = new MockERC721('Mock ERC721', 'ERC');
+        erc721 = new MockERC721("Mock ERC721", "ERC");
         factory = new EnvelopWNFTFactory();
         impl_native = new WNFTV2Envelop721(address(factory));
         factory.setWrapperStatus(address(impl_native), true); // set wrapper
-        erc20_1 = new MockERC20('Mock ERC20', 'ERC20');
-        erc20_2 = new MockERC20('Mock ERC20', 'ERC20');
-        erc1155 = new MockERC1155('https://bunny.com');
+        erc20_1 = new MockERC20("Mock ERC20", "ERC20");
+        erc20_2 = new MockERC20("Mock ERC20", "ERC20");
+        erc1155 = new MockERC1155("https://bunny.com");
     }
 
     function test_wNFTMaker() public {
         WNFTV2Envelop721.InitParams memory initData = WNFTV2Envelop721.InitParams(
             address(this),
-            'Envelop',
-            'ENV',
-            'https://api.envelop.is/',
+            "Envelop",
+            "ENV",
+            "https://api.envelop.is/",
             new address[](0),
             new bytes32[](0),
             new uint256[](0),
             ""
-            );
+        );
 
         vm.prank(address(this));
         // create master wallet
@@ -83,14 +83,14 @@ contract WNFTV2Envelop721_Test_a_wNFTMaker2 is Test  {
         // prepare data for deploying of child wallets
         initData = WNFTV2Envelop721.InitParams(
             address(1),
-            'Envelop',
-            'ENV',
-            'https://api.envelop.is/',
+            "Envelop",
+            "ENV",
+            "https://api.envelop.is/",
             new address[](0),
             new bytes32[](0),
             new uint256[](0),
             ""
-            );
+        );
 
         // using method with salt
         /*bytes memory _data = abi.encodeWithSignature(
@@ -99,22 +99,16 @@ contract WNFTV2Envelop721_Test_a_wNFTMaker2 is Test  {
         );*/
         bytes memory _data = "";
 
-        values[0] = sendEtherAmount / 2;  
-        values[1] = sendEtherAmount / 2;    
-        values[2] = 0;  
+        values[0] = sendEtherAmount / 2;
+        values[1] = sendEtherAmount / 2;
+        values[2] = 0;
         values[3] = 0;
-        
+
         dataArray[0] = _data;
         dataArray[1] = _data;
-        dataArray[2] = abi.encodeWithSignature(
-            "transfer(address,uint256)",
-            address(1),sendERC20Amount / 2
-        );
-        dataArray[3] = abi.encodeWithSignature(
-            "transfer(address,uint256)",
-            address(2),sendERC20Amount / 2
-        );
-        
+        dataArray[2] = abi.encodeWithSignature("transfer(address,uint256)", address(1), sendERC20Amount / 2);
+        dataArray[3] = abi.encodeWithSignature("transfer(address,uint256)", address(2), sendERC20Amount / 2);
+
         (bool sent, bytes memory data) = _wnftWallet.call{value: sendEtherAmount}("");
         console2.log(_wnftWallet.balance);
 
@@ -124,7 +118,5 @@ contract WNFTV2Envelop721_Test_a_wNFTMaker2 is Test  {
         console2.log(address(2).balance);
         console2.log(erc20_1.balanceOf(address(1)));
         console2.log(erc20_1.balanceOf(address(2)));
-       
     }
-    
 }

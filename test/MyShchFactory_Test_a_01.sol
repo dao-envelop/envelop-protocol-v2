@@ -19,14 +19,13 @@ import "../src/interfaces/IEnvelopV2wNFT.sol";
 // create wnft wallet for user
 
 contract MyShchFactory_Test_a_01 is Test {
-    
     event Log(string message);
 
     uint256 public sendEtherAmount = 1e18;
     uint256 public sendERC20Amount = 3e18;
     uint64 BOT_TG_ID = 111111;
     uint64 USER_TG_ID = 222222;
-    address public constant botEOA   = 0x7EC0BF0a4D535Ea220c6bD961e352B752906D568;
+    address public constant botEOA = 0x7EC0BF0a4D535Ea220c6bD961e352B752906D568;
     uint256 public constant botEOA_PRIVKEY = 0x1bbde125e133d7b485f332b8125b891ea2fbb6a957e758db72e6539d46e2cd71;
     MockERC721 public erc721;
     MockERC20 public erc20;
@@ -39,25 +38,23 @@ contract MyShchFactory_Test_a_01 is Test {
     address payable userWNFT;
 
     receive() external payable virtual {}
-    
+
     function setUp() public {
-        erc721 = new MockERC721('Mock ERC721', 'ERC');
+        erc721 = new MockERC721("Mock ERC721", "ERC");
         impl_myshch = new WNFTMyshchWallet(address(0));
         factory = new MyShchFactory(address(impl_myshch));
         factory.setSignerStatus(address(1), true); // address(1) is trusted address
-        erc20 = new MockERC20('Mock ERC20', 'ERC20');
+        erc20 = new MockERC20("Mock ERC20", "ERC20");
     }
 
     // create wallet by trusted signer
-    
+
     function test_create_wnft() public {
         vm.startPrank(address(1));
         // create wnft for bot tg id
         vm.expectEmit();
         emit EnvelopWNFTFactory.EnvelopV2Deployment(
-            factory.getAddressForNonce(BOT_TG_ID, 1), 
-            address(impl_myshch),
-            impl_myshch.ORACLE_TYPE()
+            factory.getAddressForNonce(BOT_TG_ID, 1), address(impl_myshch), impl_myshch.ORACLE_TYPE()
         );
         botWNFT = payable(factory.mintPersonalMSW(BOT_TG_ID, ""));
         vm.stopPrank();
@@ -79,20 +76,19 @@ contract MyShchFactory_Test_a_01 is Test {
         assertEq(nonce, 1);
 
         // try to call non-trusted signer - without right signature
-        vm.expectRevert(
-            abi.encodeWithSelector(MyShchFactory.UnexpectedSigner.selector, address(0))
-        );
+        vm.expectRevert(abi.encodeWithSelector(MyShchFactory.UnexpectedSigner.selector, address(0)));
         botWNFT = payable(factory.mintPersonalMSW(BOT_TG_ID, ""));
     }
 
     // create wallet using signature - wrong signature
     function test_wnft_user_wallet() public {
-        factory.setSignerStatus(botEOA, true); 
+        factory.setSignerStatus(botEOA, true);
         bytes memory botSignature;
         bytes32 digest = MessageHashUtils.toEthSignedMessageHash(
-            factory.getDigestForSign(USER_TG_ID, factory.currentNonce(USER_TG_ID) + 2)); // wrong next nonce: + 2
+            factory.getDigestForSign(USER_TG_ID, factory.currentNonce(USER_TG_ID) + 2)
+        ); // wrong next nonce: + 2
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(botEOA_PRIVKEY, digest);
-        botSignature = abi.encodePacked(r,s,v);
+        botSignature = abi.encodePacked(r, s, v);
         vm.prank(address(2));
         vm.expectRevert();
         userWNFT = payable(factory.mintPersonalMSW(USER_TG_ID, botSignature));

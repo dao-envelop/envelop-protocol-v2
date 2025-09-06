@@ -16,9 +16,9 @@ import "../src/EnvelopLegacyWrapperBaseV2.sol";
 //import {ET} from "../src/utils/LibET.sol";
 
 // call tokenUri
-contract WNFTV2Envelop721_Test_a_07 is Test  {
+contract WNFTV2Envelop721_Test_a_07 is Test {
     using Strings for uint160;
-    
+
     event Log(string message);
 
     uint256 public sendEtherAmount = 1e18;
@@ -31,38 +31,36 @@ contract WNFTV2Envelop721_Test_a_07 is Test  {
     WNFTV2Envelop721 public impl_legacy;
     EnvelopLegacyWrapperBaseV2 public wrapper;
 
-
     receive() external payable virtual {}
+
     function setUp() public {
-        erc721 = new MockERC721('Mock ERC721', 'ERC');
+        erc721 = new MockERC721("Mock ERC721", "ERC");
         factory = new EnvelopWNFTFactory();
         impl_legacy = new WNFTV2Envelop721(address(factory));
         factory.setWrapperStatus(address(impl_legacy), true); // set wrapper
-        erc20 = new MockERC20('Mock ERC20', 'ERC20');
+        erc20 = new MockERC20("Mock ERC20", "ERC20");
     }
-
 
     function test_create_wNFT() public {
         WNFTV2Envelop721.InitParams memory initData = WNFTV2Envelop721.InitParams(
             address(this),
-            'Envelop',
-            'ENV',
-            'https://api.envelop.is/',
+            "Envelop",
+            "ENV",
+            "https://api.envelop.is/",
             new address[](0),
             new bytes32[](0),
             new uint256[](0),
             ""
-            );
+        );
 
         vm.prank(address(this));
         address payable _wnftWallet = payable(impl_legacy.createWNFTonFactory(initData));
 
         WNFTV2Envelop721 wnft = WNFTV2Envelop721(_wnftWallet);
 
-
         string memory url = string(
             abi.encodePacked(
-                'https://api.envelop.is/',
+                "https://api.envelop.is/",
                 vm.toString(block.chainid),
                 "/",
                 uint160(address(wnft)).toHexString(),

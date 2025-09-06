@@ -15,7 +15,6 @@ import "../src/impl/WNFTV2Envelop721.sol";
 
 // call executeEncodedTxBatch
 contract WNFTV2Index_Test_a_01 is Test {
-    
     event Log(string message);
 
     uint256 public sendEtherAmount = 1e18;
@@ -26,42 +25,31 @@ contract WNFTV2Index_Test_a_01 is Test {
     WNFTV2Index public impl_index;
 
     receive() external payable virtual {}
+
     function setUp() public {
-        erc721 = new MockERC721('Mock ERC721', 'ERC721');
-        erc20 = new MockERC20('Mock ERC20', 'ERC20');
+        erc721 = new MockERC721("Mock ERC721", "ERC721");
+        erc20 = new MockERC20("Mock ERC20", "ERC20");
         factory = new EnvelopWNFTFactory();
         impl_index = new WNFTV2Index(address(factory));
         factory.setWrapperStatus(address(impl_index), true); // set wrapper
     }
-    
+
     function test_create_index_1() public {
         //add timelock
         uint256[] memory numberParams = new uint256[](2);
         numberParams[0] = block.timestamp + 10000;
 
-        WNFTV2Envelop721.InitParams memory initData = WNFTV2Envelop721.InitParams(
-            address(this),
-            '',
-            '',
-            '',
-            new address[](0),
-            new bytes32[](0),
-            numberParams,
-            ""
-            );   
+        WNFTV2Envelop721.InitParams memory initData =
+            WNFTV2Envelop721.InitParams(address(this), "", "", "", new address[](0), new bytes32[](0), numberParams, "");
 
         vm.prank(address(this));
         address payable _wnftIndex = payable(impl_index.createWNFTonFactory(initData));
         WNFTV2Index wnft = WNFTV2Index(_wnftIndex);
 
-
         // send erc20 to wnft wallet
         erc20.transfer(_wnftIndex, sendERC20Amount);
-        
-        bytes memory _data = abi.encodeWithSignature(
-            "transfer(address,uint256)",
-            address(11), sendERC20Amount / 2
-        );
+
+        bytes memory _data = abi.encodeWithSignature("transfer(address,uint256)", address(11), sendERC20Amount / 2);
 
         address[] memory targets = new address[](2);
         targets[0] = address(erc20);
@@ -76,13 +64,13 @@ contract WNFTV2Index_Test_a_01 is Test {
         datas[1] = _data;
 
         // now time lock
-        vm.expectRevert('TimeLock error');
+        vm.expectRevert("TimeLock error");
         wnft.executeEncodedTxBatch(targets, values, datas);
-        
+
         // time lock has finished
         vm.warp(block.timestamp + 10001);
         vm.prank(address(1));
-        vm.expectRevert('Only for wNFT owner');
+        vm.expectRevert("Only for wNFT owner");
         wnft.executeEncodedTxBatch(targets, values, datas);
 
         wnft.executeEncodedTxBatch(targets, values, datas);
@@ -99,28 +87,13 @@ contract WNFTV2Index_Test_a_01 is Test {
         numberParams[0] = timeLock;
         numberParams[1] = price;
 
-        WNFTV2Envelop721.InitParams memory initData = WNFTV2Envelop721.InitParams(
-            address(this),
-            '',
-            '',
-            '',
-            new address[](0),
-            new bytes32[](0),
-            numberParams,
-            ""
-            ); 
-        WNFTV2Index.IndexData memory indexData = WNFTV2Index.IndexData(
-            impl_index.indexVersion(),
-            numberParams[1]);  
+        WNFTV2Envelop721.InitParams memory initData =
+            WNFTV2Envelop721.InitParams(address(this), "", "", "", new address[](0), new bytes32[](0), numberParams, "");
+        WNFTV2Index.IndexData memory indexData = WNFTV2Index.IndexData(impl_index.indexVersion(), numberParams[1]);
 
         vm.prank(address(this));
         vm.expectEmit();
-        emit WNFTV2Envelop721.EnvelopWrappedV2(
-            address(this), 
-            impl_index.TOKEN_ID(),  
-            '', 
-            abi.encode(indexData)
-        );
-        impl_index.createWNFTonFactory(initData);  
+        emit WNFTV2Envelop721.EnvelopWrappedV2(address(this), impl_index.TOKEN_ID(), "", abi.encode(indexData));
+        impl_index.createWNFTonFactory(initData);
     }
 }

@@ -18,15 +18,11 @@ import "./Objects.s.sol";
 // Deploy and init acions
 contract CheckChainParam is Script, Objects {
     using stdJson for string;
+
     function run() public {
         console2.log("Chain id: %s", vm.toString(block.chainid));
-        console2.log(
-            "Deployer address: %s, "
-            "\n native balnce %s",
-            msg.sender, msg.sender.balance
-        );
-         
+        console2.log("Deployer address: %s, " "\n native balnce %s", msg.sender, msg.sender.balance);
+
         getChainParams();
-   
     }
 }

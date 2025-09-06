@@ -18,7 +18,6 @@ import "../src/EnvelopLegacyWrapperBaseV2.sol";
 // call addCollateralBatch
 // check owner functions
 contract LegacyWrapper_a_01 is Test {
-    
     event Log(string message);
 
     uint256 public sendEtherAmount = 1e18;
@@ -31,64 +30,55 @@ contract LegacyWrapper_a_01 is Test {
     WNFTLegacy721 public impl_legacy;
     EnvelopLegacyWrapperBaseV2 public wrapper;
 
-
     receive() external payable virtual {}
+
     function setUp() public {
-        erc721 = new MockERC721('Mock ERC721', 'ERC721');
-        erc20 = new MockERC20('Mock ERC20', 'ERC20');
-        erc1155 = new MockERC1155('api.envelop.is');
+        erc721 = new MockERC721("Mock ERC721", "ERC721");
+        erc20 = new MockERC20("Mock ERC20", "ERC20");
+        erc1155 = new MockERC1155("api.envelop.is");
         factory = new EnvelopWNFTFactory();
         wrapper = new EnvelopLegacyWrapperBaseV2(address(factory));
         impl_legacy = new WNFTLegacy721();
         factory.setWrapperStatus(address(wrapper), true); // set wrapper
-        wrapper.setWNFTId(
-            ET.AssetType.ERC721, 
-            address(impl_legacy), 
-            impl_legacy.TOKEN_ID()
-        );
+        wrapper.setWNFTId(ET.AssetType.ERC721, address(impl_legacy), impl_legacy.TOKEN_ID());
 
         // check admin function
         vm.prank(address(2));
         vm.expectRevert();
         factory.setWrapperStatus(address(wrapper), true); // set wrapper
-    
+
         vm.prank(address(2));
         vm.expectRevert();
-        wrapper.setWNFTId(
-            ET.AssetType.ERC721, 
-            address(impl_legacy), 
-            0
-        );
+        wrapper.setWNFTId(ET.AssetType.ERC721, address(impl_legacy), 0);
     }
-    
+
     function test_create_legacy() public {
-        
         address[] memory receivers = new address[](1);
         receivers[0] = address(1);
-        ET.AssetItem memory original_nft = ET.AssetItem(ET.Asset(ET.AssetType.EMPTY, address(0)),0,0);
+        ET.AssetItem memory original_nft = ET.AssetItem(ET.Asset(ET.AssetType.EMPTY, address(0)), 0, 0);
         EnvelopLegacyWrapperBaseV2.INData memory inData = EnvelopLegacyWrapperBaseV2.INData(
-                original_nft, // inAsset
-                address(1), //unWrapDestination
-                new ET.Fee[](0), // fees 
-                new ET.Lock[](0), // locks
-                new ET.Royalty[](0), // royalties
-                ET.AssetType.ERC721,
-                uint256(0),        
-                0x0000   //bytes2
+            original_nft, // inAsset
+            address(1), //unWrapDestination
+            new ET.Fee[](0), // fees
+            new ET.Lock[](0), // locks
+            new ET.Royalty[](0), // royalties
+            ET.AssetType.ERC721,
+            uint256(0),
+            0x0000 //bytes2
         );
 
-        EnvelopLegacyWrapperBaseV2.INData[] memory inDataS = new  EnvelopLegacyWrapperBaseV2.INData[](2);
+        EnvelopLegacyWrapperBaseV2.INData[] memory inDataS = new EnvelopLegacyWrapperBaseV2.INData[](2);
         inDataS[0] = inData;
         inDataS[1] = inData;
 
         ET.AssetItem[] memory collateral = new ET.AssetItem[](1);
-        collateral[0] = ET.AssetItem(ET.Asset(ET.AssetType.ERC20, address(erc20)),0,sendERC20Amount);
-        
+        collateral[0] = ET.AssetItem(ET.Asset(ET.AssetType.ERC20, address(erc20)), 0, sendERC20Amount);
+
         erc20.approve(address(wrapper), sendERC20Amount * 2);
-        vm.expectRevert('Array params must have equal length');
+        vm.expectRevert("Array params must have equal length");
         wrapper.wrapBatch(
             inDataS,
-            collateral,   // collateral
+            collateral, // collateral
             receivers
         );
 
@@ -98,7 +88,7 @@ contract LegacyWrapper_a_01 is Test {
 
         ET.AssetItem[] memory wnfts = wrapper.wrapBatch{value: sendEtherAmount}(
             inDataS,
-            collateral,   // collateral
+            collateral, // collateral
             receivers1
         );
         assertEq(wnfts[0].asset.contractAddress.balance, sendEtherAmount / 2);
@@ -119,23 +109,22 @@ contract LegacyWrapper_a_01 is Test {
         tokenIDs[0] = impl_legacy.TOKEN_ID();
         ET.AssetItem[] memory collateral2 = new ET.AssetItem[](0);
 
-        vm.expectRevert('Array params must have equal length');
+        vm.expectRevert("Array params must have equal length");
         wrapper.addCollateralBatch(receivers2, tokenIDs, collateral2);
 
         uint256[] memory tokenIDs2 = new uint256[](2);
         tokenIDs2[0] = impl_legacy.TOKEN_ID();
         tokenIDs2[1] = impl_legacy.TOKEN_ID();
 
-        vm.expectRevert('Collateral not found');
+        vm.expectRevert("Collateral not found");
         wrapper.addCollateralBatch(receivers2, tokenIDs2, collateral2);
-
 
         wrapper.addCollateralBatch{value: 1e18}(receivers2, tokenIDs2, collateral2);
 
         erc20.approve(address(wrapper), sendERC20Amount * 2);
 
         ET.AssetItem[] memory collateral3 = new ET.AssetItem[](1);
-        collateral3[0] = ET.AssetItem(ET.Asset(ET.AssetType.ERC20, address(erc20)),0,sendERC20Amount);
+        collateral3[0] = ET.AssetItem(ET.Asset(ET.AssetType.ERC20, address(erc20)), 0, sendERC20Amount);
 
         wrapper.addCollateralBatch(receivers2, tokenIDs2, collateral3);
 

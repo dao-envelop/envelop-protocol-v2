@@ -17,10 +17,10 @@ import "../src/impl/WNFTV2Envelop721.sol";
 //import {ET} from "../src/utils/LibET.sol";
 
 // add collateral to wnft (erc721, erc1155) and withdraw
-contract WNFTV2Index_Test_m_01 is Test  {
+contract WNFTV2Index_Test_m_01 is Test {
     using Strings for uint160;
     using Strings for uint256;
-    
+
     event Log(string message);
 
     uint256 public sendEtherAmount = 1e18;
@@ -34,31 +34,31 @@ contract WNFTV2Index_Test_m_01 is Test  {
     WNFTV2Index public impl_index;
     WNFTV2Envelop721 public impl_native;
 
-
     receive() external payable virtual {}
+
     function setUp() public {
-        erc721 = new MockERC721('Mock ERC721', 'ERC');
+        erc721 = new MockERC721("Mock ERC721", "ERC");
         factory = new EnvelopWNFTFactory();
         impl_index = new WNFTV2Index(address(factory));
         impl_native = new WNFTV2Envelop721(address(factory));
         factory.setWrapperStatus(address(impl_index), true); // set wrapper
         factory.setWrapperStatus(address(impl_native), true); // set wrapper
-        erc20_1 = new MockERC20('Mock ERC20', 'ERC20');
-        erc20_2 = new MockERC20('Mock ERC20', 'ERC20');
-        erc1155 = new MockERC1155('https://bunny.com');
+        erc20_1 = new MockERC20("Mock ERC20", "ERC20");
+        erc20_2 = new MockERC20("Mock ERC20", "ERC20");
+        erc1155 = new MockERC1155("https://bunny.com");
     }
 
     function test_wNFTMaker() public {
         WNFTV2Envelop721.InitParams memory initData = WNFTV2Envelop721.InitParams(
             address(this),
-            'Envelop V2 Smart Wallet',
-            'ENVELOPV2',
-            'https://api.envelop.is/wallet',
+            "Envelop V2 Smart Wallet",
+            "ENVELOPV2",
+            "https://api.envelop.is/wallet",
             new address[](0),
             new bytes32[](0),
             new uint256[](0),
             ""
-            );
+        );
 
         vm.prank(address(this));
         address payable _wnftWallet = payable(impl_native.createWNFTonFactory(initData));
@@ -86,9 +86,9 @@ contract WNFTV2Index_Test_m_01 is Test  {
         // prepare data for deploying of child wallets (indexes)
         initData = WNFTV2Envelop721.InitParams(
             address(1),
-            'Envelop',
-            'ENV',
-            'https://api.envelop.is/',
+            "Envelop",
+            "ENV",
+            "https://api.envelop.is/",
             new address[](0),
             new bytes32[](0),
             new uint256[](2),
@@ -98,15 +98,13 @@ contract WNFTV2Index_Test_m_01 is Test  {
 
         // using method with salt
         bytes memory _data = abi.encodeWithSignature(
-            "createWNFTonFactory2((address,string,string,string,address[],bytes32[],uint256[],bytes))",
-            initData
+            "createWNFTonFactory2((address,string,string,string,address[],bytes32[],uint256[],bytes))", initData
         );
 
-        for (uint i =0; i < 6; i++)
-        {
-            values[i] = 0;    
+        for (uint256 i = 0; i < 6; i++) {
+            values[i] = 0;
         }
-        
+
         // calc child wallet addresses (indexes)
         bytes32 salt = keccak256(abi.encode(address(impl_index), _wnftWallet, impl_index.nonce(_wnftWallet) + 1));
         address calcW1 = factory.predictDeterministicAddress(address(impl_index), salt);
@@ -115,35 +113,19 @@ contract WNFTV2Index_Test_m_01 is Test  {
 
         dataArray[0] = _data;
         dataArray[1] = _data;
-        dataArray[2] = abi.encodeWithSignature(
-            "transfer(address,uint256)",
-            calcW1,sendEtherAmount / 2
-        );
-        dataArray[3] = abi.encodeWithSignature(
-            "transfer(address,uint256)",
-            calcW2,sendEtherAmount / 2
-        );
-        dataArray[4] = abi.encodeWithSignature(
-            "transfer(address,uint256)",
-            calcW1,sendEtherAmount
-        );
-        dataArray[5] = abi.encodeWithSignature(
-            "transfer(address,uint256)",
-            calcW2,sendEtherAmount
-        );
+        dataArray[2] = abi.encodeWithSignature("transfer(address,uint256)", calcW1, sendEtherAmount / 2);
+        dataArray[3] = abi.encodeWithSignature("transfer(address,uint256)", calcW2, sendEtherAmount / 2);
+        dataArray[4] = abi.encodeWithSignature("transfer(address,uint256)", calcW1, sendEtherAmount);
+        dataArray[5] = abi.encodeWithSignature("transfer(address,uint256)", calcW2, sendEtherAmount);
 
         bytes[] memory result = wnft.executeEncodedTxBatch(targets, values, dataArray);
 
         // get child wallet (index) adresses from output
-        address payable w1 =  payable(abi.decode(result[0],
-             (address)
-        ));
+        address payable w1 = payable(abi.decode(result[0], (address)));
 
         WNFTV2Index index1 = WNFTV2Index(w1);
 
-        address payable w2 =  payable(abi.decode(result[1],
-             (address)
-        ));
+        address payable w2 = payable(abi.decode(result[1], (address)));
 
         // check balance of child wallets
         assertEq(erc20_1.balanceOf(w1), sendEtherAmount / 2);
@@ -154,15 +136,10 @@ contract WNFTV2Index_Test_m_01 is Test  {
         assertEq(index1.name(), "Envelop wNFT V2 Index");
         assertEq(index1.symbol(), "ENVELOPV2");
         assertEq(
-            index1.tokenURI(1),  
-            
+            index1.tokenURI(1),
             string(
                 abi.encodePacked(
-                    index1.BASE_INDEX_URI(),
-                    block.chainid.toString(),
-                    "/",
-                    uint160(address(index1)).toHexString(),
-                    "/1"
+                    index1.BASE_INDEX_URI(), block.chainid.toString(), "/", uint160(address(index1)).toHexString(), "/1"
                 )
             )
         );
