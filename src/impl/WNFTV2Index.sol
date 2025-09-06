@@ -40,8 +40,21 @@ contract WNFTV2Index is WNFTV2Envelop721 {
             indexVersion,
             _init.numberParams[1]
         );
-        // in this implementation we do not store price in contract state/  Only logs
-        //_st.wnftData.locks.push(ET.Lock(0xff, _init.numberParams[1]));
+        /*
+        In this implementation we do not store price in contract state/  Only logs.
+         _st.wnftData.locks.push(ET.Lock(0xff, _init.numberParams[1]));
+        
+        So it wiil be not easy to decode ofchain thst data. That why decode example below  exists
+        0x
+        0000000000000000000000000000000000000000000000000000000000000020   0         because of data in event is dynamic bytes type
+        00000000000000000000000000000000000000000000000000000000000000a0  32 (0x20)  number of bytes (5x32=160). From here bytes started
+        0000000000000000000000000000000000000000000000000000000000000020  64 (0x40)  offset due encoding struct as dynamic bytes 
+        0000000000000000000000000000000000000000000000000000000000000040  96 (0x60)   ->string `version` (point to 160)
+        0000000000000000000000000000000000000000000000000000000000000032 128 (0x80)   startPrice uint256
+        0000000000000000000000000000000000000000000000000000000000000005 160 (0xA0)   number  of elements in string(5)
+        322e302e32000000000000000000000000000000000000000000000000000000 192 (0xC0)   string 5 bytes
+
+        */
         emit EnvelopWrappedV2(
           _init.creator, 
           TOKEN_ID,  
@@ -76,11 +89,11 @@ contract WNFTV2Index is WNFTV2Envelop721 {
          return super.createWNFTonFactory2(_init);
     }
 
-    function name() public pure override returns (string memory) {
+    function name() public virtual pure override returns (string memory) {
         return nftName;
     } 
 
-    function symbol() public pure override returns (string memory) {
+    function symbol() public virtual pure override returns (string memory) {
         return nftSymbol;
     }
 
