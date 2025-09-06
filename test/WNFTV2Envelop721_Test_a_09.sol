@@ -28,7 +28,7 @@ contract WNFTV2Envelop721_Test_a_09 is Test  {
     MockERC20 public erc20;
     MockERC1155 public erc1155;
     EnvelopWNFTFactory public factory;
-    WNFTV2Envelop721 public impl_legacy;
+    WNFTV2Envelop721 public impl;
     EnvelopLegacyWrapperBaseV2 public wrapper;
 
 
@@ -36,8 +36,8 @@ contract WNFTV2Envelop721_Test_a_09 is Test  {
     function setUp() public {
         erc721 = new MockERC721('Mock ERC721', 'ERC');
         factory = new EnvelopWNFTFactory();
-        impl_legacy = new WNFTV2Envelop721(address(factory));
-        factory.setWrapperStatus(address(impl_legacy), true); // set wrapper
+        impl = new WNFTV2Envelop721(address(factory));
+        factory.setWrapperStatus(address(impl), true); // set wrapper
         erc20 = new MockERC20('Mock ERC20', 'ERC20');
     }
 
@@ -54,26 +54,26 @@ contract WNFTV2Envelop721_Test_a_09 is Test  {
             );
 
         vm.prank(address(this));
-        address payable _wnftWallet1 = payable(impl_legacy.createWNFTonFactory(initData));
+        address payable _wnftWallet1 = payable(impl.createWNFTonFactory(initData));
 
         WNFTV2Envelop721 wnft1 = WNFTV2Envelop721(_wnftWallet1);
 
         vm.prank(address(this));
-        address payable _wnftWallet2 = payable(impl_legacy.createWNFTonFactory(initData));
+        address payable _wnftWallet2 = payable(impl.createWNFTonFactory(initData));
 
         WNFTV2Envelop721 wnft2 = WNFTV2Envelop721(_wnftWallet2);
 
-        wnft1.transferFrom(address(this), address(wnft2), impl_legacy.TOKEN_ID());
+        wnft1.transferFrom(address(this), address(wnft2), impl.TOKEN_ID());
 
-        assertEq(wnft1.ownerOf(impl_legacy.TOKEN_ID()), address(wnft2));
+        assertEq(wnft1.ownerOf(impl.TOKEN_ID()), address(wnft2));
 
         bytes memory _data = abi.encodeWithSignature(
             "transferFrom(address,address,uint256)",
-            address(wnft2), address(this), impl_legacy.TOKEN_ID()
+            address(wnft2), address(this), impl.TOKEN_ID()
         );
 
         wnft2.executeEncodedTx(address(wnft1), 0, _data);
 
-        assertEq(wnft1.ownerOf(impl_legacy.TOKEN_ID()), address(this));    
+        assertEq(wnft1.ownerOf(impl.TOKEN_ID()), address(this));    
     }
 }

@@ -28,7 +28,7 @@ contract WNFTV2Envelop721_Test_a_10 is Test  {
     MockERC20 public erc20;
     MockERC1155 public erc1155;
     EnvelopWNFTFactory public factory;
-    WNFTV2Envelop721 public impl_legacy;
+    WNFTV2Envelop721 public impl;
     EnvelopLegacyWrapperBaseV2 public wrapper;
 
 
@@ -36,8 +36,8 @@ contract WNFTV2Envelop721_Test_a_10 is Test  {
     function setUp() public {
         erc721 = new MockERC721('Mock ERC721', 'ERC');
         factory = new EnvelopWNFTFactory();
-        impl_legacy = new WNFTV2Envelop721(address(factory));
-        factory.setWrapperStatus(address(impl_legacy), true); // set wrapper
+        impl = new WNFTV2Envelop721(address(factory));
+        factory.setWrapperStatus(address(impl), true); // set wrapper
         erc20 = new MockERC20('Mock ERC20', 'ERC20');
         erc1155 = new MockERC1155('https://bunny.com');
     }
@@ -55,7 +55,7 @@ contract WNFTV2Envelop721_Test_a_10 is Test  {
             );
 
         vm.prank(address(this));
-        address payable _wnftWallet = payable(impl_legacy.createWNFTonFactory(initData));
+        address payable _wnftWallet = payable(impl.createWNFTonFactory(initData));
 
         WNFTV2Envelop721 wnft = WNFTV2Envelop721(_wnftWallet);
 
@@ -96,11 +96,11 @@ contract WNFTV2Envelop721_Test_a_10 is Test  {
             );
 
         vm.prank(address(this));
-        address payable _wnftWallet = payable(impl_legacy.createWNFTonFactory(initData));
+        address payable _wnftWallet = payable(impl.createWNFTonFactory(initData));
 
         WNFTV2Envelop721 wnft = WNFTV2Envelop721(_wnftWallet);
 
-        ET.WNFT memory info = wnft.wnftInfo(impl_legacy.TOKEN_ID());
+        ET.WNFT memory info = wnft.wnftInfo(impl.TOKEN_ID());
         assertEq(info.locks[0].param, numberParams[0]);
         assertEq(info.locks[0].lockType, bytes1(""));
     }
