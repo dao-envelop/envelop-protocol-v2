@@ -74,6 +74,8 @@ $ forge script script/Deploy.s.sol:TestTxScript --rpc-url arbitrum  --account en
 $ # Mint V2
 $ forge script script/MintV2.s.sol:MintV2Script --rpc-url arbitrum  --account env_deploy_2025 --sender 0x13B9cBcB46aD79878af8c9faa835Bee19B977D3D --broadcast --etherscan-api-key $ETHERSCAN_TOKEN 
 
+$ # MyShch Check & Init Signers Script
+$ forge script script/MyShchInit.s.sol:MyShchInit --rpc-url arbitrum  --account env_deploy_2025 --sender 0x13B9cBcB46aD79878af8c9faa835Bee19B977D3D --broadcast 
 
 $ # sending NFT
 $ cast send 0x7963f799bcD782c61AeE63eACad6c7EB375Ea003 "transferFrom(address,address,uint256)" "0x13B9cBcB46aD79878af8c9faa835Bee19B977D3D" "0xB72993EbB94dc20E4140AFc99A4BC5E42D3d93B2" "1" --rpc-url arbitrum  --account env_deploy_2025 

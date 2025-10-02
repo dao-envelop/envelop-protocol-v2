@@ -66,7 +66,9 @@
             "0x120e49d7ab1EDc0bFBF509Fa8566ca5b5dCAAd40"
         ],
         "trusted_signers_list":[
+            "0x1dc7E53dc4884fA9a384cfEC308DC13672A40784"
         ],
+        "status_to_set": "true",
         "factory": "0xBDb5201565925AE934A5622F0E7091aFFceed5EB",
         "myshch_factory": "0xf58208676a7b5a604df41ca25b5310f3cc997bF3",
         "legacy_wrapper": "0x21c23bA0ec49c9440CD259cCB48ff9D06CD16522",
