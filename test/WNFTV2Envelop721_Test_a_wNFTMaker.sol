@@ -130,4 +130,13 @@ contract WNFTV2Envelop721_Test_a_wNFTMaker is Test {
         assertEq(erc20_2.balanceOf(w2), sendERC20Amount);
         assertEq(impl_native.nonce(_wnftWallet), 2);
     }
+
+    function test_decode() public {
+         bytes memory data =   hex"0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000320000000000000000000000000000000000000000000000000000000000000005322E302E32000000000000000000000000000000000000000000000000000000";
+        (string memory version, uint256 price) =  (abi.decode(data,
+             (string, uint256)
+        ));
+        console2.log(price);
+        console2.log(version);
+    } 
 }

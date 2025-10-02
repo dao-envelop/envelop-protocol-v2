@@ -10,6 +10,8 @@ import "../src/impl/WNFTV2Envelop721.sol";
 import "../src/impl/WNFTLegacy721.sol";
 import "../src/impl/WNFTMyshchWallet.sol";
 import "../src/EnvelopLegacyWrapperBaseV2.sol";
+import "../src/impl/WNFTV2IndexForEvent01.sol";
+
 
 contract InteracteScript is Script {
     using stdJson for string;
@@ -17,7 +19,9 @@ contract InteracteScript is Script {
     address payable nativeImpl = payable(0x53e5CA35761cD24D83479f9066e4C0281dEd59da);
     address payable legacyImpl = payable(0xB692f2f8bABC3e348484dBa1ef24F61F75D61cdB);
     address payable myshchImpl = payable(0x7b294BFa2E76058512adb0807Bddf5e34235a70a);
+    address payable indexEvent01 = payable(0xbded9C8C786727499f13261cC34b997dfa260538);
     address payable relayer = payable(0xf4139ff4C97d189Db6D7F57849CBe22fAacEc688);
+
 
     address _factory = 0x431Db5c6ce5D85A0BAa2198Aa7Aa0E65d37a25c8;
     address _wrapper = 0x9ED82f27f05e0aa6A1eC7811518DeC0F788B5774;
