@@ -39,13 +39,13 @@ contract TokenService_Test_a_04 is Test {
         //native tokens transfer
         ET.AssetItem memory item = ET.AssetItem(ET.Asset(ET.AssetType.NATIVE, address(0)), 0, amount);
 
-        address payable _receiver = payable(address(11));
+        address payable _receiver = payable(address(111));
         _receiver.transfer(amount);
 
-        vm.prank(address(11));
-        bytes memory returndata = tokenService.transfer{value: amount}(item, address(11), address(12));
-        assertEq(address(11).balance, 0);
-        assertEq(address(12).balance, amount);
+        vm.prank(address(111));
+        bytes memory returndata = tokenService.transfer{value: amount}(item, address(111), address(122));
+        assertEq(address(111).balance, 0);
+        assertEq(address(122).balance, amount);
         assertEq0(returndata, bytes(""));
 
         // erc20 tokens transfer
