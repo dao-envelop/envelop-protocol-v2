@@ -61,12 +61,8 @@ contract WNFTV2Envelop721_Test_a_08 is Test {
         // try to transferFrom
         erc20.transfer(_wnftWallet, sendERC20Amount);
         bytes memory _data = abi.encodeWithSignature(
-<<<<<<< HEAD
             "transferFrom(address,address,uint256)",
             address(this), address(2), impl.TOKEN_ID()
-=======
-            "transferFrom(address,address,uint256)", address(this), address(2), impl_legacy.TOKEN_ID()
->>>>>>> b9e67cb0e10aaf05eeaf323b918fa3eec737e158
         );
 
         vm.prank(address(1));
@@ -74,13 +70,7 @@ contract WNFTV2Envelop721_Test_a_08 is Test {
         wnft.executeEncodedTx(_wnftWallet, 0, _data);
 
         wnft.setApprovalForAll(_wnftWallet, true);
-        wnft.executeEncodedTx(_wnftWallet, 0, _data);
-<<<<<<< HEAD
-        
+        wnft.executeEncodedTx(_wnftWallet, 0, _data);    
         assertEq(wnft.ownerOf(impl.TOKEN_ID()), address(2));
-=======
-
-        assertEq(wnft.ownerOf(impl_legacy.TOKEN_ID()), address(2));
->>>>>>> b9e67cb0e10aaf05eeaf323b918fa3eec737e158
     }
 }

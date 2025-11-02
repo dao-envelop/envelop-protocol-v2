@@ -68,20 +68,11 @@ contract WNFTV2Envelop721_Test_a_09 is Test {
         assertEq(wnft1.ownerOf(impl.TOKEN_ID()), address(wnft2));
 
         bytes memory _data = abi.encodeWithSignature(
-<<<<<<< HEAD
             "transferFrom(address,address,uint256)",
             address(wnft2), address(this), impl.TOKEN_ID()
-=======
-            "transferFrom(address,address,uint256)", address(wnft2), address(this), impl_legacy.TOKEN_ID()
->>>>>>> b9e67cb0e10aaf05eeaf323b918fa3eec737e158
         );
 
         wnft2.executeEncodedTx(address(wnft1), 0, _data);
-
-<<<<<<< HEAD
         assertEq(wnft1.ownerOf(impl.TOKEN_ID()), address(this));    
-=======
-        assertEq(wnft1.ownerOf(impl_legacy.TOKEN_ID()), address(this));
->>>>>>> b9e67cb0e10aaf05eeaf323b918fa3eec737e158
     }
 }
