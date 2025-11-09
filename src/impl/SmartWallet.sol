@@ -2,11 +2,11 @@
 // Envelop V2, Wallet
 pragma solidity ^0.8.20;
 
-import "@Uopenzeppelin/contracts/token/ERC721/utils/ERC721HolderUpgradeable.sol";
-import "@Uopenzeppelin/contracts/token/ERC1155/utils/ERC1155HolderUpgradeable.sol";
+import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
+import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
-abstract contract SmartWallet is ERC721HolderUpgradeable, ERC1155HolderUpgradeable {
+abstract contract SmartWallet is ERC721Holder, ERC1155Holder {
     error DifferentArraysLength(uint256 arr1, uint256 arr2);
 
     event EtherBalanceChanged(

@@ -284,7 +284,7 @@ contract WNFTV2Envelop721 is Singleton721, SmartWallet, IEnvelopV2wNFT {
         public
         view
         virtual
-        override(ERC721Upgradeable, ERC1155HolderUpgradeable, IERC165)
+        override(ERC721Upgradeable, ERC1155Holder, IERC165)
         returns (bool)
     {
         //TODO  add current contract interface

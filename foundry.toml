@@ -4,7 +4,7 @@ out = "out"
 libs = ["lib"]
 remappings = [
     "@openzeppelin/=lib/openzeppelin-contracts/",
-    "@Uopenzeppelin/=lib/openzeppelin-contracts-upgradeable.git/"
+    "@Uopenzeppelin/=lib/openzeppelin-contracts-upgradeable/"
 ]
 optimizer = true
 optimizer_runs = 200
