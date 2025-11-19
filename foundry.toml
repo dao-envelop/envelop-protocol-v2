@@ -15,6 +15,9 @@ fs_permissions = [
     { access = "read", path = "/home/max_siz/.foundry/keystores/"}
 ]
 
+[lint]
+#lint_on_build = false
+
 [etherscan]
   arbitrum = { key = "${ARBISCAN_TOKEN}" }
   avalanche = { key = "${SNOWTRACE_TOKEN}" }
