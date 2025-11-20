@@ -94,7 +94,7 @@ contract Predicter is ERC6909TokenSupply {
             _burn(_user, winTokenId, winTokenBalance);
             CompactAsset storage s = predictions[_prediction].strike;
             // TODO add fee spliting
-            IERC20(s.token).safeTransferFrom(address(this), _user, winnerPrize);
+            IERC20(s.token).safeTransfer( _user, winnerPrize);
         }
     }
 
@@ -104,7 +104,7 @@ contract Predicter is ERC6909TokenSupply {
     {
         CompactAsset storage s = predictions[_prediction].strike;
         charged = _prizeAmount * FEE_CREATOR_PERCENT / (100 * PERCENT_DENOMINATOR);
-        IERC20(s.token).safeTransferFrom(address(this), _prediction, charged);
+        IERC20(s.token).safeTransfer(_prediction, charged);
         uint256 protocolFee = _prizeAmount * FEE_PROTOCOL_PERCENT / (100 * PERCENT_DENOMINATOR); 
         charged += protocolFee;
     } 
