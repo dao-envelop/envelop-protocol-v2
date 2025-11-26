@@ -40,6 +40,7 @@ contract Predicter is ERC6909TokenSupply {
 
     error ActivePredictionExist(address sender);
     error PredictionExpired(address prediction, uint40 expirationTime);
+    error PredictionNotExist(address prediction);
 
     constructor (address _feeBeneficiary, address _oracle) {
         FEE_PROTOCOL_BENEFICIARY = _feeBeneficiary;
@@ -49,6 +50,7 @@ contract Predicter is ERC6909TokenSupply {
     function createPrediction(Prediction calldata _pred) 
         external 
     {
+        // Base case for this contract when v2 index create prediction from itself 
         _createPrediction(msg.sender, _pred);
     }
 
@@ -72,10 +74,18 @@ contract Predicter is ERC6909TokenSupply {
     }
 
     function _vote(address _user, address _prediction, bool _agree) internal {
-        // TODO check prediction status
-        CompactAsset storage s = predictions[_prediction].strike;
-        _mint(_user, (uint256(uint160(_prediction)) << 96) | (_agree ? 1 : 0), s.amount);
-        IERC20(s.token).safeTransferFrom(_user, address(this), s.amount);
+        Prediction storage p = predictions[_creator];
+        if (p.expirationTime == 0) {
+            revert PredictionNotExist(_prediction);
+        }
+
+        if (p.expirationTime > block.timestamp ) {
+            CompactAsset storage s = p.strike;
+            _mint(_user, (uint256(uint160(_prediction)) << 96) | (_agree ? 1 : 0), s.amount);
+            IERC20(s.token).safeTransferFrom(_user, address(this), s.amount);
+        } else {
+            revert PredictionExpired(_prediction, p.expirationTime);
+        }
     }
 
     function _resolvePrediction(address _prediction) internal {
@@ -104,7 +114,7 @@ contract Predicter is ERC6909TokenSupply {
     {
         CompactAsset storage s = predictions[_prediction].strike;
         charged = _prizeAmount * FEE_CREATOR_PERCENT / (100 * PERCENT_DENOMINATOR);
-        IERC20(s.token).safeTransfer(_prediction, charged);
+        IERC20(s.token).safeTransfer( _prediction, charged);
         uint256 protocolFee = _prizeAmount * FEE_PROTOCOL_PERCENT / (100 * PERCENT_DENOMINATOR); 
         charged += protocolFee;
     } 
