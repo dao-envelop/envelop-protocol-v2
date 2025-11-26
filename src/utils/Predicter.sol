@@ -132,7 +132,7 @@ contract Predicter is ERC6909TokenSupply {
      * @dev Internal implementation of prediction creation.
      *      Reverts if creator already has an active prediction.
      */
-    function _createPrediction(address _creator, Prediction calldata _pred) internal {
+    function _createPrediction(address _creator, Prediction calldata _pred) internal virtual {
         Prediction storage p = predictions[_creator];
         if (p.expirationTime != 0) {
             revert ActivePredictionExist(_creator);
@@ -151,6 +151,7 @@ contract Predicter is ERC6909TokenSupply {
         Prediction storage p = predictions[_prediction];
         if (p.expirationTime == 0) revert PredictionNotExist(_prediction);
 
+        // if not expired yet
         if (p.expirationTime > block.timestamp) {
             CompactAsset storage s = p.strike;
 
@@ -211,13 +212,15 @@ contract Predicter is ERC6909TokenSupply {
 
             // 3. Creator fee
             fee = winnerPrize * FEE_CREATOR_PERCENT / (100 * PERCENT_DENOMINATOR);
-            IERC20(s.token).safeTransfer(_prediction, paid);
             paid += fee;
+            IERC20(s.token).safeTransfer(_prediction, fee);
+            
 
             // 4. Protocol fee
             fee = winnerPrize * FEE_PROTOCOL_PERCENT / (100 * PERCENT_DENOMINATOR);
-            IERC20(s.token).safeTransfer(FEE_PROTOCOL_BENEFICIARY, paid);
             paid += fee;
+            IERC20(s.token).safeTransfer(FEE_PROTOCOL_BENEFICIARY, fee);
+            
 
             // 5. User reward
             IERC20(s.token).safeTransfer(_user, winnerPrize - paid);
