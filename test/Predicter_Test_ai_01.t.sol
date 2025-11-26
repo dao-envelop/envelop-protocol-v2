@@ -2,10 +2,10 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
-import "../src/utils/Predicter.sol"; // поправь путь под свой проект
+import "../src/utils/Predicter.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-/// Простой ERC20 для тестов
+/// @dev Simple ERC20 mock for staking in tests.
 contract MockERC20 is ERC20 {
     constructor() ERC20("Mock", "MOCK") {
         _mint(msg.sender, 1e27);
@@ -16,95 +16,89 @@ contract MockERC20 is ERC20 {
     }
 }
 
-/// Мок оракла, который просто возвращает заранее установленную цену
-contract MockOracle {
+/// @dev Mock oracle returning a configurable price.
+contract MockOracle is IEnvelopOracle {
     uint256 public price;
 
     function setPrice(uint256 _price) external {
         price = _price;
     }
 
-    // Важно: сигнатура должна совпасть с той, которую вызывает Predicter
+    function getIndexPrice(address) external view override returns (uint256) {
+        return price;
+    }
+
     function getIndexPrice(CompactAsset[] calldata)
         external
         view
+        override
         returns (uint256)
     {
         return price;
     }
 }
 
-/// Хелпер-контракт, чтобы вытащить internal-функции наружу
-contract PredicterHarness is Predicter {
-    constructor(address feeBeneficiary, address oracle)
-        Predicter(feeBeneficiary, oracle)
-    {}
-
-    // function exposedChargeFee(address _prediction, uint256 _prizeAmount)
-    //     external
-    //     returns (uint256)
-    // {
-    //     return _chargeFee(_prediction, _prizeAmount);
-    // }
-
-    function exposedGetWinnerShareAndAmount(address _user, address _prediction)
-        external
-        view
-        returns (
-            uint256 winTokenId,
-            uint256 winTokenBalance,
-            uint256 sharesNonDenominated,
-            uint256 prizeAmount
-        )
-    {
-        return _getWinnerShareAndAmount(_user, _prediction);
+contract MockPermit2 is IPermit2 {
+    function permitTransferFrom(
+        PermitTransferFrom calldata permit,
+        SignatureTransferDetails calldata transferDetails,
+        address owner,
+        bytes calldata /*signature*/
+    ) external override {
+        // Просто делаем transferFrom токена от owner к transferDetails.to
+        IERC20(permit.permitted.token).transferFrom(
+            owner,
+            transferDetails.to,
+            transferDetails.requestedAmount
+        );
     }
 }
+
 
 contract PredicterTest is Test {
     MockERC20 internal token;
     MockOracle internal oracle;
-    PredicterHarness internal predicter;
+    Predicter internal predicter;
 
     address internal creator = address(0xC0FFEE);
-    address internal userWin = address(0xBEEF1);
-    address internal userLose = address(0xBEEF2);
+    address internal userYes = address(0xBEEF1);
+    address internal userNo  = address(0xBEEF2);
+    address internal feeBeneficiary = address(0xFEEBEEF);
+
+    MockPermit2 internal mockPermit2;
+
 
     function setUp() public {
         token = new MockERC20();
         oracle = new MockOracle();
 
-        predicter = new PredicterHarness(
-            address(0xFEE_FEE_FEE_FEE),
-            address(oracle)
-        );
+        predicter = new Predicter(feeBeneficiary, address(oracle));
 
-        // немного токенов пользователям
-        token.mint(userWin, 1_000 ether);
-        token.mint(userLose, 1_000 ether);
+        // deploy mock Permit2 and replace PERMIT2
+        mockPermit2 = new MockPermit2();
+        // replace code at address  Predicter.PERMIT2()
+        vm.etch(predicter.PERMIT2(), address(mockPermit2).code);
+
+        // Give users some tokens and approvals
+        token.mint(userYes, 1_000 ether);
+        token.mint(userNo, 1_000 ether);
     }
 
-    /// Вспомогалка: собрать Prediction
-    function _buildPrediction(uint40 expiration, uint96 strikeAmount, uint96 predictedPriceAmount)
+    // ------------------------------------------------------------
+    // Helpers
+    // ------------------------------------------------------------
+
+    function _buildPrediction(uint40 expiration, uint96 strikeAmount, uint96 predictedAmount)
         internal
         view
         returns (Predicter.Prediction memory pred)
     {
-        // портфель из одного актива (для оракула)
+        // One-asset portfolio
         CompactAsset[] memory portfolio = new CompactAsset[](1);
-        portfolio[0] = CompactAsset({
-            token: address(token),
-            amount: 1 ether
-        });
+        portfolio[0] = CompactAsset({token: address(token), amount: 1 ether});
 
-        pred.strike = CompactAsset({
-            token: address(token),
-            amount: strikeAmount
-        });
-        pred.predictedPrice = CompactAsset({
-            token: address(token),
-            amount: predictedPriceAmount
-        });
+        pred.strike = CompactAsset({token: address(token), amount: strikeAmount});
+        pred.predictedPrice = CompactAsset({token: address(token), amount: predictedAmount});
         pred.expirationTime = expiration;
         pred.resolvedPrice = 0;
         pred.portfolio = portfolio;
@@ -114,192 +108,304 @@ contract PredicterTest is Test {
     // createPrediction
     // ------------------------------------------------------------
 
-    function test_createPrediction_storesData_andRevertsOnSecond() public {
+    function test_createPrediction_success() public {
         uint40 exp = uint40(block.timestamp + 1 days);
-        Predicter.Prediction memory pred = _buildPrediction(exp, 100 ether, 150);
+        Predicter.Prediction memory pred = _buildPrediction(exp, 10 ether, 100);
 
-        // первый вызов от creator
         vm.prank(creator);
         predicter.createPrediction(pred);
 
-        (
-            CompactAsset memory strike,
-            CompactAsset memory predictedPrice,
-            uint40 expirationTime,
-            uint96 resolvedPrice
-        ) = predicter.predictions(creator);
+        (CompactAsset memory strike,
+         CompactAsset memory predictedPrice,
+         uint40 expirationTime,
+         uint96 resolvedPrice) = predicter.predictions(creator);
 
         assertEq(strike.token, address(token));
-        assertEq(strike.amount, 100 ether);
-        assertEq(predictedPrice.amount, 150);
+        assertEq(strike.amount, 10 ether);
+        assertEq(predictedPrice.amount, 100);
         assertEq(expirationTime, exp);
         assertEq(resolvedPrice, 0);
+    }
 
-        // второй вызов должен ревертиться ActivePredictionExist
+    function test_createPrediction_revertTooManyPortfolioItems() public {
+        // new instance with big portfolio
+        CompactAsset[] memory portfolio = new CompactAsset[](predicter.MAX_PORTFOLIO_LEN() + 1);
+        for (uint256 i = 0; i < portfolio.length; i++) {
+            portfolio[i] = CompactAsset({token: address(token), amount: 1});
+        }
+
+        Predicter.Prediction memory pred;
+        pred.strike = CompactAsset({token: address(token), amount: 1 ether});
+        pred.predictedPrice = CompactAsset({token: address(token), amount: 100});
+        pred.expirationTime = uint40(block.timestamp + 1 days);
+        pred.portfolio = portfolio;
+
         vm.prank(creator);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Predicter.ActivePredictionExist.selector,
-                creator
-            )
-        );
+        vm.expectRevert(Predicter.TooManyPortfolioItems.selector);
         predicter.createPrediction(pred);
+    }
+
+    function test_createPrediction_revertActivePredictionExist() public {
+        uint40 exp = uint40(block.timestamp + 1 days);
+        Predicter.Prediction memory pred = _buildPrediction(exp, 10 ether, 100);
+
+        vm.startPrank(creator);
+        predicter.createPrediction(pred);
+
+        // second creation should revert
+        vm.expectRevert(Predicter.ActivePredictionExist.selector);
+        predicter.createPrediction(pred);
+        vm.stopPrank();
     }
 
     // ------------------------------------------------------------
     // vote
     // ------------------------------------------------------------
 
-    function test_vote_mints6909_andTransfersStake() public {
+    function test_vote_mintsSharesAndTransfersStake() public {
         uint40 exp = uint40(block.timestamp + 1 days);
-        Predicter.Prediction memory pred = _buildPrediction(exp, 10 ether, 150);
+        Predicter.Prediction memory pred = _buildPrediction(exp, 10 ether, 100);
 
-        // предикция от creator
         vm.prank(creator);
         predicter.createPrediction(pred);
 
-        // userWin голосует "за"
-        vm.startPrank(userWin);
+        // userYes votes "yes"
+        (uint256 yesId, ) = predicter.hlpGet6909Ids(creator);
+
+        vm.startPrank(userYes);
         token.approve(address(predicter), 10 ether);
         predicter.vote(creator, true);
         vm.stopPrank();
 
-        // ожидаемый tokenId: (creator << 96) | 1
-        uint256 yesId =
-            (uint256(uint160(creator)) << 96) | uint256(1);
-
-        assertEq(predicter.balanceOf(userWin, yesId), 10 ether);
+        assertEq(predicter.balanceOf(userYes, yesId), 10 ether);
         assertEq(token.balanceOf(address(predicter)), 10 ether);
+    }
 
-        // userLose голосует "против"
-        vm.startPrank(userLose);
+    function test_vote_revertPredictionNotExist() public {
+        vm.prank(userYes);
+        vm.expectRevert(Predicter.PredictionNotExist.selector);
+        predicter.vote(address(0xDEAD), true);
+    }
+
+    function test_vote_revertPredictionExpired() public {
+        uint40 exp = uint40(block.timestamp - 1 days); // already expired
+        Predicter.Prediction memory pred = _buildPrediction(exp, 10 ether, 100);
+
+        vm.prank(creator);
+        predicter.createPrediction(pred);
+
+        vm.startPrank(userYes);
         token.approve(address(predicter), 10 ether);
-        predicter.vote(creator, false);
+        vm.expectRevert(Predicter.PredictionExpired.selector);
+        predicter.vote(creator, true);
         vm.stopPrank();
-
-        uint256 noId =
-            (uint256(uint160(creator)) << 96) | uint256(0);
-
-        assertEq(predicter.balanceOf(userLose, noId), 10 ether);
-        assertEq(token.balanceOf(address(predicter)), 20 ether);
     }
 
     // ------------------------------------------------------------
-    // _resolvePrediction (через claim)
+    // hlpGet6909Ids
     // ------------------------------------------------------------
 
-    function test_resolvePrediction_setsResolvedPrice_afterExpiry() public {
+    function test_hlpGet6909Ids_encoding() public view {
+        (uint256 yesId, uint256 noId) = predicter.hlpGet6909Ids(creator);
+
+        assertEq(yesId, (uint256(uint160(creator)) << 96) | 1);
+        assertEq(noId, (uint256(uint160(creator)) << 96));
+    }
+
+    // ------------------------------------------------------------
+    // getUserEstimates
+    // ------------------------------------------------------------
+
+    function test_getUserEstimates_basic() public {
         uint40 exp = uint40(block.timestamp + 1 days);
         Predicter.Prediction memory pred = _buildPrediction(exp, 10 ether, 100);
 
         vm.prank(creator);
         predicter.createPrediction(pred);
 
-        // userWin голосует
-        vm.startPrank(userWin);
+        // userYes votes 1x yes
+        vm.startPrank(userYes);
         token.approve(address(predicter), 10 ether);
         predicter.vote(creator, true);
         vm.stopPrank();
 
-        // устанавливаем цену из оракула
-        oracle.setPrice(200); // > predictedPrice.amount → должен быть "true"
+        // userNo votes 2x no
+        vm.startPrank(userNo);
+        token.approve(address(predicter), 20 ether);
+        predicter.vote(creator, false);
+        predicter.vote(creator, false);
+        vm.stopPrank();
 
-        // отматываем время за expiration
-        vm.warp(exp + 1);
-
-        // claim: внутри вызовется _resolvePrediction
-        vm.prank(userWin);
-        // ВНИМАНИЕ: сейчас этот вызов РЕВЕРТИТСЯ из-за бага в _claim (см. ниже),
-        // поэтому сначала проверяем resolvedPrice через try/catch-паттерн у vm.expectRevert
-        vm.expectRevert(); // из-за неверного safeTransferFrom в _claim
-        predicter.claim(creator);
-
-        // но _resolvePrediction вызывается ДО _claim и успевает записать resolvedPrice,
-        // поэтому мы можем проверить его
         (
-            ,
-            ,
-            ,
-            uint96 resolvedPrice
-        ) = predicter.predictions(creator);
+            uint256 yesBalance,
+            uint256 noBalance,
+            uint256 yesTotal,
+            uint256 noTotal,
+            uint256 yesReward,
+            uint256 noReward
+        ) = predicter.getUserEstimates(userYes, creator);
 
-        assertEq(resolvedPrice, 200, "resolvedPrice must be set from oracle");
+        (uint256 yesId, uint256 noId) = predicter.hlpGet6909Ids(creator);
+
+        assertEq(yesBalance, predicter.balanceOf(userYes, yesId));
+        assertEq(noBalance, predicter.balanceOf(userYes, noId));
+        assertEq(yesTotal, predicter.totalSupply(yesId));
+        assertEq(noTotal, predicter.totalSupply(noId));
+
+        // userYes owns 1/1 of yes pool, loser pool size = 20 ether
+        assertEq(yesReward, 20 ether);
+        // userYes has 0 noTokens, so noReward = 0
+        assertEq(noReward, 0);
     }
 
     // ------------------------------------------------------------
-    // _getWinnerShareAndAmount (через harness)
+    // _resolvePrediction via claim
     // ------------------------------------------------------------
 
-    function test_getWinnerShareAndAmount_singleWinnerVsSingleLoser() public {
+    function test_resolvePrediction_setsResolvedPriceAndClaimPays() public {
         uint40 exp = uint40(block.timestamp + 1 days);
-        // predictedPrice.amount = 100
         Predicter.Prediction memory pred = _buildPrediction(exp, 10 ether, 100);
 
         vm.prank(creator);
         predicter.createPrediction(pred);
 
-        // userWin голосует "за"
-        vm.startPrank(userWin);
+        // yes: userYes (1 vote)
+        vm.startPrank(userYes);
         token.approve(address(predicter), 10 ether);
         predicter.vote(creator, true);
         vm.stopPrank();
 
-        // userLose голосует "против"
-        vm.startPrank(userLose);
+        // no: userNo (1 vote)
+        vm.startPrank(userNo);
         token.approve(address(predicter), 10 ether);
         predicter.vote(creator, false);
         vm.stopPrank();
 
-        // выставляем цену > predictedPrice => predictedTrue = true
+        // set oracle price > predictedPrice => predictedTrue = true (yes wins)
         oracle.setPrice(200);
+
+        // jump after expiration
         vm.warp(exp + 1);
 
-        // сначала резолвим (чтобы записать resolvedPrice)
-        // используем прямой вызов claim, но ожидаем revert на фазе _claim
-        vm.prank(userWin);
-        vm.expectRevert();
+        uint256 balanceBeforeUser   = token.balanceOf(userYes);
+        uint256 balanceBeforeCr     = token.balanceOf(creator);
+        uint256 balanceBeforeProto  = token.balanceOf(feeBeneficiary);
+        uint256 contractBalanceBefore = token.balanceOf(address(predicter));
+
+        vm.prank(userYes);
         predicter.claim(creator);
 
-        // теперь считаем долю победителя через harness
-        (
-            uint256 winTokenId,
-            uint256 winBal,
-            uint256 shareNonDenom,
-            uint256 prize
-        ) = predicter.exposedGetWinnerShareAndAmount(userWin, creator);
+        // resolvedPrice should be set
+        (, , , uint96 resolvedPrice) = predicter.predictions(creator);
+        assertEq(resolvedPrice, 200);
 
-        // winner = userWin с yesTokenId
-        uint256 yesId =
-            (uint256(uint160(creator)) << 96) | uint256(1);
+        uint256 balanceAfterUser   = token.balanceOf(userYes);
+        uint256 balanceAfterCr     = token.balanceOf(creator);
+        uint256 balanceAfterProto  = token.balanceOf(feeBeneficiary);
+        uint256 contractBalanceAfter = token.balanceOf(address(predicter));
 
-        assertEq(winTokenId, yesId);
-        assertEq(winBal, 10 ether);
+        // User must have received back stake + net reward > 0
+        assertGt(balanceAfterUser, balanceBeforeUser);
 
-        // totalSupply(winId) = 10 ether → shareNonDenom = 10000 (100%)
-        assertEq(shareNonDenom, predicter.PERCENT_DENOMINATOR());
+        // Creator and protocol both get some fee cut
+        assertGt(balanceAfterCr, balanceBeforeCr);
+        assertGt(balanceAfterProto, balanceBeforeProto);
 
-        // totalSupply(loserId) = 10 ether → приз = 10 ether
-        assertEq(prize, 10 ether);
+        // Контракт уменьшил баланс (выплаты сделаны)
+        assertLt(contractBalanceAfter, contractBalanceBefore);
     }
 
-    // ------------------------------------------------------------
-    // _chargeFee (явно покажет баг с transferFrom)
-    // ------------------------------------------------------------
+    function test_resolvePrediction_revertOraclePriceTooHigh() public {
+        uint40 exp = uint40(block.timestamp + 1 days);
+        Predicter.Prediction memory pred = _buildPrediction(exp, 10 ether, 100);
 
-    // function test_chargeFee_revertsDueToTransferFromBug() public {
-    //     uint40 exp = uint40(block.timestamp + 1 days);
-    //     Predicter.Prediction memory pred = _buildPrediction(exp, 10 ether, 100);
+        vm.prank(creator);
+        predicter.createPrediction(pred);
 
-    //     vm.prank(creator);
-    //     predicter.createPrediction(pred);
+        // userYes votes "yes"
+        vm.startPrank(userYes);
+        token.approve(address(predicter), 10 ether);
+        predicter.vote(creator, true);
+        vm.stopPrank();
 
-    //     // зальём контракт токенами, чтобы у него был баланс
-    //     token.mint(address(predicter), 100 ether);
+        // set oracle price above uint96.max
+        oracle.setPrice(uint256(type(uint96).max) + 1);
 
-    //     // попытаемся списать fee: внутри _chargeFee используется
-    //     // IERC20(s.token).safeTransferFrom(address(this), _prediction, charged)
-    //     // что для стандартного ERC20 ревернётся из-за отсутствия allowance
-    //     vm.expectRevert();
-    //     predicter.exposedChargeFee(creator, 10 ether);
-    // }
+        vm.warp(exp + 1);
+
+        vm.prank(userYes);
+        vm.expectRevert(Predicter.OraclePriceTooHigh.selector);
+        predicter.claim(creator);
+    }
+
+    function test_claim_noWinnerNoRevert() public {
+        uint40 exp = uint40(block.timestamp + 1 days);
+        Predicter.Prediction memory pred = _buildPrediction(exp, 10 ether, 100);
+
+        vm.prank(creator);
+        predicter.createPrediction(pred);
+
+        // only userNo votes "no"
+        vm.startPrank(userNo);
+        token.approve(address(predicter), 10 ether);
+        predicter.vote(creator, false);
+        vm.stopPrank();
+
+        // set oracle price LOWER than predictedPrice => predictedTrue = false => "no" wins
+        oracle.setPrice(50);
+
+        vm.warp(exp + 1);
+
+        // userYes has no winning tokens, should not revert, just no reward
+        uint256 before = token.balanceOf(userYes);
+        vm.prank(userYes);
+        predicter.claim(creator);
+        uint256 afterBal = token.balanceOf(userYes);
+
+        assertEq(before, afterBal);
+    }
+
+        function test_voteWithPermit2_transfersViaPermit2AndMintsShares() public {
+        uint40 exp = uint40(block.timestamp + 1 days);
+        Predicter.Prediction memory pred = _buildPrediction(exp, 10 ether, 100);
+
+        vm.prank(creator);
+        predicter.createPrediction(pred);
+
+        (uint256 yesId, ) = predicter.hlpGet6909Ids(creator);
+
+        // userYes give approve to Permit2 contract
+        vm.startPrank(userYes);
+        token.approve(predicter.PERMIT2(), 10 ether);
+
+        // Prepare Permit2-structs (this mock not check it)
+        IPermit2.PermitTransferFrom memory permit;
+        permit.permitted = IPermit2.TokenPermissions({
+            token: address(token),
+            amount: 10 ether
+        });
+        permit.nonce = 0;
+        permit.deadline = block.timestamp + 1 days;
+
+        IPermit2.SignatureTransferDetails memory transferDetails = IPermit2.SignatureTransferDetails({
+            to: address(predicter),
+            requestedAmount: 10 ether
+        });
+
+        bytes memory signature = hex""; // no actual signs check
+
+        
+        predicter.voteWithPermit2(
+            creator,
+            true,
+            permit,
+            transferDetails,
+            signature
+        );
+        vm.stopPrank();
+
+        assertEq(token.balanceOf(address(predicter)), 10 ether);
+        assertEq(predicter.balanceOf(userYes, yesId), 10 ether);
+    }
+
 }
