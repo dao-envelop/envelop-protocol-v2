@@ -55,6 +55,8 @@ contract Predicter is ERC6909TokenSupply {
     uint96 public constant FEE_PROTOCOL_PERCENT = 100000;  
     uint96 public constant PERCENT_DENOMINATOR = 10000;
 
+    uint256 public constant MAX_PORTFOLIO_LEN = 100;
+
     // Uniswap Permit2 constant (not used yet in this version)
     address public constant PERMIT2 = 0x000000000022D473030F116dDEE9F6B43aC78BA3;
 
@@ -80,6 +82,17 @@ contract Predicter is ERC6909TokenSupply {
     /// Thrown if the prediction is referenced but does not exist
     error PredictionNotExist(address prediction);
 
+    error OraclePriceTooHigh(uint256 oraclePrice);
+
+    error TooManyPortfolioItems(uint256 actualLength);
+
+
+    event PredictionCreated(address indexed creator, uint40 expirationTime);
+    event Voted(address indexed voter, address indexed prediction, bool agree);
+    event PredictionResolved(address indexed prediction, uint256 resolvedPrice); 
+    event Claimed(address indexed user, address indexed prediction, uint256 reward);
+
+
     // ==================================
     //           CONSTRUCTOR
     // ==================================
@@ -103,7 +116,11 @@ contract Predicter is ERC6909TokenSupply {
      * @param _pred The prediction parameters.
      */
     function createPrediction(Prediction calldata _pred) external {
+        if (_pred.portfolio.length > MAX_PORTFOLIO_LEN) {
+            revert TooManyPortfolioItems(_pred.portfolio.length);
+        }
         _createPrediction(msg.sender, _pred);
+        emit PredictionCreated(msg.sender, _pred.expirationTime);
     }
 
     /**
@@ -120,8 +137,41 @@ contract Predicter is ERC6909TokenSupply {
      * @param _prediction Address of prediction creator.
      */
     function claim(address _prediction) external {
-        _resolvePrediction(_prediction);
-        _claim(msg.sender, _prediction);
+        if (_resolvePrediction(_prediction)) {
+            _claim(msg.sender, _prediction);
+        }
+    }
+
+    
+    function getUserEstimates(address _user, address _prediction) external view 
+    returns(
+        uint256 yesBalance, 
+        uint256 noBalance, 
+        uint256 yesTotal, 
+        uint256 noTotal, 
+        uint256 yesReward, 
+        uint256 noReward
+    )
+    {
+        (uint256 yesToken, uint256 noToken) = hlpGet6909Ids(_prediction);
+        yesBalance = balanceOf(_user, yesToken);
+        noBalance = balanceOf(_user, noToken);
+        yesTotal = totalSupply(yesToken);
+        noTotal = totalSupply(noToken);
+
+        if (yesTotal > 0) {
+            yesReward = noTotal * (yesBalance * PERCENT_DENOMINATOR / yesTotal) / PERCENT_DENOMINATOR;
+        }
+
+        if (noTotal > 0){
+           noReward = yesTotal * (noBalance * PERCENT_DENOMINATOR / noTotal) / PERCENT_DENOMINATOR;     
+        }
+        
+    }
+
+    function hlpGet6909Ids(address _prediction) public pure returns(uint256 yesId, uint256 noId){
+        yesId = (uint256(uint160(_prediction)) << 96) | 1;
+        noId  = (uint256(uint160(_prediction)) << 96);
     }
 
     // ==================================
@@ -167,19 +217,30 @@ contract Predicter is ERC6909TokenSupply {
         } else {
             revert PredictionExpired(_prediction, p.expirationTime);
         }
+        emit Voted(_user, _prediction, _agree);
     }
 
     /**
      * @dev Resolve a prediction by fetching its actual price from oracle.
      *      Only executes once per prediction.
      */
-    function _resolvePrediction(address _prediction) internal {
+    function _resolvePrediction(address _prediction) internal returns(bool isResolved){
         Prediction storage p = predictions[_prediction];
-        if (p.expirationTime <= block.timestamp && p.resolvedPrice == 0) {
-            // Oracle returns the final price for the selected asset composition
-            p.resolvedPrice =
-                uint96(IEnvelopOracle(ORACLE).getIndexPrice(p.portfolio)); 
-        }
+        if (
+                p.expirationTime <= block.timestamp  // time to resolve came 
+                && p.resolvedPrice == 0              // implicit Resolved Flag
+            ) 
+            {
+            
+                // Oracle returns the final price for the selected asset composition
+                uint256 oracle_price = IEnvelopOracle(ORACLE).getIndexPrice(p.portfolio);
+                if (oracle_price > type(uint96).max) {
+                    revert OraclePriceTooHigh(oracle_price);
+                }
+                p.resolvedPrice = uint96(oracle_price);
+                emit PredictionResolved(_prediction, oracle_price);
+            }
+        isResolved = p.resolvedPrice > 0;
     }
 
     /**
@@ -215,15 +276,15 @@ contract Predicter is ERC6909TokenSupply {
             paid += fee;
             IERC20(s.token).safeTransfer(_prediction, fee);
             
-
             // 4. Protocol fee
             fee = winnerPrize * FEE_PROTOCOL_PERCENT / (100 * PERCENT_DENOMINATOR);
             paid += fee;
             IERC20(s.token).safeTransfer(FEE_PROTOCOL_BENEFICIARY, fee);
             
-
             // 5. User reward
             IERC20(s.token).safeTransfer(_user, winnerPrize - paid);
+
+            emit Claimed(_user, _prediction, winnerPrize - paid);
         }
     }
 

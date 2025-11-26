@@ -8,7 +8,7 @@ struct CompactAsset {
 }
 
 interface IEnvelopOracle {
-    function getIndexPrice(address _v2Index) external returns(uint256);
-    function getIndexPrice(CompactAsset[] calldata _assets) external returns(uint256);
+    function getIndexPrice(address _v2Index) external view returns(uint256);
+    function getIndexPrice(CompactAsset[] calldata _assets) external view returns(uint256);
 
 }
