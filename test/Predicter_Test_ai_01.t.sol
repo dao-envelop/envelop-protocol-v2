@@ -141,7 +141,9 @@ contract PredicterTest is Test {
         pred.portfolio = portfolio;
 
         vm.prank(creator);
-        vm.expectRevert(Predicter.TooManyPortfolioItems.selector);
+        vm.expectRevert(
+            abi.encodeWithSelector(Predicter.TooManyPortfolioItems.selector, predicter.MAX_PORTFOLIO_LEN() + 1)
+        );
         predicter.createPrediction(pred);
     }
 
@@ -153,7 +155,10 @@ contract PredicterTest is Test {
         predicter.createPrediction(pred);
 
         // second creation should revert
-        vm.expectRevert(Predicter.ActivePredictionExist.selector);
+        //vm.expectPartialRevert(Predicter.ActivePredictionExist.selector);
+        vm.expectRevert(
+            abi.encodeWithSelector(Predicter.ActivePredictionExist.selector, creator)
+        );
         predicter.createPrediction(pred);
         vm.stopPrank();
     }
@@ -183,12 +188,14 @@ contract PredicterTest is Test {
 
     function test_vote_revertPredictionNotExist() public {
         vm.prank(userYes);
-        vm.expectRevert(Predicter.PredictionNotExist.selector);
+        vm.expectRevert(
+            abi.encodeWithSelector(Predicter.PredictionNotExist.selector, address(0xDEAD))
+        );
         predicter.vote(address(0xDEAD), true);
     }
 
     function test_vote_revertPredictionExpired() public {
-        uint40 exp = uint40(block.timestamp - 1 days); // already expired
+        uint40 exp = uint40(block.timestamp); // already expired
         Predicter.Prediction memory pred = _buildPrediction(exp, 10 ether, 100);
 
         vm.prank(creator);
@@ -196,7 +203,9 @@ contract PredicterTest is Test {
 
         vm.startPrank(userYes);
         token.approve(address(predicter), 10 ether);
-        vm.expectRevert(Predicter.PredictionExpired.selector);
+        vm.expectRevert(
+            abi.encodeWithSelector(Predicter.PredictionExpired.selector, creator, exp)
+        );
         predicter.vote(creator, true);
         vm.stopPrank();
     }
@@ -334,7 +343,9 @@ contract PredicterTest is Test {
         vm.warp(exp + 1);
 
         vm.prank(userYes);
-        vm.expectRevert(Predicter.OraclePriceTooHigh.selector);
+        vm.expectRevert(
+            abi.encodeWithSelector(Predicter.OraclePriceTooHigh.selector, uint256(type(uint96).max) + 1)
+        );
         predicter.claim(creator);
     }
 
