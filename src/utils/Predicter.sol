@@ -398,7 +398,12 @@ contract Predicter is ERC6909TokenSupply {
             p.resolvedPrice == 0 // implicit resolved flag
         ) {
             uint256 oraclePrice =
-                IEnvelopOracle(ORACLE).getIndexPrice(p.portfolio);
+                IEnvelopOracle(ORACLE).getIndexPrice(_prediction);
+            if (oraclePrice == 0) {
+                oraclePrice =
+                    IEnvelopOracle(ORACLE).getIndexPrice(p.portfolio);
+            }
+            
             if (oraclePrice > type(uint96).max) {
                 revert OraclePriceTooHigh(oraclePrice);
             }
