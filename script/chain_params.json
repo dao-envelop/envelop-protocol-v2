@@ -76,8 +76,15 @@
         "impl_native": "0xC425A68df03764F648883b961eb982f087fe22ca",
         "impl_myshch": "0xDAf75f915e648FBdE1017733B3E8998bBD29f0ba",
         "impl_index": "0xcD88Cd5F96Ad232b9209b7452021284440520955",
-        "impl_erc20": "0x7A3c8F45b809078da58d17fb6Cd059334622838F"
-        },
+        "impl_erc20": "0x7A3c8F45b809078da58d17fb6Cd059334622838F",
+        "oracle" : {
+            "frrd_reg": "0x0000000000000000000000000000000000000000",
+            "coordinator": "0x3C0Ca683b403E37668AE3DC4FB62F4B29B6f7a3e",
+            "keyHash": "0x9e9e46732b32662b9adc6f3abdf6c5e926a666d174a4d6b8e39c4cca76a38897",
+            "callbackGasLimit": 250000,
+            "maxStale": 3600
+        }
+    },
 
     "80001":{
         "wl_items": [

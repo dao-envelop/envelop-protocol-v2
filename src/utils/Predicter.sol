@@ -157,7 +157,7 @@ contract Predicter is ERC6909TokenSupply {
         if (_pred.expirationTime > MAX_PREDICTION_PERIOD + uint40(block.timestamp)) {
             revert TooLongPrediction(_pred.expirationTime);
         }
-        
+        _checkPrediction(msg.sender, _pred);
         _createPrediction(msg.sender, _pred);
         emit PredictionCreated(msg.sender, _pred.expirationTime);
     }
@@ -330,6 +330,12 @@ contract Predicter is ERC6909TokenSupply {
     // ==================================
     //           INTERNAL LOGIC
     // ==================================
+    function _checkPrediction(address _creator, Prediction calldata _pred)
+        internal
+        virtual
+    {
+        
+    }
 
     /**
      * @dev Internal implementation of prediction creation.
