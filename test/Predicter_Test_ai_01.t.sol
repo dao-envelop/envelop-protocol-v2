@@ -113,6 +113,11 @@ contract PredicterTest is Test {
         Predicter.Prediction memory pred = _buildPrediction(exp, 10 ether, 100);
 
         vm.prank(creator);
+        vm.expectEmit();
+        emit Predicter.PredictionCreated(
+            creator,
+            exp
+        );
         predicter.createPrediction(pred);
 
         (CompactAsset memory strike,
@@ -158,6 +163,19 @@ contract PredicterTest is Test {
         //vm.expectPartialRevert(Predicter.ActivePredictionExist.selector);
         vm.expectRevert(
             abi.encodeWithSelector(Predicter.ActivePredictionExist.selector, creator)
+        );
+        predicter.createPrediction(pred);
+        vm.stopPrank();
+    }
+
+    function test_createPrediction_revertTooLongPrediction() public {
+        uint40 period = predicter.MAX_PREDICTION_PERIOD() + 10;
+        uint40 exp = uint40(block.timestamp + period);
+        Predicter.Prediction memory pred = _buildPrediction(exp, 10 ether, 100);
+
+        vm.startPrank(creator);
+        vm.expectRevert(
+            abi.encodeWithSelector(Predicter.TooLongPrediction.selector, exp)
         );
         predicter.createPrediction(pred);
         vm.stopPrank();
