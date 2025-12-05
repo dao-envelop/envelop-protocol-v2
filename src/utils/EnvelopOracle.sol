@@ -117,7 +117,7 @@ contract EnvelopOracle  is IEnvelopOracle, Ownable{
     }
 
     function overrideIndexPrice(address _v2Index, uint256 _price) external onlyOwner {
-        require(_v2Index > 0, "Price <= 0");
+        require(_price > 0, "Price <= 0");
         overridedPrices[_v2Index] = _price;
     }
 
