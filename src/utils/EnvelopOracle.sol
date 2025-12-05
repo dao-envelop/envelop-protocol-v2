@@ -10,7 +10,6 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 //     function getIndexPrice(address _v2Index) external view returns (uint256);
 //     function getIndexPrice(CompactAsset[] calldata _assets) external view returns (uint256);
 // }
-
 // ---- Chainlink Feed Registry minimal interface ----
 interface FeedRegistryInterface {
     function latestRoundData(
@@ -118,6 +117,7 @@ contract EnvelopOracle  is IEnvelopOracle, Ownable{
     }
 
     function overrideIndexPrice(address _v2Index, uint256 _price) external onlyOwner {
+        require(_v2Index > 0, "Price <= 0");
         overridedPrices[_v2Index] = _price;
     }
 
