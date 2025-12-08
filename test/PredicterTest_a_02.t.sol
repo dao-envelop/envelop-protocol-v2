@@ -122,7 +122,7 @@ contract PredicterTest_a_02 is Test {
         (uint256 yesId, ) = predicter.hlpGet6909Ids(creator);
 
         vm.startPrank(userYes);
-        token.approve(address(predicter), 10 ether);
+        token.approve(address(predicter), strikeAmount);
         vm.expectEmit();
         emit Predicter.Voted(userYes, creator, true);
         predicter.vote(creator, true);
@@ -156,5 +156,58 @@ contract PredicterTest_a_02 is Test {
         );
         predicter.vote(creator, true);
         vm.stopPrank();
+    }
+
+    function test_vote_secondTimeTrue() public {
+        uint40 exp = uint40(block.timestamp + 1 days);
+        uint96 strikeAmount = 10e18;
+        uint96 predictedAmount = 100;
+        Predicter.Prediction memory pred = _buildPrediction(exp, strikeAmount, predictedAmount);
+
+        vm.prank(creator);
+        predicter.createPrediction(pred);
+
+        // userYes votes "yes"
+        (uint256 yesId, ) = predicter.hlpGet6909Ids(creator);
+
+        vm.startPrank(userYes);
+        token.approve(address(predicter), strikeAmount);
+        predicter.vote(creator, true);
+        token.approve(address(predicter), strikeAmount);
+        predicter.vote(creator, true);
+        vm.stopPrank();
+
+        assertEq(predicter.balanceOf(userYes, yesId), 2 * strikeAmount);
+        assertEq(token.balanceOf(address(predicter)), 2 * strikeAmount);
+    }
+
+    function test_vote_secondTime_firstTrue_secondFalse() public {
+        uint40 exp = uint40(block.timestamp + 1 days);
+        uint96 strikeAmount = 10e18;
+        uint96 predictedAmount = 100;
+        address voter = address(1);
+        token.mint(voter, 1_000 ether);
+        
+        Predicter.Prediction memory pred = _buildPrediction(exp, strikeAmount, predictedAmount);
+
+        vm.prank(creator);
+        predicter.createPrediction(pred);
+
+        // userYes votes "yes"
+        (uint256 yesId, ) = predicter.hlpGet6909Ids(creator);
+        // userYes votes "yes"
+        (, uint256 noId) = predicter.hlpGet6909Ids(creator);
+
+
+        vm.startPrank(voter);
+        token.approve(address(predicter), strikeAmount);
+        predicter.vote(creator, true);
+        token.approve(address(predicter), strikeAmount);
+        predicter.vote(creator, false);
+        vm.stopPrank();
+
+        assertEq(predicter.balanceOf(voter, yesId), strikeAmount);
+        assertEq(token.balanceOf(address(predicter)), 2 * strikeAmount);
+        assertEq(predicter.balanceOf(voter, noId), strikeAmount);
     }
 }
