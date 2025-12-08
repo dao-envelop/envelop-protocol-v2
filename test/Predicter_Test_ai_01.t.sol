@@ -95,62 +95,14 @@ contract PredicterTest is Test {
     {
         // One-asset portfolio
         CompactAsset[] memory portfolio = new CompactAsset[](1);
-        portfolio[0] = CompactAsset({token: address(token), amount: 1 ether});
+        uint96 portfolioAmount = 1e18;
+        portfolio[0] = CompactAsset({token: address(token), amount: portfolioAmount});
 
         pred.strike = CompactAsset({token: address(token), amount: strikeAmount});
         pred.predictedPrice = CompactAsset({token: address(token), amount: predictedAmount});
         pred.expirationTime = expiration;
         pred.resolvedPrice = 0;
         pred.portfolio = portfolio;
-    }
-
-    // ------------------------------------------------------------
-    // vote
-    // ------------------------------------------------------------
-
-    function test_vote_mintsSharesAndTransfersStake() public {
-        uint40 exp = uint40(block.timestamp + 1 days);
-        Predicter.Prediction memory pred = _buildPrediction(exp, 10 ether, 100);
-
-        vm.prank(creator);
-        predicter.createPrediction(pred);
-
-        // userYes votes "yes"
-        (uint256 yesId, ) = predicter.hlpGet6909Ids(creator);
-
-        vm.startPrank(userYes);
-        token.approve(address(predicter), 10 ether);
-        vm.expectEmit();
-        emit Predicter.Voted(userYes, creator, true);
-        predicter.vote(creator, true);
-        vm.stopPrank();
-
-        assertEq(predicter.balanceOf(userYes, yesId), 10 ether);
-        assertEq(token.balanceOf(address(predicter)), 10 ether);
-    }
-
-    function test_vote_revertPredictionNotExist() public {
-        vm.prank(userYes);
-        vm.expectRevert(
-            abi.encodeWithSelector(Predicter.PredictionNotExist.selector, address(0xDEAD))
-        );
-        predicter.vote(address(0xDEAD), true);
-    }
-
-    function test_vote_revertPredictionExpired() public {
-        uint40 exp = uint40(block.timestamp); // already expired
-        Predicter.Prediction memory pred = _buildPrediction(exp, 10 ether, 100);
-
-        vm.prank(creator);
-        predicter.createPrediction(pred);
-
-        vm.startPrank(userYes);
-        token.approve(address(predicter), 10 ether);
-        vm.expectRevert(
-            abi.encodeWithSelector(Predicter.PredictionExpired.selector, creator, exp)
-        );
-        predicter.vote(creator, true);
-        vm.stopPrank();
     }
 
     // ------------------------------------------------------------

@@ -38,8 +38,6 @@ contract MockOracle is IEnvelopOracle {
     }
 }
 
-
-
 contract PredicterTest_a_01 is Test {
     MockERC20 internal token;
     MockOracle internal oracle;
