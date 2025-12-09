@@ -18,6 +18,12 @@ fs_permissions = [
 [lint]
 #lint_on_build = false
 
+[fuzz]
+runs = 100  # увеличить прогоны
+max_test_rejects = 4
+seed = 0
+
+
 [etherscan]
   arbitrum = { key = "${ARBISCAN_TOKEN}" }
   avalanche = { key = "${SNOWTRACE_TOKEN}" }
