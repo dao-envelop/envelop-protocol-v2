@@ -21,7 +21,6 @@ fs_permissions = [
 [fuzz]
 runs = 100  # увеличить прогоны
 max_test_rejects = 4
-seed = 0
 
 
 [etherscan]
