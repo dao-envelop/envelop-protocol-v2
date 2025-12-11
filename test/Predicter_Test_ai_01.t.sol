@@ -219,59 +219,7 @@ contract PredicterTest is Test {
         assertLt(contractBalanceAfter, contractBalanceBefore);
     }
 
-    function test_resolvePrediction_revertOraclePriceTooHigh() public {
-        uint40 exp = uint40(block.timestamp + 1 days);
-        Predicter.Prediction memory pred = _buildPrediction(exp, 10 ether, 100);
-
-        vm.prank(creator);
-        predicter.createPrediction(pred);
-
-        // userYes votes "yes"
-        vm.startPrank(userYes);
-        token.approve(address(predicter), 10 ether);
-        predicter.vote(creator, true);
-        vm.stopPrank();
-
-        // set oracle price above uint96.max
-        oracle.setPrice(uint256(type(uint96).max) + 1);
-
-        vm.warp(exp + 1);
-
-        vm.prank(userYes);
-        vm.expectRevert(
-            abi.encodeWithSelector(Predicter.OraclePriceTooHigh.selector, uint256(type(uint96).max) + 1)
-        );
-        predicter.claim(creator);
-    }
-
-    function test_claim_noWinnerNoRevert() public {
-        uint40 exp = uint40(block.timestamp + 1 days);
-        Predicter.Prediction memory pred = _buildPrediction(exp, 10 ether, 100);
-
-        vm.prank(creator);
-        predicter.createPrediction(pred);
-
-        // only userNo votes "no"
-        vm.startPrank(userNo);
-        token.approve(address(predicter), 10 ether);
-        predicter.vote(creator, false);
-        vm.stopPrank();
-
-        // set oracle price LOWER than predictedPrice => predictedTrue = false => "no" wins
-        oracle.setPrice(50);
-
-        vm.warp(exp + 1);
-
-        // userYes has no winning tokens, should not revert, just no reward
-        uint256 before = token.balanceOf(userYes);
-        vm.prank(userYes);
-        predicter.claim(creator);
-        uint256 afterBal = token.balanceOf(userYes);
-
-        assertEq(before, afterBal);
-    }
-
-        function test_voteWithPermit2_transfersViaPermit2AndMintsShares() public {
+    function test_voteWithPermit2_transfersViaPermit2AndMintsShares() public {
         uint40 exp = uint40(block.timestamp + 1 days);
         Predicter.Prediction memory pred = _buildPrediction(exp, 10 ether, 100);
 
