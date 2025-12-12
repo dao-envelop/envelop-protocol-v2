@@ -365,4 +365,70 @@ contract PredicterTest_a_03 is Test {
         assertEq(calcWinPrize, strikeAmount);
         assertGt(balanceBeforeYesVoter1, strikeAmount);
     }
+
+    function test_resolvePrediction_claimSeveralTimes2() public {
+        uint40 exp = uint40(block.timestamp + 1 days);
+        uint96 strikeAmount = 10 ether;
+        Predicter.Prediction memory pred = _buildPrediction(exp, strikeAmount, 100);
+
+        vm.prank(creator);
+        predicter.createPrediction(pred);
+
+        // yes: users vote 
+        address yesVoter1 = address(100);
+        address yesVoter2 = address(101);
+
+        address noVoter1 = address(102);
+        address noVoter2 = address(103);
+
+        vm.startPrank(yesVoter1);
+        token.mint(yesVoter1, strikeAmount);
+        token.approve(address(predicter), strikeAmount);
+        predicter.vote(creator, true);
+        vm.stopPrank();
+
+        vm.startPrank(yesVoter2);
+        token.mint(yesVoter2, strikeAmount);
+        token.approve(address(predicter), strikeAmount);
+        predicter.vote(creator, true);
+        vm.stopPrank();
+
+        // no: users vote 
+        vm.startPrank(noVoter1);
+        token.mint(noVoter1, strikeAmount);
+        token.approve(address(predicter), strikeAmount);
+        predicter.vote(creator, false);
+        vm.stopPrank();
+
+        vm.startPrank(noVoter2);
+        token.mint(noVoter2, strikeAmount);
+        token.approve(address(predicter), strikeAmount);
+        predicter.vote(creator, false);
+        vm.stopPrank();
+
+        // set oracle price > predictedPrice => predictedTrue = true (yes wins)
+        uint256 oraclePrice = 200;
+        oracle.setPrice(oraclePrice);
+
+        // jump after expiration
+        vm.warp(exp + 100);
+
+        assertEq(token.balanceOf(creator), 0);
+        assertEq(token.balanceOf(predicter.FEE_PROTOCOL_BENEFICIARY()), 0);
+        // claim by noVoter1 - first time
+        vm.prank(noVoter1);
+        predicter.claim(creator);
+        
+        assertEq(token.balanceOf(noVoter1), 0);
+        assertEq(token.balanceOf(creator), 0);
+        assertEq(token.balanceOf(predicter.FEE_PROTOCOL_BENEFICIARY()), 0);
+
+        // claim by noVoter1 - second time
+        vm.prank(noVoter1);
+        predicter.claim(creator);
+        assertEq(token.balanceOf(noVoter1), 0);
+        assertEq(token.balanceOf(creator), 0);
+        assertEq(token.balanceOf(predicter.FEE_PROTOCOL_BENEFICIARY()), 0);
+        
+    }
 }
