@@ -285,9 +285,10 @@ contract PredicterTest_a_03 is Test {
         vm.prank(userYes);
         predicter.claim(creatorForOtherPred);
 
-        // resolvedPrice should be set
+        // resolvedPrice should be zero
         (, , , uint96 resolvedPrice) = predicter.predictions(creator);
         assertEq(resolvedPrice, 0);
+        // resolvedPrice should be set
         (, , , resolvedPrice) = predicter.predictions(creatorForOtherPred);
         assertEq(resolvedPrice, oraclePrice);    
         assertEq(token.balanceOf(userYes), balanceBefore);
@@ -306,9 +307,6 @@ contract PredicterTest_a_03 is Test {
         address yesVoter1 = address(100);
         address yesVoter2 = address(101);
 
-        address noVoter1 = address(102);
-        address noVoter2 = address(103);
-
         vm.startPrank(yesVoter1);
         token.mint(yesVoter1, strikeAmount);
         token.approve(address(predicter), strikeAmount);
@@ -322,6 +320,8 @@ contract PredicterTest_a_03 is Test {
         vm.stopPrank();
 
         // no: users vote 
+        address noVoter1 = address(102);
+        address noVoter2 = address(103);
         vm.startPrank(noVoter1);
         token.mint(noVoter1, strikeAmount);
         token.approve(address(predicter), strikeAmount);
@@ -378,9 +378,6 @@ contract PredicterTest_a_03 is Test {
         address yesVoter1 = address(100);
         address yesVoter2 = address(101);
 
-        address noVoter1 = address(102);
-        address noVoter2 = address(103);
-
         vm.startPrank(yesVoter1);
         token.mint(yesVoter1, strikeAmount);
         token.approve(address(predicter), strikeAmount);
@@ -394,6 +391,8 @@ contract PredicterTest_a_03 is Test {
         vm.stopPrank();
 
         // no: users vote 
+        address noVoter1 = address(102);
+        address noVoter2 = address(103);
         vm.startPrank(noVoter1);
         token.mint(noVoter1, strikeAmount);
         token.approve(address(predicter), strikeAmount);
@@ -429,6 +428,49 @@ contract PredicterTest_a_03 is Test {
         assertEq(token.balanceOf(noVoter1), 0);
         assertEq(token.balanceOf(creator), 0);
         assertEq(token.balanceOf(predicter.FEE_PROTOCOL_BENEFICIARY()), 0);
+    }
+
+    function test_resolvePrediction_claimBeforeExpiredDate() public {
+        uint40 exp = uint40(block.timestamp + 1 days);
+        uint96 strikeAmount = 10 ether;
+        Predicter.Prediction memory pred = _buildPrediction(exp, strikeAmount, 100);
+
+        vm.prank(creator);
+        predicter.createPrediction(pred);
+
+        address yesVoter1 = address(100);
+        address noVoter1 = address(102);
+
+        vm.startPrank(yesVoter1);
+        token.mint(yesVoter1, strikeAmount);
+        token.approve(address(predicter), strikeAmount);
+        predicter.vote(creator, true);
+        vm.stopPrank();
+
+        vm.startPrank(noVoter1);
+        token.mint(noVoter1, strikeAmount);
+        token.approve(address(predicter), strikeAmount);
+        predicter.vote(creator, false);
+        vm.stopPrank();
+
+        // set oracle price > predictedPrice => predictedTrue = true (yes wins)
+        uint256 oraclePrice = 200;
+        oracle.setPrice(oraclePrice);
+
+        // jump before expiration
+        vm.warp(exp - 10000);
+
+        assertEq(token.balanceOf(creator), 0);
+        assertEq(token.balanceOf(predicter.FEE_PROTOCOL_BENEFICIARY()), 0);
+        // claim by noVoter1 - first time
+        vm.prank(yesVoter1);
+        predicter.claim(creator);
         
+        assertEq(token.balanceOf(noVoter1), 0);
+        assertEq(token.balanceOf(creator), 0);
+        assertEq(token.balanceOf(predicter.FEE_PROTOCOL_BENEFICIARY()), 0);
+        // resolvedPrice should be zero
+        (, , , uint96 resolvedPrice) = predicter.predictions(creator);
+        assertEq(resolvedPrice, 0);
     }
 }
