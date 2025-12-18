@@ -38,23 +38,6 @@ contract MockOracle is IEnvelopOracle {
     }
 }
 
-contract MockPermit2 is IPermit2 {
-    function permitTransferFrom(
-        PermitTransferFrom calldata permit,
-        SignatureTransferDetails calldata transferDetails,
-        address owner,
-        bytes calldata /*signature*/
-    ) external override {
-        // Просто делаем transferFrom токена от owner к transferDetails.to
-        IERC20(permit.permitted.token).transferFrom(
-            owner,
-            transferDetails.to,
-            transferDetails.requestedAmount
-        );
-    }
-}
-
-
 contract PredicterTest_a_02 is Test {
     MockERC20 internal token;
     MockOracle internal oracle;
@@ -65,19 +48,12 @@ contract PredicterTest_a_02 is Test {
     address internal userNo  = address(0xBEEF2);
     address internal feeBeneficiary = address(0xFEEBEEF);
 
-    MockPermit2 internal mockPermit2;
-
 
     function setUp() public {
         token = new MockERC20();
         oracle = new MockOracle();
 
         predicter = new Predicter(feeBeneficiary, address(oracle));
-
-        // deploy mock Permit2 and replace PERMIT2
-        mockPermit2 = new MockPermit2();
-        // replace code at address  Predicter.PERMIT2()
-        vm.etch(predicter.PERMIT2(), address(mockPermit2).code);
 
         // Give users some tokens and approvals
         token.mint(userYes, 1_000 ether);
