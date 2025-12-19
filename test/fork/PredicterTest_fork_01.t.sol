@@ -79,19 +79,26 @@ contract PredicterTest_fork_1 is Test {
         token.mint(userNo, 1_000 ether);
     }
 
-    function getPermitTransferSignature(
+    /*function getPermitTransferSignature(
         IPermit2.PermitTransferFrom memory permit,
         uint256 privateKey,
         address sender
     ) internal view returns (bytes memory sig) {
-        bytes32 tokenPermissions = keccak256(abi.encode(_TOKEN_PERMISSIONS_TYPEHASH, permit.permitted));
+        //bytes32 tokenPermissions = keccak256(abi.encode(_TOKEN_PERMISSIONS_TYPEHASH, permit.permitted));
+        bytes32 tokenPermissionsHash = keccak256(
+            abi.encode(
+                _TOKEN_PERMISSIONS_TYPEHASH,
+                permit.permitted.token,
+                permit.permitted.amount
+            )
+        );
         bytes32 msgHash = keccak256(
             abi.encodePacked(
                 "\x19\x01",
                 DOMAIN_SEPARATOR,
                 keccak256(
                     abi.encode(
-                        _PERMIT_TRANSFER_FROM_TYPEHASH, tokenPermissions, sender, permit.nonce, permit.deadline
+                        _PERMIT_TRANSFER_FROM_TYPEHASH, tokenPermissionsHash, sender, permit.nonce, permit.deadline
                     )
                 )
             )
@@ -99,6 +106,25 @@ contract PredicterTest_fork_1 is Test {
 
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(privateKey, msgHash);
         return bytes.concat(r, s, bytes1(v));
+    }*/
+
+    function hash(IPermit2.PermitTransferFrom memory permit) internal view returns (bytes32) {
+        bytes32 tokenPermissionsHash = _hashTokenPermissions(permit.permitted);
+        return keccak256(
+            abi.encode(_PERMIT_TRANSFER_FROM_TYPEHASH, tokenPermissionsHash, msg.sender, permit.nonce, permit.deadline)
+        );
+    }
+
+    function _hashTokenPermissions(IPermit2.TokenPermissions memory permitted)
+        private
+        pure
+        returns (bytes32)
+    {
+        return keccak256(abi.encode(_TOKEN_PERMISSIONS_TYPEHASH, permitted));
+    }
+
+    function _hashTypedData(bytes32 dataHash) internal view returns (bytes32) {
+        return keccak256(abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR, dataHash));
     }
 
     function test_voteWithPermit2_transfersViaPermit2AndMintsShares() public {
@@ -122,7 +148,7 @@ contract PredicterTest_fork_1 is Test {
         (uint256 yesId, ) = predicter.hlpGet6909Ids(creator);
 
         // userYes give approve to Permit2 contract
-        vm.prank(userYes);
+        vm.startPrank(userYes);
         token.approve(predicter.PERMIT2(), 10 ether);
 
         // Prepare Permit2-structs (this mock not check it)
@@ -131,7 +157,6 @@ contract PredicterTest_fork_1 is Test {
             token: address(token),
             amount: 10 ether
         });
-        console2.log(vm.getNonce(userYes));
         permit.nonce = vm.getNonce(userYes);
         permit.deadline = block.timestamp + 1 days;
 
@@ -140,9 +165,15 @@ contract PredicterTest_fork_1 is Test {
             requestedAmount: 10 ether
         });
 
-        bytes memory signature = getPermitTransferSignature(permit, userYesPrKey, userYes);
+        bytes32 hash1 = hash(permit);
+        bytes32 hash2 = _hashTypedData(hash1);
 
-        vm.prank(userYes);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(userYesPrKey, hash2);
+        bytes memory signature =  bytes.concat(r, s, bytes1(v));
+
+
+        //bytes memory signature = getPermitTransferSignature(permit, userYesPrKey, userYes);
+
         predicter.voteWithPermit2(
             creator,
             true,
@@ -150,6 +181,7 @@ contract PredicterTest_fork_1 is Test {
             transferDetails,
             signature
         );
+        vm.stopPrank();
 
         assertEq(token.balanceOf(address(predicter)), 10 ether);
         assertEq(predicter.balanceOf(userYes, yesId), 10 ether);
