@@ -64,7 +64,7 @@ contract Predicter is ERC6909TokenSupply {
     uint96 public constant FEE_PROTOCOL_PERCENT = 100_000;
 
     /// @dev Percentage denominator (basis points = 10_000).
-    uint96 public constant PERCENT_DENOMINATOR = 10_000;
+    uint96 public constant PERCENT_DENOMINATOR = 10_000 * 1e18;
 
     /// @dev Hard cap for number of portfolio items, to avoid gas blow-ups.
     uint256 public constant MAX_PORTFOLIO_LEN = 100;
@@ -223,7 +223,7 @@ contract Predicter is ERC6909TokenSupply {
         if (transfer.to != address(this)) {
             revert("Permit2: wrong recipient");
         }
-        if (transfer.requestedAmount < s.amount) {
+        if (transfer.requestedAmount != s.amount) {
             revert("Permit2: insufficient amount");
         }
 

@@ -134,7 +134,7 @@ contract PredicterTest_a_03 is Test {
 
         // jump after expiration
         vm.warp(exp + 1);
-
+        console2.log('predicter balance before all claimes = ', token.balanceOf(address(predicter)));     
         for (uint256 i = 0; i < usersYes.length; i++) {
             vm.prank(usersYes[i]);
             predicter.claim(creator);
