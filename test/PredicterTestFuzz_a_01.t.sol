@@ -158,9 +158,9 @@ contract PredicterTestFuzz_a_01 is Test {
 
         }
 
-        console2.log('expectedYesTotal = ', expectedYesTotal);
-        console2.log('expectedNoTotal = ', expectedNoTotal);
+        console2.log('expectedYesTotal   = ', expectedYesTotal);
         console2.log('calculatedYesTotal = ', calculatedYesTotal);
+        console2.log('expectedNoTotal   = ', expectedNoTotal);
         console2.log('calculatedNoTotal = ', calculatedNoTotal);
         assertEq(expectedYesTotal, calculatedYesTotal);
         assertEq(expectedNoTotal, calculatedNoTotal);

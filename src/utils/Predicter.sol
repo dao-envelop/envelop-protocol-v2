@@ -56,15 +56,16 @@ contract Predicter is ERC6909TokenSupply {
     /// @dev Reserved constant for potential “stop voting before expiration” logic.
     uint40 public constant STOP_BEFORE_EXPIRED = 0;
 
-    /// @dev Creator fee numerator. Interpreted together with PERCENT_DENOMINATOR and `/ 100`.
-    /// Example: 200_000 / (100 * 10_000) = 20%
-    uint96 public constant FEE_CREATOR_PERCENT = 200_000;
+    /// @dev Creator fee in bps. 2_000 = 20%
+    uint96 public constant FEE_CREATOR_PERCENT = 2_00;
 
-    /// @dev Protocol fee numerator. Example: 100_000 / (100 * 10_000) = 10%.
-    uint96 public constant FEE_PROTOCOL_PERCENT = 100_000;
+    /// @dev Protocol fee  in bps. 1000 = 10%.
+    uint96 public constant FEE_PROTOCOL_PERCENT = 1_00;
 
     /// @dev Percentage denominator (basis points = 10_000).
-    uint96 public constant PERCENT_DENOMINATOR = 10_000 * 1e18;
+    uint96 public constant PERCENT_DENOMINATOR = 10_000;
+
+    uint96 public constant SCALE = 1e18;
 
     /// @dev Hard cap for number of portfolio items, to avoid gas blow-ups.
     uint256 public constant MAX_PORTFOLIO_LEN = 100;
@@ -296,15 +297,13 @@ contract Predicter is ERC6909TokenSupply {
         if (yesTotal > 0) {
             yesReward =
                 noTotal *
-                (yesBalance * PERCENT_DENOMINATOR / yesTotal) /
-                PERCENT_DENOMINATOR;
+                (yesBalance * SCALE / yesTotal) / SCALE;
         }
 
         if (noTotal > 0) {
             noReward =
                 yesTotal *
-                (noBalance * PERCENT_DENOMINATOR / noTotal) /
-                PERCENT_DENOMINATOR;
+                (noBalance * SCALE / noTotal) / SCALE;
         }
     }
 
@@ -395,6 +394,7 @@ contract Predicter is ERC6909TokenSupply {
      */
     function _resolvePrediction(address _prediction)
         internal
+        virtual
         returns (bool isResolved)
     {
         Prediction storage p = predictions[_prediction];
@@ -453,15 +453,15 @@ contract Predicter is ERC6909TokenSupply {
 
             // 3. Creator fee
             fee =
-                (winnerPrize * FEE_CREATOR_PERCENT) /
-                (100 * PERCENT_DENOMINATOR);
+                (winnerPrize * FEE_CREATOR_PERCENT * SCALE) /
+                PERCENT_DENOMINATOR / SCALE;
             paid += fee;
             IERC20(s.token).safeTransfer(_prediction, fee);
 
             // 4. Protocol fee
             fee =
-                (winnerPrize * FEE_PROTOCOL_PERCENT) /
-                (100 * PERCENT_DENOMINATOR);
+                (winnerPrize * FEE_PROTOCOL_PERCENT * SCALE) /
+                PERCENT_DENOMINATOR / SCALE;
             paid += fee;
             IERC20(s.token).safeTransfer(FEE_PROTOCOL_BENEFICIARY, fee);
 
@@ -520,13 +520,12 @@ contract Predicter is ERC6909TokenSupply {
         }
 
         sharesNonDenominated =
-            (winTokenBalance * PERCENT_DENOMINATOR) /
+            (winTokenBalance * SCALE) /
             totalWin;
 
         // Prize = share * totalLosingPool
         uint256 totalLose = totalSupply(loserTokenId);
         prizeAmount =
-            (totalLose * sharesNonDenominated) /
-            PERCENT_DENOMINATOR;
+            (totalLose * sharesNonDenominated) / SCALE;
     }
 }
