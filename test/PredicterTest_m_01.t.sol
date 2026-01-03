@@ -105,8 +105,8 @@ contract PredicterTest_m_01 is Test {
 
         uint256 totalYesAmount;
         uint256 totalNoAmount;
-        uint256 yesNum = 4111;
-        uint256 noNum = 31;
+        uint256 yesNum = 4;
+        uint256 noNum = 3;
         
         address user;
         // usersYes vote
@@ -154,8 +154,14 @@ contract PredicterTest_m_01 is Test {
 
         // jump after expiration
         vm.warp(exp + 1);
+        
         console2.log('predicter balance before all claimes: %s', token.balanceOf(address(predicter)));  
         assertEq(token.balanceOf(address(predicter)), totalNoAmount + totalYesAmount);   
+        (uint256 yesToken, uint256 noToken) = predicter.hlpGet6909Ids(address(creator));
+        assertEq(
+            token.balanceOf(address(predicter)), 
+            predicter.totalSupply(yesToken) + predicter.totalSupply(noToken)
+        );
 
         // claims
         for (uint256 i = 0; i < usersYes.length; i++) {
@@ -194,386 +200,173 @@ contract PredicterTest_m_01 is Test {
         assertLt(contractBalanceAfter, contractBalanceBefore);*/
     }
 
-    // function test_claim_nonParticipant() public {
-    //     uint40 exp = uint40(block.timestamp + 1 days);
-    //     uint96 predictedPrice = 100;
-    //     Predicter.Prediction memory pred = _buildPrediction(exp, 10 ether, predictedPrice);
 
-    //     vm.prank(creator);
-    //     predicter.createPrediction(pred);
+function test_resolvePrediction_onlyWinnersBets() public {
+        uint40 exp = uint40(block.timestamp + 1 days);
+        uint96 strikeAmount = 1_000_000;
+        uint96 predictedPrice = 100;
+        Predicter.Prediction memory pred = _buildPrediction(exp, strikeAmount, predictedPrice);
 
-    //     // yes: userYes (1 vote)
-    //     vm.startPrank(userYes);
-    //     token.approve(address(predicter), 10 ether);
-    //     predicter.vote(creator, true);
-    //     vm.stopPrank();
+        vm.prank(creator);
+        predicter.createPrediction(pred);
 
-    //     // set oracle price > predictedPrice => predictedTrue = true (yes wins)
-    //     uint256 oraclePrice = 200;
-    //     oracle.setPrice(oraclePrice);
-    //     address nonParticipant = address(1);
-    //     assertEq(token.balanceOf(nonParticipant), 0);  
-
-    //     // jump after expiration
-    //     vm.warp(exp + 1);
-    //     vm.prank(nonParticipant);
-    //     predicter.claim(creator); 
-    //     assertEq(token.balanceOf(nonParticipant), 0);  
-    // }
-
-    // function test_claim_noWinnerNoRevert() public {
-    //     uint40 exp = uint40(block.timestamp + 1 days);
-    //     uint96 predictedPrice = 100;
-    //     Predicter.Prediction memory pred = _buildPrediction(exp, 10 ether, predictedPrice);
-
-    //     vm.prank(creator);
-    //     predicter.createPrediction(pred);
-
-    //     // only userNo votes "no"
-    //     vm.startPrank(userNo);
-    //     token.approve(address(predicter), 10 ether);
-    //     predicter.vote(creator, false);
-    //     vm.stopPrank();
-
-    //     // set oracle price LOWER than predictedPrice => predictedTrue = false => "no" wins
-    //     uint256 oraclePrice = 50;
-    //     oracle.setPrice(oraclePrice);
-
-    //     vm.warp(exp + 1);
-
-    //     // userYes has no winning tokens, should not revert, just no reward
-    //     uint256 before = token.balanceOf(userYes);
-    //     vm.prank(userYes);
-    //     predicter.claim(creator);
-    //     uint256 afterBal = token.balanceOf(userYes);
-
-    //     assertEq(before, afterBal);
-    // }
-
-    // function test_resolvePrediction_revertOraclePriceTooHigh() public {
-    //     uint40 exp = uint40(block.timestamp + 1 days);
-    //     uint96 predictedPrice = 100;
-    //     Predicter.Prediction memory pred = _buildPrediction(exp, 10 ether, predictedPrice);
-
-    //     vm.prank(creator);
-    //     predicter.createPrediction(pred);
-
-    //     // userYes votes "yes"
-    //     vm.startPrank(userYes);
-    //     token.approve(address(predicter), 10 ether);
-    //     predicter.vote(creator, true);
-    //     vm.stopPrank();
-
-    //     // set oracle price above uint96.max
-    //     uint256 oraclePrice = uint256(type(uint96).max) + 1;
-    //     oracle.setPrice(oraclePrice);
-
-    //     vm.warp(exp + 1);
-
-    //     vm.prank(userYes);
-    //     vm.expectRevert(
-    //         abi.encodeWithSelector(Predicter.OraclePriceTooHigh.selector, uint256(type(uint96).max) + 1)
-    //     );
-    //     predicter.claim(creator);
-    // }
-
-    // function test_resolvePrediction_claimInOtherPrediction() public {
-    //     uint40 exp = uint40(block.timestamp + 1 days);
-    //     uint96 predictedPrice = 100;
-    //     Predicter.Prediction memory pred = _buildPrediction(exp, 10 ether, predictedPrice);
-
-    //     vm.prank(creator);
-    //     predicter.createPrediction(pred);
-    //     address creatorForOtherPred = address(100);
-    //     vm.prank(creatorForOtherPred);
-    //     predicter.createPrediction(pred);
-
-    //     // yes: userYes (1 vote) - first voting
-    //     vm.startPrank(userYes);
-    //     token.approve(address(predicter), 10 ether);
-    //     predicter.vote(creator, true);
-    //     vm.stopPrank();
-
-    //     // no: userNo (1 vote)  - first voting
-    //     vm.startPrank(userNo);
-    //     token.approve(address(predicter), 10 ether);
-    //     predicter.vote(creator, false);
-    //     vm.stopPrank();
-
-    //     // no: user (1 vote) - second voting
-    //     address voterForSecPred = address(100);
-    //     token.mint(voterForSecPred, 10e18);
-    //     vm.startPrank(voterForSecPred);
-    //     token.approve(address(predicter), 10e18);
-    //     predicter.vote(creatorForOtherPred, false);
-    //     vm.stopPrank();
-
-    //     // set oracle price > predictedPrice => predictedTrue = true (yes wins)
-    //     uint256 oraclePrice = 200;
-    //     oracle.setPrice(oraclePrice);
-
-    //     // jump after expiration
-    //     vm.warp(exp + 100);
-
-    //     uint256 balanceBefore = token.balanceOf(userYes);
-    //     uint256 balanceBeforePr = token.balanceOf(address(predicter));
-    //     //somebody can resolves
-    //     vm.prank(userYes);
-    //     predicter.claim(creatorForOtherPred);
-
-    //     // resolvedPrice should be zero
-    //     (, , , uint96 resolvedPrice) = predicter.predictions(creator);
-    //     assertEq(resolvedPrice, 0);
-    //     // resolvedPrice should be set
-    //     (, , , resolvedPrice) = predicter.predictions(creatorForOtherPred);
-    //     assertEq(resolvedPrice, oraclePrice);    
-    //     assertEq(token.balanceOf(userYes), balanceBefore);
-    //     assertEq(token.balanceOf(address(predicter)), balanceBeforePr);
-    // }
-
-    // function test_resolvePrediction_claimSeveralTimes() public {
-    //     uint40 exp = uint40(block.timestamp + 1 days);
-    //     uint96 strikeAmount = 10 ether;
-    //     uint96 predictedPrice = 100;
-    //     Predicter.Prediction memory pred = _buildPrediction(exp, strikeAmount, predictedPrice);
-
-    //     vm.prank(creator);
-    //     predicter.createPrediction(pred);
-
-    //     // yes: users vote 
-    //     address yesVoter1 = address(100);
-    //     address yesVoter2 = address(101);
-
-    //     vm.startPrank(yesVoter1);
-    //     token.mint(yesVoter1, strikeAmount);
-    //     token.approve(address(predicter), strikeAmount);
-    //     predicter.vote(creator, true);
-    //     vm.stopPrank();
-
-    //     vm.startPrank(yesVoter2);
-    //     token.mint(yesVoter2, strikeAmount);
-    //     token.approve(address(predicter), strikeAmount);
-    //     predicter.vote(creator, true);
-    //     vm.stopPrank();
-
-    //     // no: users vote 
-    //     address noVoter1 = address(102);
-    //     address noVoter2 = address(103);
-    //     vm.startPrank(noVoter1);
-    //     token.mint(noVoter1, strikeAmount);
-    //     token.approve(address(predicter), strikeAmount);
-    //     predicter.vote(creator, false);
-    //     vm.stopPrank();
-
-    //     vm.startPrank(noVoter2);
-    //     token.mint(noVoter2, strikeAmount);
-    //     token.approve(address(predicter), strikeAmount);
-    //     predicter.vote(creator, false);
-    //     vm.stopPrank();
-
-    //     // set oracle price > predictedPrice => predictedTrue = true (yes wins)
-    //     uint256 oraclePrice = 200;
-    //     oracle.setPrice(oraclePrice);
-
-    //     // jump after expiration
-    //     vm.warp(exp + 100);
-
-    //     uint256 balanceBeforeYesVoter1 = token.balanceOf(address(yesVoter1));
-    //     assertEq(token.balanceOf(creator), 0);
-    //     assertEq(token.balanceOf(predicter.FEE_PROTOCOL_BENEFICIARY()), 0);
-    //     // claim by yesVoter1 - first time
-    //     vm.prank(yesVoter1);
-    //     predicter.claim(creator);
+        uint256 totalYesAmount;
+        uint256 totalNoAmount;
+        uint256 yesNum = 4;
+        uint256 noNum = 0;
         
-    //     assertGt(token.balanceOf(yesVoter1), balanceBeforeYesVoter1);
-    //     uint256 balanceCreator = token.balanceOf(creator);
-    //     uint256 balanceProtocol = token.balanceOf(predicter.FEE_PROTOCOL_BENEFICIARY());
-    //     assertGt(balanceCreator, 0);
-    //     assertGt(balanceProtocol, 0);
+        address user;
+        // usersYes vote
+        for (uint256 i = 0; i < yesNum; i++) {
+            user = address(uint160(i+100));
+            token.mint(user, strikeAmount);
+            vm.startPrank(user);
+            token.approve(address(predicter), strikeAmount);
+            predicter.vote(creator, true);
+            vm.stopPrank();
+            totalYesAmount += strikeAmount;
+            usersYes.push(user);
+        }
 
-    //     // claim by yesVoter1 - second time
-    //     balanceBeforeYesVoter1 = token.balanceOf(address(yesVoter1));
-    //     vm.prank(yesVoter1);
-    //     predicter.claim(creator);
-    //     assertEq(token.balanceOf(address(yesVoter1)), balanceBeforeYesVoter1);
-    //     assertEq(balanceCreator, token.balanceOf(creator));
-    //     assertEq(balanceProtocol, token.balanceOf(predicter.FEE_PROTOCOL_BENEFICIARY()));
-    //     uint256 calcWinPrize = balanceProtocol + balanceCreator + balanceBeforeYesVoter1 - strikeAmount;
-    //     assertEq(calcWinPrize, strikeAmount);
-    //     assertGt(balanceBeforeYesVoter1, strikeAmount);
-    // }
+        // usersNo vote 
+        for (uint256 i = yesNum; i < yesNum + noNum; i++) {
+            user = address(uint160(i));
+            vm.startPrank(user);
+            token.mint(user, strikeAmount);
+            token.approve(address(predicter), strikeAmount);
+            predicter.vote(creator, false);
+            totalNoAmount += strikeAmount;
+            usersNo.push(user);
+            vm.stopPrank();
+        }
 
-    // function test_resolvePrediction_claimSeveralTimes2() public {
-    //     uint40 exp = uint40(block.timestamp + 1 days);
-    //     uint96 strikeAmount = 10 ether;
-    //     uint96 predictedPrice = 100;
-    //     Predicter.Prediction memory pred = _buildPrediction(exp, strikeAmount, predictedPrice);
 
-    //     vm.prank(creator);
-    //     predicter.createPrediction(pred);
+        l.estTotalFeeBenef = totalNoAmount * predicter.FEE_PROTOCOL_PERCENT() * predicter.SCALE()
+          /predicter.PERCENT_DENOMINATOR()/ predicter.SCALE();
+        console2.log('Estimate Beneficiary Fee Amount: %s', l.estTotalFeeBenef);    
 
-    //     // yes: users vote 
-    //     address yesVoter1 = address(100);
-    //     address yesVoter2 = address(101);
+        l.estTotalFeeCreator = totalNoAmount * predicter.FEE_CREATOR_PERCENT() * predicter.SCALE()
+          /predicter.PERCENT_DENOMINATOR() / predicter.SCALE();
+        console2.log('Estimate Creator     Fee Amount: %s', l.estTotalFeeCreator);
 
-    //     vm.startPrank(yesVoter1);
-    //     token.mint(yesVoter1, strikeAmount);
-    //     token.approve(address(predicter), strikeAmount);
-    //     predicter.vote(creator, true);
-    //     vm.stopPrank();
 
-    //     vm.startPrank(yesVoter2);
-    //     token.mint(yesVoter2, strikeAmount);
-    //     token.approve(address(predicter), strikeAmount);
-    //     predicter.vote(creator, true);
-    //     vm.stopPrank();
-
-    //     // no: users vote 
-    //     address noVoter1 = address(102);
-    //     address noVoter2 = address(103);
-    //     vm.startPrank(noVoter1);
-    //     token.mint(noVoter1, strikeAmount);
-    //     token.approve(address(predicter), strikeAmount);
-    //     predicter.vote(creator, false);
-    //     vm.stopPrank();
-
-    //     vm.startPrank(noVoter2);
-    //     token.mint(noVoter2, strikeAmount);
-    //     token.approve(address(predicter), strikeAmount);
-    //     predicter.vote(creator, false);
-    //     vm.stopPrank();
-
-    //     // set oracle price > predictedPrice => predictedTrue = true (yes wins)
-    //     uint256 oraclePrice = 200;
-    //     oracle.setPrice(oraclePrice);
-
-    //     // jump after expiration
-    //     vm.warp(exp + 100);
-
-    //     assertEq(token.balanceOf(creator), 0);
-    //     assertEq(token.balanceOf(predicter.FEE_PROTOCOL_BENEFICIARY()), 0);
-    //     // claim by noVoter1 - first time
-    //     vm.prank(noVoter1);
-    //     predicter.claim(creator);
+        l.oneYesReward = (totalNoAmount / yesNum - l.estTotalFeeBenef / yesNum- l.estTotalFeeCreator/ yesNum) ;
+        console2.log('Estimate Reward Amount: %s', l.oneYesReward);  
         
-    //     assertEq(token.balanceOf(noVoter1), 0);
-    //     assertEq(token.balanceOf(creator), 0);
-    //     assertEq(token.balanceOf(predicter.FEE_PROTOCOL_BENEFICIARY()), 0);
+        // set oracle price > predictedPrice => predictedTrue = true (yes wins)
+        uint256 oraclePrice = 200;
+        oracle.setPrice(oraclePrice);
 
-    //     // claim by noVoter1 - second time
-    //     vm.prank(noVoter1);
-    //     predicter.claim(creator);
-    //     assertEq(token.balanceOf(noVoter1), 0);
-    //     assertEq(token.balanceOf(creator), 0);
-    //     assertEq(token.balanceOf(predicter.FEE_PROTOCOL_BENEFICIARY()), 0);
-    // }
+        // jump after expiration
+        vm.warp(exp + 1);
+        console2.log('predicter balance before all claimes: %s', token.balanceOf(address(predicter)));  
+        assertEq(token.balanceOf(address(predicter)), totalNoAmount + totalYesAmount);   
+        (uint256 yesToken, uint256 noToken) = predicter.hlpGet6909Ids(address(creator));
+        bool isValidGame = (predicter.totalSupply(yesToken) > 0 && predicter.totalSupply(noToken) > 0);
+        console2.log('yesTokenSuplpy: %s, noTokenSupply: %s, game is valid: %s',
+            predicter.totalSupply(yesToken), predicter.totalSupply(noToken), isValidGame
+        );  
+        assertEq(
+            token.balanceOf(address(predicter)), 
+            predicter.totalSupply(yesToken) + predicter.totalSupply(noToken)
+        );
 
-    // function test_resolvePrediction_claimBeforeExpiredDate() public {
-    //     uint40 exp = uint40(block.timestamp + 1 days);
-    //     uint96 strikeAmount = 10 ether;
-    //     uint96 predictedPrice = 100;
-    //     Predicter.Prediction memory pred = _buildPrediction(exp, strikeAmount, predictedPrice);
 
-    //     vm.prank(creator);
-    //     predicter.createPrediction(pred);
+        // claims
+        for (uint256 i = 0; i < usersYes.length; i++) {
+            vm.prank(usersYes[i]);
+            predicter.claim(creator);
+        }
 
-    //     address yesVoter1 = address(100);
-    //     address noVoter1 = address(102);
+        // resolvedPrice should be set
+        (, , , uint96 resolvedPrice) = predicter.predictions(creator);
+        assertEq(resolvedPrice, oraclePrice);
+        //assertEq(token.balanceOf(address(predicter)), 0);
+        console2.log('predicter balance after all claimes:  %s', token.balanceOf(address(predicter)));
+        console2.log('creater   balance after all claimes:  %s', token.balanceOf(address(creator)));
+        console2.log('beneficia balance after all claimes:  %s', token.balanceOf(address(feeBeneficiary)));
+        console2.log('One Yes voter balance after claimes:  %s', token.balanceOf(usersYes[0]));
+        assertEq(token.balanceOf(address(predicter)), 0);   
 
-    //     vm.startPrank(yesVoter1);
-    //     token.mint(yesVoter1, strikeAmount);
-    //     token.approve(address(predicter), strikeAmount);
-    //     predicter.vote(creator, true);
-    //     vm.stopPrank();
+    }
 
-    //     vm.startPrank(noVoter1);
-    //     token.mint(noVoter1, strikeAmount);
-    //     token.approve(address(predicter), strikeAmount);
-    //     predicter.vote(creator, false);
-    //     vm.stopPrank();
+    function test_resolvePrediction_onlyNoBets() public {
+        uint40 exp = uint40(block.timestamp + 1 days);
+        uint96 strikeAmount = 1_000_000;
+        uint96 predictedPrice = 100;
+        Predicter.Prediction memory pred = _buildPrediction(exp, strikeAmount, predictedPrice);
 
-    //     // set oracle price > predictedPrice => predictedTrue = true (yes wins)
-    //     uint256 oraclePrice = 200;
-    //     oracle.setPrice(oraclePrice);
+        vm.prank(creator);
+        predicter.createPrediction(pred);
 
-    //     // jump before expiration
-    //     vm.warp(exp - 10000);
-
-    //     assertEq(token.balanceOf(creator), 0);
-    //     assertEq(token.balanceOf(predicter.FEE_PROTOCOL_BENEFICIARY()), 0);
-    //     // claim by yesVoter1 
-    //     vm.prank(yesVoter1);
-    //     predicter.claim(creator);
+        uint256 totalYesAmount;
+        uint256 totalNoAmount;
+        uint256 yesNum = 0;
+        uint256 noNum = 2;
         
-    //     assertEq(token.balanceOf(noVoter1), 0);
-    //     assertEq(token.balanceOf(creator), 0);
-    //     assertEq(token.balanceOf(predicter.FEE_PROTOCOL_BENEFICIARY()), 0);
-    //     // resolvedPrice should be zero
-    //     (, , , uint96 resolvedPrice) = predicter.predictions(creator);
-    //     assertEq(resolvedPrice, 0);
-    // }
+        address user;
+        // usersYes vote
+        for (uint256 i = 0; i < yesNum; i++) {
+            user = address(uint160(i+100));
+            token.mint(user, strikeAmount);
+            vm.startPrank(user);
+            token.approve(address(predicter), strikeAmount);
+            predicter.vote(creator, true);
+            vm.stopPrank();
+            totalYesAmount += strikeAmount;
+            usersYes.push(user);
+        }
 
-    // function test_repeatClaimAfterChangePrice() public {
-    //     uint40 exp = uint40(block.timestamp + 1 days);
-    //     uint96 strikeAmount = 10 ether;
-    //     uint96 predictedPrice = 100;
-    //     Predicter.Prediction memory pred = _buildPrediction(exp, strikeAmount, predictedPrice);
+        // usersNo vote 
+        for (uint256 i = yesNum; i < yesNum + noNum; i++) {
+            user = address(uint160(i=100));
+            vm.startPrank(user);
+            token.mint(user, strikeAmount);
+            token.approve(address(predicter), strikeAmount);
+            predicter.vote(creator, false);
+            totalNoAmount += strikeAmount;
+            usersNo.push(user);
+            vm.stopPrank();
+        }
 
-    //     vm.prank(creator);
-    //     predicter.createPrediction(pred);
 
-    //     // yes: users vote 
-    //     address yesVoter1 = address(100);
-    //     address yesVoter2 = address(101);
-    //     vm.startPrank(yesVoter1);
-    //     token.mint(yesVoter1, strikeAmount);
-    //     token.approve(address(predicter), strikeAmount);
-    //     predicter.vote(creator, true);
-    //     vm.stopPrank();
+        l.estTotalFeeBenef = totalNoAmount * predicter.FEE_PROTOCOL_PERCENT() * predicter.SCALE()
+          /predicter.PERCENT_DENOMINATOR()/ predicter.SCALE();
+        console2.log('Estimate Beneficiary Fee Amount: %s', l.estTotalFeeBenef);    
 
-    //     vm.startPrank(yesVoter2);
-    //     token.mint(yesVoter2, strikeAmount);
-    //     token.approve(address(predicter), strikeAmount);
-    //     predicter.vote(creator, true);
-    //     vm.stopPrank();
+        l.estTotalFeeCreator = totalNoAmount * predicter.FEE_CREATOR_PERCENT() * predicter.SCALE()
+          /predicter.PERCENT_DENOMINATOR() / predicter.SCALE();
+        console2.log('Estimate Creator     Fee Amount: %s', l.estTotalFeeCreator);
 
-    //     // no: users vote 
-    //     address noVoter1 = address(102);
-    //     address noVoter2 = address(103);
-    //     vm.startPrank(noVoter1);
-    //     token.mint(noVoter1, strikeAmount);
-    //     token.approve(address(predicter), strikeAmount);
-    //     predicter.vote(creator, false);
-    //     vm.stopPrank();
 
-    //     vm.startPrank(noVoter2);
-    //     token.mint(noVoter2, strikeAmount);
-    //     token.approve(address(predicter), strikeAmount);
-    //     predicter.vote(creator, false);
-    //     vm.stopPrank();
-
-    //     // set oracle price > predictedPrice => predictedTrue = true (yes wins)
-    //     uint256 oraclePrice = 50;
-    //     oracle.setPrice(oraclePrice);
-
-    //     // jump before expiration
-    //     vm.warp(exp + 100);
-
-    //     // claim by noVoter1 - first time
-    //     vm.prank(noVoter1);
-    //     predicter.claim(creator);
         
-    //     // resolvedPrice should be zero
-    //     (, , , uint96 resolvedPrice) = predicter.predictions(creator);
-    //     assertEq(resolvedPrice, oraclePrice);
+            
+        // set oracle price > predictedPrice => predictedTrue = true (yes wins)
+        uint256 oraclePrice = 200;
+        oracle.setPrice(oraclePrice);
 
+        // jump after expiration
+        vm.warp(exp + 1);
+        console2.log('predicter balance before all claimes: %s', token.balanceOf(address(predicter)));  
+        assertEq(token.balanceOf(address(predicter)), totalNoAmount + totalYesAmount);   
 
-    //     // claim by noVoter1 - second time
-    //     oraclePrice = 75;
-    //     oracle.setPrice(oraclePrice);
-    //     vm.prank(noVoter2);
-    //     predicter.claim(creator);
-    //     (, , , resolvedPrice) = predicter.predictions(creator);
-    //     assertLt(resolvedPrice, oraclePrice);
-    // }
+        // claims
+        console2.log('Claiming %s users........', usersNo.length);  
+        for (uint256 i = 0; i < usersNo.length; i++) {
+            vm.prank(usersNo[i]);
+            predicter.claim(creator);
+        }
+
+        // resolvedPrice should be set
+        (, , , uint96 resolvedPrice) = predicter.predictions(creator);
+        assertEq(resolvedPrice, oraclePrice);
+        //assertEq(token.balanceOf(address(predicter)), 0);
+        console2.log('predicter balance after all claimes:  %s', token.balanceOf(address(predicter)));
+        console2.log('creater   balance after all claimes:  %s', token.balanceOf(address(creator)));
+        console2.log('beneficia balance after all claimes:  %s', token.balanceOf(address(feeBeneficiary)));
+        console2.log('One Yes voter balance after claimes:  %s', token.balanceOf(usersNo[0]));
+        assertEq(token.balanceOf(address(predicter)), 0); 
+    }
+
+    
 }

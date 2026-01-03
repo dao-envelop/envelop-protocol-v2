@@ -260,7 +260,11 @@ contract Predicter is ERC6909TokenSupply {
      */
     function claim(address _prediction) external {
         if (_resolvePrediction(_prediction)) {
-            _claim(msg.sender, _prediction);
+
+            if (_checkIsGameValidAndReturnStakesIfNot(msg.sender, _prediction)){
+                _claim(msg.sender, _prediction);    
+            }
+            
         }
     }
 
@@ -420,6 +424,28 @@ contract Predicter is ERC6909TokenSupply {
         isResolved = p.resolvedPrice > 0;
     }
 
+    function _checkIsGameValidAndReturnStakesIfNot(address _user, address _prediction) internal returns (bool isValidGame){
+        (uint256 yesToken, uint256 noToken) = hlpGet6909Ids(_prediction);
+        isValidGame = totalSupply(yesToken) > 0 && totalSupply(noToken) > 0;
+        CompactAsset storage s = predictions[_prediction].strike;
+
+        //if we have bets only one side then no game situation
+        //and users can get back their bets
+        if (!isValidGame){
+            uint256 y = balanceOf(_user, yesToken);
+            uint256 n = balanceOf(_user, noToken);
+            // 1. Pull back ERC6909 share tokens (not burned in this version)
+            _transfer(_user, address(this), yesToken, y);
+            // 1. Pull back ERC6909 share tokens (not burned in this version)
+            _transfer(_user, address(this), noToken, n);
+
+            // 2. Return original stake
+            IERC20(s.token).safeTransfer(_user, y);
+            IERC20(s.token).safeTransfer(_user, n);
+
+        }
+    }
+
     /**
      * @dev Claim the reward for a winning voter.
      *      Handles:
@@ -439,17 +465,37 @@ contract Predicter is ERC6909TokenSupply {
             uint256 winnerPrize
         ) = _getWinnerShareAndAmount(_user, _prediction);
 
-        uint256 paid;
-        uint256 fee;
+        
+        //(uint256 yesToken, uint256 noToken) = hlpGet6909Ids(_prediction);
+        //bool isValidGame = totalSupply(yesToken) > 0 && totalSupply(noToken) >= 0;
+        CompactAsset storage s = predictions[_prediction].strike;
+
+        // if we have bets only one side then no game situation
+        // and users can get back their bets
+        // if (!isValidGame){
+        //     uint256 y = balanceOf(_user, yesToken);
+        //     uint256 n = balanceOf(_user, noToken);
+        //     // 1. Pull back ERC6909 share tokens (not burned in this version)
+        //     _transfer(_user, address(this), yesToken, y);
+        //     // 1. Pull back ERC6909 share tokens (not burned in this version)
+        //     _transfer(_user, address(this), noToken, n);
+
+        //     // 2. Return original stake
+        //     IERC20(s.token).safeTransfer(_user, y);
+        //     IERC20(s.token).safeTransfer(_user, n);
+        //     //return;
+        // }
 
         if (winnerPrize > 0) {
-            CompactAsset storage s = predictions[_prediction].strike;
+            uint256 paid;
+            uint256 fee;    
+            // 1. Pull back ERC6909 share tokens (not burned in this version)
+            _transfer(_user, address(this), winTokenId, winTokenBalance);
 
-            // 1. Return original stake
+            // 2. Return original stake
             IERC20(s.token).safeTransfer(_user, winTokenBalance);
 
-            // 2. Pull back ERC6909 share tokens (not burned in this version)
-            _transfer(_user, address(this), winTokenId, winTokenBalance);
+            
 
             // 3. Creator fee
             fee =
