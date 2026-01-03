@@ -105,7 +105,7 @@ contract PredicterTest_m_01 is Test {
 
         uint256 totalYesAmount;
         uint256 totalNoAmount;
-        uint256 yesNum = 4;
+        uint256 yesNum = 4111;
         uint256 noNum = 3;
         
         address user;
@@ -212,7 +212,7 @@ function test_resolvePrediction_onlyWinnersBets() public {
 
         uint256 totalYesAmount;
         uint256 totalNoAmount;
-        uint256 yesNum = 4;
+        uint256 yesNum = 411;
         uint256 noNum = 0;
         
         address user;
@@ -302,7 +302,7 @@ function test_resolvePrediction_onlyWinnersBets() public {
         uint256 totalYesAmount;
         uint256 totalNoAmount;
         uint256 yesNum = 0;
-        uint256 noNum = 2;
+        uint256 noNum = 23;
         
         address user;
         // usersYes vote

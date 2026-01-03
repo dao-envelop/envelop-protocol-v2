@@ -5,6 +5,9 @@ pragma solidity ^0.8.24;
 
 
 import {ERC6909TokenSupply} from "@openzeppelin/contracts/token/ERC6909/extensions/ERC6909TokenSupply.sol";
+
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+
 /// forge-lint: disable-next-line(unaliased-plain-import)
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
@@ -28,7 +31,7 @@ import "../interfaces/IPermit2Minimal.sol";
  *
  * @custom:security-contact Envelop V2
  */
-contract Predicter is ERC6909TokenSupply {
+contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     /**
@@ -41,8 +44,13 @@ contract Predicter is ERC6909TokenSupply {
      * - resolvedPrice: oracle result after expiration, stored once and used for outcome.
      * - portfolio: array of underlying assets used by the oracle for pricing.
      */
+     
+
     struct Prediction {
         CompactAsset strike;
+        /// @dev predictedPrice.amount is a threshold value.
+        ///      Outcome is YES if predictedPrice.amount <= resolvedPrice, otherwise NO.
+        ///      resolvedPrice must be in the same units/decimals as predictedPrice.amount.
         CompactAsset predictedPrice;
         uint40 expirationTime;
         uint96 resolvedPrice;
@@ -56,15 +64,17 @@ contract Predicter is ERC6909TokenSupply {
     /// @dev Reserved constant for potential “stop voting before expiration” logic.
     uint40 public constant STOP_BEFORE_EXPIRED = 0;
 
-    /// @dev Creator fee in bps. 2_000 = 20%
-    uint96 public constant FEE_CREATOR_PERCENT = 2_00;
+    /// @dev Creator fee in bps. 200 = 2%
+    uint96 public constant FEE_CREATOR_PERCENT = 200;
 
-    /// @dev Protocol fee  in bps. 1000 = 10%.
-    uint96 public constant FEE_PROTOCOL_PERCENT = 1_00;
+    /// @dev Protocol fee  in bps. 100 = 10%.
+    uint96 public constant FEE_PROTOCOL_PERCENT = 100;
 
     /// @dev Percentage denominator (basis points = 10_000).
     uint96 public constant PERCENT_DENOMINATOR = 10_000;
 
+    /// @dev Fixed-point scale used to reduce rounding loss in share calculations.
+    ///      Shares are computed as: userShares = (userBalance * SCALE) / totalWin.
     uint96 public constant SCALE = 1e18;
 
     /// @dev Hard cap for number of portfolio items, to avoid gas blow-ups.
@@ -176,7 +186,7 @@ contract Predicter is ERC6909TokenSupply {
      * - Current time MUST be strictly less than `expirationTime`.
      * - Caller MUST have approved enough ERC20 to `this` for the strike amount.
      */
-    function vote(address _prediction, bool _agree) external {
+    function vote(address _prediction, bool _agree) external nonReentrant() {
         _vote(msg.sender, _prediction, _agree);
     }
 
@@ -208,7 +218,7 @@ contract Predicter is ERC6909TokenSupply {
         IPermit2.PermitTransferFrom calldata permit,
         IPermit2.SignatureTransferDetails calldata transfer,
         bytes calldata signature
-    ) external {
+    ) external nonReentrant() {
         Prediction storage p = predictions[_prediction];
         if (p.expirationTime == 0) revert PredictionNotExist(_prediction);
         if (p.expirationTime <= block.timestamp) {
@@ -246,6 +256,7 @@ contract Predicter is ERC6909TokenSupply {
 
 
     /**
+     * @dev If only one side has any votes (no-contest), voters can refund their stake instead of rewards.
      * @notice Claim rewards based on resolved prediction outcome.
      * @param _prediction Address of prediction creator.
      *
@@ -258,7 +269,7 @@ contract Predicter is ERC6909TokenSupply {
      * - Caller MUST hold a positive amount of winning share tokens (ERC6909),
      *   otherwise the call is a no-op.
      */
-    function claim(address _prediction) external {
+    function claim(address _prediction) external nonReentrant(){
         if (_resolvePrediction(_prediction)) {
 
             if (_checkIsGameValidAndReturnStakesIfNot(msg.sender, _prediction)){
@@ -424,6 +435,9 @@ contract Predicter is ERC6909TokenSupply {
         isResolved = p.resolvedPrice > 0;
     }
 
+    /// @dev Handles the "no-contest" case: if either YES or NO totalSupply is zero,
+    ///      user gets their stake refunded for both sides they hold, and their 6909 shares are pulled back.
+    /// @return isValidGame True if both sides have non-zero totalSupply.
     function _checkIsGameValidAndReturnStakesIfNot(address _user, address _prediction) internal returns (bool isValidGame){
         (uint256 yesToken, uint256 noToken) = hlpGet6909Ids(_prediction);
         isValidGame = totalSupply(yesToken) > 0 && totalSupply(noToken) > 0;
