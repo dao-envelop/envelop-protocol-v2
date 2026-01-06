@@ -90,7 +90,7 @@ contract PredicterTest_a_03 is Test {
 
     function test_resolvePrediction_setsResolvedPriceAndClaimPays() public {
         uint40 exp = uint40(block.timestamp + 1 days);
-        uint96 strikeAmount = 1000_000;
+        uint96 strikeAmount = 1_000_000;
         uint96 predictedPrice = 100;
         Predicter.Prediction memory pred = _buildPrediction(exp, strikeAmount, predictedPrice);
 
@@ -134,7 +134,7 @@ contract PredicterTest_a_03 is Test {
 
         // jump after expiration
         vm.warp(exp + 1);
-
+        console2.log('predicter balance before all claimes = ', token.balanceOf(address(predicter)));     
         for (uint256 i = 0; i < usersYes.length; i++) {
             vm.prank(usersYes[i]);
             predicter.claim(creator);

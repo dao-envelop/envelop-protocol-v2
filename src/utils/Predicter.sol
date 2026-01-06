@@ -5,6 +5,9 @@ pragma solidity ^0.8.24;
 
 
 import {ERC6909TokenSupply} from "@openzeppelin/contracts/token/ERC6909/extensions/ERC6909TokenSupply.sol";
+
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+
 /// forge-lint: disable-next-line(unaliased-plain-import)
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
@@ -30,7 +33,7 @@ import "../interfaces/IPermit2Minimal.sol";
  *
  * @custom:security-contact Envelop V2
  */
-contract Predicter is ERC6909TokenSupply {
+contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     /**
@@ -43,8 +46,13 @@ contract Predicter is ERC6909TokenSupply {
      * - resolvedPrice: oracle result after expiration, stored once and used for outcome.
      * - portfolio: array of underlying assets used by the oracle for pricing.
      */
+     
+
     struct Prediction {
         CompactAsset strike;
+        /// @dev predictedPrice.amount is a threshold value.
+        ///      Outcome is YES if predictedPrice.amount <= resolvedPrice, otherwise NO.
+        ///      resolvedPrice must be in the same units/decimals as predictedPrice.amount.
         CompactAsset predictedPrice;
         uint40 expirationTime;
         uint96 resolvedPrice;
@@ -58,15 +66,18 @@ contract Predicter is ERC6909TokenSupply {
     /// @dev Reserved constant for potential “stop voting before expiration” logic.
     uint40 public constant STOP_BEFORE_EXPIRED = 0;
 
-    /// @dev Creator fee numerator. Interpreted together with PERCENT_DENOMINATOR and `/ 100`.
-    /// Example: 200_000 / (100 * 10_000) = 20%
-    uint96 public constant FEE_CREATOR_PERCENT = 200_000;
+    /// @dev Creator fee in bps. 200 = 2%
+    uint96 public constant FEE_CREATOR_PERCENT = 200;
 
-    /// @dev Protocol fee numerator. Example: 100_000 / (100 * 10_000) = 10%.
-    uint96 public constant FEE_PROTOCOL_PERCENT = 100_000;
+    /// @dev Protocol fee  in bps. 100 = 10%.
+    uint96 public constant FEE_PROTOCOL_PERCENT = 100;
 
     /// @dev Percentage denominator (basis points = 10_000).
     uint96 public constant PERCENT_DENOMINATOR = 10_000;
+
+    /// @dev Fixed-point scale used to reduce rounding loss in share calculations.
+    ///      Shares are computed as: userShares = (userBalance * SCALE) / totalWin.
+    uint96 public constant SCALE = 1e18;
 
     /// @dev Hard cap for number of portfolio items, to avoid gas blow-ups.
     uint256 public constant MAX_PORTFOLIO_LEN = 100;
@@ -177,7 +188,7 @@ contract Predicter is ERC6909TokenSupply {
      * - Current time MUST be strictly less than `expirationTime`.
      * - Caller MUST have approved enough ERC20 to `this` for the strike amount.
      */
-    function vote(address _prediction, bool _agree) external {
+    function vote(address _prediction, bool _agree) external nonReentrant() {
         _vote(msg.sender, _prediction, _agree);
     }
 
@@ -209,7 +220,7 @@ contract Predicter is ERC6909TokenSupply {
         IPermit2.PermitTransferFrom calldata permit,
         IPermit2.SignatureTransferDetails calldata transfer,
         bytes calldata signature
-    ) external {
+    ) external nonReentrant() {
         Prediction storage p = predictions[_prediction];
         if (p.expirationTime == 0) revert PredictionNotExist(_prediction);
         if (p.expirationTime <= block.timestamp) {
@@ -225,7 +236,7 @@ contract Predicter is ERC6909TokenSupply {
         if (transfer.to != address(this)) {
             revert("Permit2: wrong recipient");
         }
-        if (transfer.requestedAmount < s.amount) {
+        if (transfer.requestedAmount != s.amount) {
             revert("Permit2: insufficient amount");
         }
 
@@ -247,6 +258,7 @@ contract Predicter is ERC6909TokenSupply {
 
 
     /**
+     * @dev If only one side has any votes (no-contest), voters can refund their stake instead of rewards.
      * @notice Claim rewards based on resolved prediction outcome.
      * @param _prediction Address of prediction creator.
      *
@@ -259,9 +271,13 @@ contract Predicter is ERC6909TokenSupply {
      * - Caller MUST hold a positive amount of winning share tokens (ERC6909),
      *   otherwise the call is a no-op.
      */
-    function claim(address _prediction) external {
+    function claim(address _prediction) external nonReentrant(){
         if (_resolvePrediction(_prediction)) {
-            _claim(msg.sender, _prediction);
+
+            if (_checkIsGameValidAndReturnStakesIfNot(msg.sender, _prediction)){
+                _claim(msg.sender, _prediction);    
+            }
+            
         }
     }
 
@@ -298,15 +314,13 @@ contract Predicter is ERC6909TokenSupply {
         if (yesTotal > 0) {
             yesReward =
                 noTotal *
-                (yesBalance * PERCENT_DENOMINATOR / yesTotal) /
-                PERCENT_DENOMINATOR;
+                (yesBalance * SCALE / yesTotal) / SCALE;
         }
 
         if (noTotal > 0) {
             noReward =
                 yesTotal *
-                (noBalance * PERCENT_DENOMINATOR / noTotal) /
-                PERCENT_DENOMINATOR;
+                (noBalance * SCALE / noTotal) / SCALE;
         }
     }
 
@@ -397,6 +411,7 @@ contract Predicter is ERC6909TokenSupply {
      */
     function _resolvePrediction(address _prediction)
         internal
+        virtual
         returns (bool isResolved)
     {
         Prediction storage p = predictions[_prediction];
@@ -422,6 +437,31 @@ contract Predicter is ERC6909TokenSupply {
         isResolved = p.resolvedPrice > 0;
     }
 
+    /// @dev Handles the "no-contest" case: if either YES or NO totalSupply is zero,
+    ///      user gets their stake refunded for both sides they hold, and their 6909 shares are pulled back.
+    /// @return isValidGame True if both sides have non-zero totalSupply.
+    function _checkIsGameValidAndReturnStakesIfNot(address _user, address _prediction) internal returns (bool isValidGame){
+        (uint256 yesToken, uint256 noToken) = hlpGet6909Ids(_prediction);
+        isValidGame = totalSupply(yesToken) > 0 && totalSupply(noToken) > 0;
+        CompactAsset storage s = predictions[_prediction].strike;
+
+        //if we have bets only one side then no game situation
+        //and users can get back their bets
+        if (!isValidGame){
+            uint256 y = balanceOf(_user, yesToken);
+            uint256 n = balanceOf(_user, noToken);
+            // 1. Pull back ERC6909 share tokens (not burned in this version)
+            _transfer(_user, address(this), yesToken, y);
+            // 1. Pull back ERC6909 share tokens (not burned in this version)
+            _transfer(_user, address(this), noToken, n);
+
+            // 2. Return original stake
+            IERC20(s.token).safeTransfer(_user, y);
+            IERC20(s.token).safeTransfer(_user, n);
+
+        }
+    }
+
     /**
      * @dev Claim the reward for a winning voter.
      *      Handles:
@@ -441,29 +481,49 @@ contract Predicter is ERC6909TokenSupply {
             uint256 winnerPrize
         ) = _getWinnerShareAndAmount(_user, _prediction);
 
-        uint256 paid;
-        uint256 fee;
+        
+        //(uint256 yesToken, uint256 noToken) = hlpGet6909Ids(_prediction);
+        //bool isValidGame = totalSupply(yesToken) > 0 && totalSupply(noToken) >= 0;
+        CompactAsset storage s = predictions[_prediction].strike;
+
+        // if we have bets only one side then no game situation
+        // and users can get back their bets
+        // if (!isValidGame){
+        //     uint256 y = balanceOf(_user, yesToken);
+        //     uint256 n = balanceOf(_user, noToken);
+        //     // 1. Pull back ERC6909 share tokens (not burned in this version)
+        //     _transfer(_user, address(this), yesToken, y);
+        //     // 1. Pull back ERC6909 share tokens (not burned in this version)
+        //     _transfer(_user, address(this), noToken, n);
+
+        //     // 2. Return original stake
+        //     IERC20(s.token).safeTransfer(_user, y);
+        //     IERC20(s.token).safeTransfer(_user, n);
+        //     //return;
+        // }
 
         if (winnerPrize > 0) {
-            CompactAsset storage s = predictions[_prediction].strike;
+            uint256 paid;
+            uint256 fee;    
+            // 1. Pull back ERC6909 share tokens (not burned in this version)
+            _transfer(_user, address(this), winTokenId, winTokenBalance);
 
-            // 1. Return original stake
+            // 2. Return original stake
             IERC20(s.token).safeTransfer(_user, winTokenBalance);
 
-            // 2. Pull back ERC6909 share tokens (not burned in this version)
-            _transfer(_user, address(this), winTokenId, winTokenBalance);
+            
 
             // 3. Creator fee
             fee =
-                (winnerPrize * FEE_CREATOR_PERCENT) /
-                (100 * PERCENT_DENOMINATOR);
+                (winnerPrize * FEE_CREATOR_PERCENT * SCALE) /
+                PERCENT_DENOMINATOR / SCALE;
             paid += fee;
             IERC20(s.token).safeTransfer(_prediction, fee);
 
             // 4. Protocol fee
             fee =
-                (winnerPrize * FEE_PROTOCOL_PERCENT) /
-                (100 * PERCENT_DENOMINATOR);
+                (winnerPrize * FEE_PROTOCOL_PERCENT * SCALE) /
+                PERCENT_DENOMINATOR / SCALE;
             paid += fee;
             IERC20(s.token).safeTransfer(FEE_PROTOCOL_BENEFICIARY, fee);
 
@@ -522,13 +582,12 @@ contract Predicter is ERC6909TokenSupply {
         }
 
         sharesNonDenominated =
-            (winTokenBalance * PERCENT_DENOMINATOR) /
+            (winTokenBalance * SCALE) /
             totalWin;
 
         // Prize = share * totalLosingPool
         uint256 totalLose = totalSupply(loserTokenId);
         prizeAmount =
-            (totalLose * sharesNonDenominated) /
-            PERCENT_DENOMINATOR;
+            (totalLose * sharesNonDenominated) / SCALE;
     }
 }
