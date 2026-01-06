@@ -19,7 +19,7 @@ fs_permissions = [
 #lint_on_build = false
 
 [fuzz]
-runs = 100  # увеличить прогоны
+runs = 200  # увеличить прогоны
 max_test_rejects = 4
 
 

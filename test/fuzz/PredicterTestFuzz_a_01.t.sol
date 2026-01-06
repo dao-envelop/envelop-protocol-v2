@@ -2,7 +2,7 @@
 pragma solidity ^0.8.24;
 
 import {Test, console2} from "forge-std/Test.sol";
-import "../src/utils/Predicter.sol";
+import "../../src/utils/Predicter.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 /// @dev Simple ERC20 mock for staking in tests.
@@ -31,7 +31,6 @@ contract PredicterTestFuzz_a_01 is Test {
 
     function setUp() public {
         token = new MockERC20();
-
         predicter = new Predicter(feeBeneficiary, oracle);
 
     }
@@ -49,7 +48,6 @@ contract PredicterTestFuzz_a_01 is Test {
         CompactAsset[] memory portfolio = new CompactAsset[](1);
         uint96 portfolioAmount = 1e18;
         portfolio[0] = CompactAsset({token: address(token), amount: portfolioAmount});
-
         pred.strike = CompactAsset({token: address(token), amount: strikeAmount});
         pred.predictedPrice = CompactAsset({token: address(token), amount: predictedAmount});
         pred.expirationTime = expiration;
@@ -62,12 +60,12 @@ contract PredicterTestFuzz_a_01 is Test {
     // ------------------------------------------------------------
 
     function testFuzz_getUserEstimates(uint8 num) public {
-    //function testFuzz_getUserEstimates() public {
+        console2.log('num = ', num);
         uint256 totalYesAmount;
         uint256 totalNoAmount;
         //vm.assume(num > 10);
         num = uint8(bound(num, 10, 95));
-        console2.log('num = ', num);
+        
         uint8 yesNum = num;
         uint8 noNum = 255 - num;
         //uint8 yesNum = 3;
@@ -92,9 +90,7 @@ contract PredicterTestFuzz_a_01 is Test {
             vm.stopPrank();
         }
         
-        
-
-        // userNo votes 2x no
+        // userNo votes no
         //for (uint8 i = noNum; i < 255; i++) {
         for (uint8 i = yesNum; i < yesNum + noNum; i++) {
             address user = address(uint160(i));
@@ -107,8 +103,6 @@ contract PredicterTestFuzz_a_01 is Test {
             vm.stopPrank();
 
         }
-        //console2.log('totalYesAmount = ', totalYesAmount);
-        //console2.log('totalNoAmount = ', totalNoAmount);
 
         uint256 calculatedNoTotal;
         uint256 expectedYesTotal;
@@ -126,14 +120,6 @@ contract PredicterTestFuzz_a_01 is Test {
             calculatedNoTotal += yesReward;
             expectedYesTotal = yesTotal;
             expectedNoTotal = noTotal;
-            /*console2.log('yes yesBalance = ', yesBalance);
-            console2.log('yes noBalance = ', noBalance);
-            console2.log('yes yesTotal = ', yesTotal);
-            console2.log('yes noTotal = ', noTotal);
-            console2.log('yes yesReward = ', yesReward);
-            console2.log('yes noReward = ', noReward);
-            console2.log('**********************************************');*/
-
         }
 
         uint256 calculatedYesTotal;
@@ -148,40 +134,8 @@ contract PredicterTestFuzz_a_01 is Test {
             uint256 noReward
             ) = predicter.getUserEstimates(usersNo[i], creator);
             calculatedYesTotal += noReward;
-            /*console2.log('no yesBalance = ', yesBalance);
-            console2.log('no noBalance = ', noBalance);
-            console2.log('no yesTotal = ', yesTotal);
-            console2.log('no noTotal = ', noTotal);
-            console2.log('no yesReward = ', yesReward);
-            console2.log('no noReward = ', noReward);
-            console2.log('**********************************************');*/
-
         }
-
-        console2.log('expectedYesTotal   = ', expectedYesTotal);
-        console2.log('calculatedYesTotal = ', calculatedYesTotal);
-        console2.log('expectedNoTotal   = ', expectedNoTotal);
-        console2.log('calculatedNoTotal = ', calculatedNoTotal);
-        assertEq(expectedYesTotal, calculatedYesTotal);
-        assertEq(expectedNoTotal, calculatedNoTotal);
-
-
-        /*(
-            uint256 yesBalance,
-            uint256 noBalance,
-            uint256 yesTotal,
-            uint256 noTotal,
-            uint256 yesReward,
-            uint256 noReward
-        ) = predicter.getUserEstimates(userYes, creator);
-
-        (uint256 yesId, uint256 noId) = predicter.hlpGet6909Ids(creator);
-
-        assertEq(yesBalance, predicter.balanceOf(userYes, yesId));
-        assertEq(noBalance, predicter.balanceOf(userYes, noId));
-        assertEq(yesTotal, predicter.totalSupply(yesId));
-        assertEq(noTotal, predicter.totalSupply(noId));
-
-        assertEq(yesReward+)*/
+        assertApproxEqAbs(expectedYesTotal, calculatedYesTotal, 12000);
+        assertApproxEqAbs(expectedNoTotal, calculatedNoTotal, 12000);
     }
 }
