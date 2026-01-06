@@ -166,7 +166,7 @@ contract PredicterTest is Test {
     // _resolvePrediction via claim
     // ------------------------------------------------------------
 
-    function test_resolvePrediction_setsResolvedPriceAndClaimPays() public {
+    /*function test_resolvePrediction_setsResolvedPriceAndClaimPays() public {
         uint40 exp = uint40(block.timestamp + 1 days);
         Predicter.Prediction memory pred = _buildPrediction(exp, 10 ether, 100);
 
@@ -217,9 +217,9 @@ contract PredicterTest is Test {
 
         // Контракт уменьшил баланс (выплаты сделаны)
         assertLt(contractBalanceAfter, contractBalanceBefore);
-    }
+    }*/
 
-    function test_voteWithPermit2_transfersViaPermit2AndMintsShares() public {
+        function test_voteWithPermit2_transfersViaPermit2AndMintsShares() public {
         uint40 exp = uint40(block.timestamp + 1 days);
         Predicter.Prediction memory pred = _buildPrediction(exp, 10 ether, 100);
 

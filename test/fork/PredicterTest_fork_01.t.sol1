@@ -54,22 +54,6 @@ contract PredicterTest_fork_1 is Test {
         "PermitTransferFrom(TokenPermissions permitted,address spender,uint256 nonce,uint256 deadline)TokenPermissions(address token,uint256 amount)"
     );
 
-    /*function _buildPrediction(uint40 expiration, uint96 strikeAmount, uint96 predictedAmount)
-            internal
-            view
-            returns (Predicter.Prediction memory pred)
-    {
-        CompactAsset[] memory portfolio = new CompactAsset[](1);
-        uint96 portfolioAmount = 1e18;
-        portfolio[0] = CompactAsset({token: address(token), amount: portfolioAmount});
-
-        pred.strike = CompactAsset({token: address(token), amount: strikeAmount});
-        pred.predictedPrice = CompactAsset({token: address(token), amount: predictedAmount});
-        pred.expirationTime = expiration;
-        pred.resolvedPrice = 0;
-        pred.portfolio = portfolio;
-    }*/
-
     function setUp() public {
         token = new MockERC20();
         oracle = new MockOracle();
@@ -78,35 +62,6 @@ contract PredicterTest_fork_1 is Test {
         token.mint(userYes, 1_000 ether);
         token.mint(userNo, 1_000 ether);
     }
-
-    /*function getPermitTransferSignature(
-        IPermit2.PermitTransferFrom memory permit,
-        uint256 privateKey,
-        address sender
-    ) internal view returns (bytes memory sig) {
-        //bytes32 tokenPermissions = keccak256(abi.encode(_TOKEN_PERMISSIONS_TYPEHASH, permit.permitted));
-        bytes32 tokenPermissionsHash = keccak256(
-            abi.encode(
-                _TOKEN_PERMISSIONS_TYPEHASH,
-                permit.permitted.token,
-                permit.permitted.amount
-            )
-        );
-        bytes32 msgHash = keccak256(
-            abi.encodePacked(
-                "\x19\x01",
-                DOMAIN_SEPARATOR,
-                keccak256(
-                    abi.encode(
-                        _PERMIT_TRANSFER_FROM_TYPEHASH, tokenPermissionsHash, sender, permit.nonce, permit.deadline
-                    )
-                )
-            )
-        );
-
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(privateKey, msgHash);
-        return bytes.concat(r, s, bytes1(v));
-    }*/
 
     function hash(IPermit2.PermitTransferFrom memory permit) internal view returns (bytes32) {
         bytes32 tokenPermissionsHash = _hashTokenPermissions(permit.permitted);
