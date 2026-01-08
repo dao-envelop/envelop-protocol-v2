@@ -3,18 +3,7 @@ pragma solidity ^0.8.24;
 
 import {Test, console2} from "forge-std/Test.sol";
 import "../../src/utils/Predicter.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-
-/// @dev Simple ERC20 mock for staking in tests.
-contract MockERC20 is ERC20 {
-    constructor() ERC20("Mock", "MOCK") {
-        _mint(msg.sender, 1e27);
-    }
-
-    function mint(address to, uint256 amount) external {
-        _mint(to, amount);
-    }
-}
+import "../../src/mock/MockERC20.sol";
 
 contract PredicterTestFuzz_a_01 is Test {
     MockERC20 internal token;
@@ -30,7 +19,7 @@ contract PredicterTestFuzz_a_01 is Test {
 
 
     function setUp() public {
-        token = new MockERC20();
+        token = new MockERC20("Mock", "MOCK");
         predicter = new Predicter(feeBeneficiary, oracle);
 
     }

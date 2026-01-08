@@ -3,42 +3,11 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 import "../src/utils/Predicter.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "../src/utils/PredictionBuilder.sol";
+import "../src/mock/MockOracle.sol";
+import "../src/mock/MockERC20.sol";
 
-/// @dev Simple ERC20 mock for staking in tests.
-contract MockERC20 is ERC20 {
-    constructor() ERC20("Mock", "MOCK") {
-        _mint(msg.sender, 1e27);
-    }
-
-    function mint(address to, uint256 amount) external {
-        _mint(to, amount);
-    }
-}
-
-/// @dev Mock oracle returning a configurable price.
-contract MockOracle is IEnvelopOracle {
-    uint256 public price;
-
-    function setPrice(uint256 _price) external {
-        price = _price;
-    }
-
-    function getIndexPrice(address) external view override returns (uint256) {
-        return 0;
-    }
-
-    function getIndexPrice(CompactAsset[] calldata)
-        external
-        view
-        override
-        returns (uint256)
-    {
-        return price;
-    }
-}
-
-contract PredicterTest_a_01 is Test {
+contract PredicterTest_a_01 is Test, PredictionBuilder {
     MockERC20 internal token;
     MockOracle internal oracle;
     Predicter internal predicter;
@@ -50,28 +19,8 @@ contract PredicterTest_a_01 is Test {
 
     function setUp() public {
         oracle = new MockOracle();
-
+        token = new MockERC20("Mock", "MOCK");
         predicter = new Predicter(feeBeneficiary, address(oracle));
-    }
-
-    // ------------------------------------------------------------
-    // Helpers
-    // ------------------------------------------------------------
-
-    function _buildPrediction(uint40 expiration, uint96 strikeAmount, uint96 predictedAmount)
-        internal
-        view
-        returns (Predicter.Prediction memory pred)
-    {
-        // One-asset portfolio
-        CompactAsset[] memory portfolio = new CompactAsset[](1);
-        portfolio[0] = CompactAsset({token: address(token), amount: 1 ether});
-
-        pred.strike = CompactAsset({token: address(token), amount: strikeAmount});
-        pred.predictedPrice = CompactAsset({token: address(token), amount: predictedAmount});
-        pred.expirationTime = expiration;
-        pred.resolvedPrice = 0;
-        pred.portfolio = portfolio;
     }
 
     // ------------------------------------------------------------
@@ -80,7 +29,9 @@ contract PredicterTest_a_01 is Test {
 
     function test_createPrediction_success() public {
         uint40 exp = uint40(block.timestamp + 1 days);
-        Predicter.Prediction memory pred = _buildPrediction(exp, 10 ether, 100);
+        uint96 strikeAmount = 10e18;
+        uint96 predictedAmount = 100;
+        Predicter.Prediction memory pred = _buildPrediction(address(token), exp, strikeAmount, predictedAmount);
 
         vm.prank(creator);
         vm.expectEmit();
@@ -124,7 +75,9 @@ contract PredicterTest_a_01 is Test {
 
     function test_createPrediction_revertActivePredictionExist() public {
         uint40 exp = uint40(block.timestamp + 1 days);
-        Predicter.Prediction memory pred = _buildPrediction(exp, 10 ether, 100);
+        uint96 strikeAmount = 10e18;
+        uint96 predictedPrice = 100;
+        Predicter.Prediction memory pred = _buildPrediction(address(token), exp, strikeAmount, predictedPrice);
 
         vm.startPrank(creator);
         predicter.createPrediction(pred);
@@ -141,7 +94,9 @@ contract PredicterTest_a_01 is Test {
     function test_createPrediction_revertTooLongPrediction() public {
         uint40 period = predicter.MAX_PREDICTION_PERIOD() + 10;
         uint40 exp = uint40(block.timestamp + period);
-        Predicter.Prediction memory pred = _buildPrediction(exp, 10 ether, 100);
+        uint96 strikeAmount = 10e18;
+        uint96 predictedPrice = 100;
+        Predicter.Prediction memory pred = _buildPrediction(address(token), exp, strikeAmount, predictedPrice);
 
         vm.startPrank(creator);
         vm.expectRevert(

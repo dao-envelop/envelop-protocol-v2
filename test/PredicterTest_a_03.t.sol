@@ -3,42 +3,11 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 import "../src/utils/Predicter.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "../src/utils/PredictionBuilder.sol";
+import "../src/mock/MockOracle.sol";
+import "../src/mock/MockERC20.sol";
 
-/// @dev Simple ERC20 mock for staking in tests.
-contract MockERC20 is ERC20 {
-    constructor() ERC20("Mock", "MOCK") {
-        _mint(msg.sender, 1e27);
-    }
-
-    function mint(address to, uint256 amount) external {
-        _mint(to, amount);
-    }
-}
-
-/// @dev Mock oracle returning a configurable price.
-contract MockOracle is IEnvelopOracle {
-    uint256 public price;
-
-    function setPrice(uint256 _price) external {
-        price = _price;
-    }
-
-    function getIndexPrice(address) external view override returns (uint256) {
-        return 0;
-    }
-
-    function getIndexPrice(CompactAsset[] calldata)
-        external
-        view
-        override
-        returns (uint256)
-    {
-        return price;
-    }
-}
-
-contract PredicterTest_a_03 is Test {
+contract PredicterTest_a_03 is Test, PredictionBuilder  {
     MockERC20 internal token;
     MockOracle internal oracle;
     Predicter internal predicter;
@@ -53,7 +22,7 @@ contract PredicterTest_a_03 is Test {
 
 
     function setUp() public {
-        token = new MockERC20();
+        token = new MockERC20("Mock", "MOCK");
         oracle = new MockOracle();
 
         predicter = new Predicter(feeBeneficiary, address(oracle));
@@ -64,27 +33,6 @@ contract PredicterTest_a_03 is Test {
     }
 
     // ------------------------------------------------------------
-    // Helpers
-    // ------------------------------------------------------------
-
-    function _buildPrediction(uint40 expiration, uint96 strikeAmount, uint96 predictedAmount)
-        internal
-        view
-        returns (Predicter.Prediction memory pred)
-    {
-        // One-asset portfolio
-        CompactAsset[] memory portfolio = new CompactAsset[](1);
-        uint96 portfolioAmount = 1e18;
-        portfolio[0] = CompactAsset({token: address(token), amount: portfolioAmount});
-
-        pred.strike = CompactAsset({token: address(token), amount: strikeAmount});
-        pred.predictedPrice = CompactAsset({token: address(token), amount: predictedAmount});
-        pred.expirationTime = expiration;
-        pred.resolvedPrice = 0;
-        pred.portfolio = portfolio;
-    }
-
-    // ------------------------------------------------------------
     // _resolvePrediction via claim
     // ------------------------------------------------------------
 
@@ -92,7 +40,7 @@ contract PredicterTest_a_03 is Test {
         uint40 exp = uint40(block.timestamp + 1 days);
         uint96 strikeAmount = 1_000_000;
         uint96 predictedPrice = 100;
-        Predicter.Prediction memory pred = _buildPrediction(exp, strikeAmount, predictedPrice);
+        Predicter.Prediction memory pred = _buildPrediction(address(token), exp, strikeAmount, predictedPrice);
 
         vm.prank(creator);
         predicter.createPrediction(pred);
@@ -172,7 +120,8 @@ contract PredicterTest_a_03 is Test {
     function test_claim_nonParticipant() public {
         uint40 exp = uint40(block.timestamp + 1 days);
         uint96 predictedPrice = 100;
-        Predicter.Prediction memory pred = _buildPrediction(exp, 10 ether, predictedPrice);
+        uint96 strikeAmount = 10 ether;
+        Predicter.Prediction memory pred = _buildPrediction(address(token), exp, strikeAmount, predictedPrice);
 
         vm.prank(creator);
         predicter.createPrediction(pred);
@@ -199,7 +148,8 @@ contract PredicterTest_a_03 is Test {
     function test_claim_noWinnerNoRevert() public {
         uint40 exp = uint40(block.timestamp + 1 days);
         uint96 predictedPrice = 100;
-        Predicter.Prediction memory pred = _buildPrediction(exp, 10 ether, predictedPrice);
+        uint96 strikeAmount = 10 ether;
+        Predicter.Prediction memory pred = _buildPrediction(address(token), exp, strikeAmount, predictedPrice);
 
         vm.prank(creator);
         predicter.createPrediction(pred);
@@ -228,7 +178,8 @@ contract PredicterTest_a_03 is Test {
     function test_resolvePrediction_revertOraclePriceTooHigh() public {
         uint40 exp = uint40(block.timestamp + 1 days);
         uint96 predictedPrice = 100;
-        Predicter.Prediction memory pred = _buildPrediction(exp, 10 ether, predictedPrice);
+        uint96 strikeAmount = 10 ether;
+        Predicter.Prediction memory pred = _buildPrediction(address(token), exp, strikeAmount, predictedPrice);
 
         vm.prank(creator);
         predicter.createPrediction(pred);
@@ -255,7 +206,8 @@ contract PredicterTest_a_03 is Test {
     function test_resolvePrediction_claimInOtherPrediction() public {
         uint40 exp = uint40(block.timestamp + 1 days);
         uint96 predictedPrice = 100;
-        Predicter.Prediction memory pred = _buildPrediction(exp, 10 ether, predictedPrice);
+        uint96 strikeAmount = 10 ether;
+        Predicter.Prediction memory pred = _buildPrediction(address(token), exp, strikeAmount, predictedPrice);
 
         vm.prank(creator);
         predicter.createPrediction(pred);
@@ -310,7 +262,7 @@ contract PredicterTest_a_03 is Test {
         uint40 exp = uint40(block.timestamp + 1 days);
         uint96 strikeAmount = 10 ether;
         uint96 predictedPrice = 100;
-        Predicter.Prediction memory pred = _buildPrediction(exp, strikeAmount, predictedPrice);
+        Predicter.Prediction memory pred = _buildPrediction(address(token), exp, strikeAmount, predictedPrice);
 
         vm.prank(creator);
         predicter.createPrediction(pred);
@@ -382,7 +334,7 @@ contract PredicterTest_a_03 is Test {
         uint40 exp = uint40(block.timestamp + 1 days);
         uint96 strikeAmount = 10 ether;
         uint96 predictedPrice = 100;
-        Predicter.Prediction memory pred = _buildPrediction(exp, strikeAmount, predictedPrice);
+        Predicter.Prediction memory pred = _buildPrediction(address(token), exp, strikeAmount, predictedPrice);
 
         vm.prank(creator);
         predicter.createPrediction(pred);
@@ -447,7 +399,7 @@ contract PredicterTest_a_03 is Test {
         uint40 exp = uint40(block.timestamp + 1 days);
         uint96 strikeAmount = 10 ether;
         uint96 predictedPrice = 100;
-        Predicter.Prediction memory pred = _buildPrediction(exp, strikeAmount, predictedPrice);
+        Predicter.Prediction memory pred = _buildPrediction(address(token), exp, strikeAmount, predictedPrice);
 
         vm.prank(creator);
         predicter.createPrediction(pred);
@@ -492,7 +444,7 @@ contract PredicterTest_a_03 is Test {
         uint40 exp = uint40(block.timestamp + 1 days);
         uint96 strikeAmount = 10 ether;
         uint96 predictedPrice = 100;
-        Predicter.Prediction memory pred = _buildPrediction(exp, strikeAmount, predictedPrice);
+        Predicter.Prediction memory pred = _buildPrediction(address(token), exp, strikeAmount, predictedPrice);
 
         vm.prank(creator);
         predicter.createPrediction(pred);
