@@ -82,39 +82,29 @@ contract PredicterTest_a_03 is Test, PredictionBuilder  {
 
         // jump after expiration
         vm.warp(exp + 1);
-        console2.log('predicter balance before all claimes = ', token.balanceOf(address(predicter)));     
+    
+        uint256 usersYesTotalBalance;
         for (uint256 i = 0; i < usersYes.length; i++) {
             vm.prank(usersYes[i]);
             predicter.claim(creator);
+            usersYesTotalBalance += token.balanceOf(usersYes[i]);
         }
 
         // resolvedPrice should be set
         (, , , uint96 resolvedPrice) = predicter.predictions(creator);
         assertEq(resolvedPrice, oraclePrice);
-        //assertEq(token.balanceOf(address(predicter)), 0);
-        console2.log('predicter balance after all claimes = ', token.balanceOf(address(predicter)));
-        console2.log('account balance = 1000_000 + reward = ', token.balanceOf(usersYes[0]));
-
-        
-
-        // resolvedPrice should be set
-        /*(, , , uint96 resolvedPrice) = predicter.predictions(creator);
-        assertEq(resolvedPrice, 200);
-
-        uint256 balanceAfterUser   = token.balanceOf(userYes);
-        uint256 balanceAfterCr     = token.balanceOf(creator);
-        uint256 balanceAfterProto  = token.balanceOf(feeBeneficiary);
-        uint256 contractBalanceAfter = token.balanceOf(address(predicter));
-
-        // User must have received back stake + net reward > 0
-        assertGt(balanceAfterUser, balanceBeforeUser);
-
-        // Creator and protocol both get some fee cut
-        assertGt(balanceAfterCr, balanceBeforeCr);
-        assertGt(balanceAfterProto, balanceBeforeProto);
-
-        // Контракт уменьшил баланс (выплаты сделаны)
-        assertLt(contractBalanceAfter, contractBalanceBefore);*/
+        uint256 inaccuracyAmount = 4000;
+        uint256 predicterBalance = token.balanceOf(address(predicter));
+        uint256 creatorBalance = token.balanceOf(address(creator));
+        uint256 beneficiaryBalance = token.balanceOf(address(feeBeneficiary));
+        assertLt(token.balanceOf(address(predicter)), inaccuracyAmount);
+        uint256 allStrikes = totalNoAmount + totalYesAmount;
+        uint256 expectedBalances = predicterBalance + creatorBalance + beneficiaryBalance + usersYesTotalBalance;
+        assertEq(allStrikes, expectedBalances);
+        uint256 calculatedBeneficiaryFee = ( totalNoAmount * predicter.FEE_PROTOCOL_PERCENT() )/ predicter.PERCENT_DENOMINATOR();
+        assertApproxEqAbs(calculatedBeneficiaryFee, beneficiaryBalance, 1500);
+        uint256 calculatedCreatorFee = ( totalNoAmount * predicter.FEE_CREATOR_PERCENT() )/ predicter.PERCENT_DENOMINATOR();
+        assertApproxEqAbs(calculatedCreatorFee, creatorBalance, 2500);
     }
 
     function test_claim_nonParticipant() public {
