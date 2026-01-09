@@ -69,7 +69,7 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
     /// @dev Creator fee in bps. 200 = 2%
     uint96 public constant FEE_CREATOR_PERCENT = 200;
 
-    /// @dev Protocol fee  in bps. 100 = 10%.
+    /// @dev Protocol fee  in bps. 100 = 1%.
     uint96 public constant FEE_PROTOCOL_PERCENT = 100;
 
     /// @dev Percentage denominator (basis points = 10_000).
@@ -482,25 +482,8 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
         ) = _getWinnerShareAndAmount(_user, _prediction);
 
         
-        //(uint256 yesToken, uint256 noToken) = hlpGet6909Ids(_prediction);
-        //bool isValidGame = totalSupply(yesToken) > 0 && totalSupply(noToken) >= 0;
         CompactAsset storage s = predictions[_prediction].strike;
 
-        // if we have bets only one side then no game situation
-        // and users can get back their bets
-        // if (!isValidGame){
-        //     uint256 y = balanceOf(_user, yesToken);
-        //     uint256 n = balanceOf(_user, noToken);
-        //     // 1. Pull back ERC6909 share tokens (not burned in this version)
-        //     _transfer(_user, address(this), yesToken, y);
-        //     // 1. Pull back ERC6909 share tokens (not burned in this version)
-        //     _transfer(_user, address(this), noToken, n);
-
-        //     // 2. Return original stake
-        //     IERC20(s.token).safeTransfer(_user, y);
-        //     IERC20(s.token).safeTransfer(_user, n);
-        //     //return;
-        // }
 
         if (winnerPrize > 0) {
             uint256 paid;
