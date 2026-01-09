@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 import "../src/utils/Predicter.sol";
-import "../src/utils/PredictionBuilder.sol";
+import "./helpers/PredictionBuilder.sol";
 import "../src/mock/MockOracle.sol";
 import "../src/mock/MockERC20.sol";
 
