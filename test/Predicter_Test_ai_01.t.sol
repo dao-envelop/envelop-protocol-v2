@@ -111,64 +111,7 @@ contract PredicterTest_ai is Test, PredictionBuilder {
         assertEq(noReward, 0);
     }
 
-    // ------------------------------------------------------------
-    // _resolvePrediction via claim
-    // ------------------------------------------------------------
-
-    /*function test_resolvePrediction_setsResolvedPriceAndClaimPays() public {
-        uint40 exp = uint40(block.timestamp + 1 days);
-        Predicter.Prediction memory pred = _buildPrediction(exp, 10 ether, 100);
-
-        vm.prank(creator);
-        predicter.createPrediction(pred);
-
-        // yes: userYes (1 vote)
-        vm.startPrank(userYes);
-        token.approve(address(predicter), 10 ether);
-        predicter.vote(creator, true);
-        vm.stopPrank();
-
-        // no: userNo (1 vote)
-        vm.startPrank(userNo);
-        token.approve(address(predicter), 10 ether);
-        predicter.vote(creator, false);
-        vm.stopPrank();
-
-        // set oracle price > predictedPrice => predictedTrue = true (yes wins)
-        oracle.setPrice(200);
-
-        // jump after expiration
-        vm.warp(exp + 1);
-
-        uint256 balanceBeforeUser   = token.balanceOf(userYes);
-        uint256 balanceBeforeCr     = token.balanceOf(creator);
-        uint256 balanceBeforeProto  = token.balanceOf(feeBeneficiary);
-        uint256 contractBalanceBefore = token.balanceOf(address(predicter));
-
-        vm.prank(userYes);
-        predicter.claim(creator);
-
-        // resolvedPrice should be set
-        (, , , uint96 resolvedPrice) = predicter.predictions(creator);
-        assertEq(resolvedPrice, 200);
-
-        uint256 balanceAfterUser   = token.balanceOf(userYes);
-        uint256 balanceAfterCr     = token.balanceOf(creator);
-        uint256 balanceAfterProto  = token.balanceOf(feeBeneficiary);
-        uint256 contractBalanceAfter = token.balanceOf(address(predicter));
-
-        // User must have received back stake + net reward > 0
-        assertGt(balanceAfterUser, balanceBeforeUser);
-
-        // Creator and protocol both get some fee cut
-        assertGt(balanceAfterCr, balanceBeforeCr);
-        assertGt(balanceAfterProto, balanceBeforeProto);
-
-        // Контракт уменьшил баланс (выплаты сделаны)
-        assertLt(contractBalanceAfter, contractBalanceBefore);
-    }*/
-
-        function test_voteWithPermit2_transfersViaPermit2AndMintsShares() public {
+    function test_voteWithPermit2_transfersViaPermit2AndMintsShares() public {
         uint40 exp = uint40(block.timestamp + 1 days);
         uint96 strikeAmount = 10e18;
         uint96 predictedPrice = 100;

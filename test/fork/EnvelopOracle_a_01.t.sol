@@ -7,13 +7,11 @@ import "../../src/utils/EnvelopOracle.sol";
 contract EnvelopOracle_a_01 is Test {
     EnvelopOracle internal oracle;
 
-    address internal creator = address(0xC0FFEE);
-    address internal userYes = address(0xBEEF1);
-    address internal userNo  = address(0xBEEF2);
-    address internal feeBeneficiary = address(0xFEEBEEF);
     address feedRegistry = 0x47Fb2585D2C56Fe188D0E6ec628a38b74fCeeeDf;
     uint256 maxStale = 36000000000;
-    
+    address usdt = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
+    address niftsy = 0x7728cd70b3dD86210e2bd321437F448231B81733;
+    uint8 usdtDecimals = 8;
 
     function setUp() public {
         oracle = new EnvelopOracle(feedRegistry, maxStale);
@@ -24,13 +22,21 @@ contract EnvelopOracle_a_01 is Test {
     // ------------------------------------------------------------
 
 
-    function test_call() public {
-        uint256 price1 = oracle.getPriceInUSD(0xdAC17F958D2ee523a2206206994597C13D831ec7);
-        (uint256 priceUsd, uint80 roundId, uint256 updatedAt, uint8 decimals) = oracle.getPriceInUSDWithMeta(0xdAC17F958D2ee523a2206206994597C13D831ec7);
-        console2.log(price1);
-        console2.log(priceUsd);
-        console2.log(roundId);
-        console2.log(updatedAt);
-        console2.log(decimals);
+    function test_getPriceInUSD_success() public {
+        uint256 gotPrice = oracle.getPriceInUSD(usdt);
+        assertApproxEqAbs(gotPrice, 10**usdtDecimals, 10**(usdtDecimals - 2));
     }
+
+    function test_getPriceInUSD_nonPricableToken() public {
+        vm.expectRevert("Feed not found");
+        oracle.getPriceInUSD(niftsy);
+    }
+
+    function test_getPriceInUSDWithMeta() public {
+        (uint256 priceUsd, uint80 roundId, uint256 updatedAt, uint8 decimals) = oracle.getPriceInUSDWithMeta(usdt);
+        assertApproxEqAbs(priceUsd, 10**usdtDecimals, 10**(usdtDecimals - 2));
+        assertGt(roundId, 0);
+        assertGt(updatedAt, 0);
+        assertEq(decimals, usdtDecimals);
+    }        
 }
