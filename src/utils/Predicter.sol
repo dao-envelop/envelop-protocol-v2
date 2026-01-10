@@ -380,7 +380,7 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
         if (p.expirationTime == 0) revert PredictionNotExist(_prediction);
 
         // Only allow voting before expiration
-        if (p.expirationTime > block.timestamp) {
+        if (p.expirationTime > block.timestamp + STOP_BEFORE_EXPIRED) {
             CompactAsset storage s = p.strike;
 
             // Construct 6909 tokenId

@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
-import "./Predicter.sol";
+import "../../src/utils/Predicter.sol";
 
 contract PredictionBuilder {
     
     function _buildPrediction(address erc20, uint40 expiration, uint96 strikeAmount, uint96 predictedAmount)
         internal
-        view
+        pure
         returns (Predicter.Prediction memory pred)
     {
         // One-asset portfolio

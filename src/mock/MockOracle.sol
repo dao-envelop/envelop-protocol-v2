@@ -11,7 +11,7 @@ contract MockOracle is IEnvelopOracle {
         price = _price;
     }
 
-    function getIndexPrice(address) external view override returns (uint256) {
+    function getIndexPrice(address) external pure override returns (uint256) {
         return 0;
     }
 
