@@ -447,7 +447,7 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
 
         //if we have bets only one side then no game situation
         //and users can get back their bets
-        if (!isValidGame){
+        if (!isValidGame){    
             uint256 y = balanceOf(_user, yesToken);
             uint256 n = balanceOf(_user, noToken);
             // 1. Pull back ERC6909 share tokens (not burned in this version)
