@@ -19,11 +19,6 @@ contract EnvelopOracle_a_01 is Test {
         oracle = new EnvelopOracle(feedRegistry, maxStale);
     }
 
-    // ------------------------------------------------------------
-    // Helpers
-    // ------------------------------------------------------------
-
-
     function test_getPriceInUSD_success() public {
         uint256 gotPrice = oracle.getPriceInUSD(usdt);
         assertApproxEqAbs(gotPrice, 10**usdtDecimals, 10**(usdtDecimals - 2));
@@ -61,6 +56,5 @@ contract EnvelopOracle_a_01 is Test {
         assets[1] = CompactAsset({token: niftsy, amount: 1});
         vm.expectRevert("Feed not found");
         oracle.getIndexPrice(assets);
-    }
-     
+    }  
 }
