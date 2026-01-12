@@ -50,7 +50,7 @@ contract PredicterTest_m_01 is Test, PredictionBuilder {
         uint256 totalYesAmount;
         uint256 totalNoAmount;
         uint256 yesNum = 411;
-        uint256 noNum = 0;
+        //uint256 noNum = 0;
         
         address user;
         // usersYes vote

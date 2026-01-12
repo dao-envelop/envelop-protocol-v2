@@ -189,7 +189,8 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
      * - Caller MUST have approved enough ERC20 to `this` for the strike amount.
      */
     function vote(address _prediction, bool _agree) external nonReentrant() {
-        _vote(msg.sender, _prediction, _agree);
+        (address token, uint96 amount) = _vote(msg.sender, _prediction, _agree);
+        IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
     }
 
         /**
@@ -223,7 +224,7 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
     ) external nonReentrant() {
         Prediction storage p = predictions[_prediction];
         if (p.expirationTime == 0) revert PredictionNotExist(_prediction);
-        if (p.expirationTime <= block.timestamp) {
+        if (p.expirationTime <= block.timestamp + STOP_BEFORE_EXPIRED) {
             revert PredictionExpired(_prediction, p.expirationTime);
         }
 
@@ -239,7 +240,9 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
         if (transfer.requestedAmount != s.amount) {
             revert("Permit2: insufficient amount");
         }
-
+        
+        _vote(msg.sender, _prediction, _agree);
+       
         // 1) Move tokens from user to this contract via Permit2
         IPermit2(PERMIT2).permitTransferFrom(
             permit,
@@ -248,12 +251,6 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
             signature
         );
 
-        // 2) Mint ERC6909 shares to user
-        uint256 tokenId =
-            (uint256(uint160(_prediction)) << 96) | (_agree ? 1 : 0);
-        _mint(msg.sender, tokenId, s.amount);
-
-        emit Voted(msg.sender, _prediction, _agree);
     }
 
 
@@ -375,27 +372,30 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
      * @param _prediction Prediction creator address.
      * @param _agree Vote type (true = yes, false = no).
      */
-    function _vote(address _user, address _prediction, bool _agree) internal {
+    function _vote(address _user, address _prediction, bool _agree) 
+        internal 
+        returns(address, uint96) 
+    {
         Prediction storage p = predictions[_prediction];
         if (p.expirationTime == 0) revert PredictionNotExist(_prediction);
 
         // Only allow voting before expiration
         if (p.expirationTime > block.timestamp + STOP_BEFORE_EXPIRED) {
-            CompactAsset storage s = p.strike;
+            //CompactAsset storage s = p.strike;
 
             // Construct 6909 tokenId
             uint256 tokenId =
                 (uint256(uint160(_prediction)) << 96) | (_agree ? 1 : 0);
 
             // Mint share tokens equal to strike amount
-            _mint(_user, tokenId, s.amount);
+            _mint(_user, tokenId, p.strike.amount);
 
-            // Pull user’s ERC20 stake
-            IERC20(s.token).safeTransferFrom(_user, address(this), s.amount);
         } else {
             revert PredictionExpired(_prediction, p.expirationTime);
         }
+
         emit Voted(_user, _prediction, _agree);
+        return (p.strike.token, p.strike.amount);
     }
 
     /**
@@ -557,13 +557,13 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
             (!predictedTrue ? 1 : 0);
 
         winTokenBalance = balanceOf(_user, winTokenId);
-
-        // User share = userVotes / totalVotes
-        uint256 totalWin = totalSupply(winTokenId);
-        if (totalWin == 0) {
+        if (winTokenBalance == 0) {
             return (winTokenId, 0, 0, 0);
         }
 
+
+        // User share = userVotes / totalVotes
+        uint256 totalWin = totalSupply(winTokenId);
         sharesNonDenominated =
             (winTokenBalance * SCALE) /
             totalWin;
