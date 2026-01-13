@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 import "../../src/utils/EnvelopOracle.sol";
 import "../../src/utils/Predicter.sol";
 
-contract EnvelopOracle_a_01 is Test {
+contract EnvelopOracle_fork_a_01 is Test {
     EnvelopOracle internal oracle;
 
     address feedRegistry = 0x47Fb2585D2C56Fe188D0E6ec628a38b74fCeeeDf;

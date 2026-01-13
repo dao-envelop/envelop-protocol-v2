@@ -3,9 +3,10 @@ pragma solidity ^0.8.24;
 
 import {Test, console2} from "forge-std/Test.sol";
 import "../../src/utils/Predicter.sol";
+import "../helpers/PredictionBuilder.sol";
 import "../../src/mock/MockERC20.sol";
 
-contract PredicterTestFuzz_a_01 is Test {
+contract PredicterTestFuzz_a_01 is Test, PredictionBuilder {
     MockERC20 internal token;
     address oracle = address(100);
     Predicter internal predicter;
@@ -25,26 +26,6 @@ contract PredicterTestFuzz_a_01 is Test {
     }
 
     // ------------------------------------------------------------
-    // Helpers
-    // ------------------------------------------------------------
-
-    function _buildPrediction(uint40 expiration, uint96 strikeAmount, uint96 predictedAmount)
-        internal
-        view
-        returns (Predicter.Prediction memory pred)
-    {
-        // One-asset portfolio
-        CompactAsset[] memory portfolio = new CompactAsset[](1);
-        uint96 portfolioAmount = 1e18;
-        portfolio[0] = CompactAsset({token: address(token), amount: portfolioAmount});
-        pred.strike = CompactAsset({token: address(token), amount: strikeAmount});
-        pred.predictedPrice = CompactAsset({token: address(token), amount: predictedAmount});
-        pred.expirationTime = expiration;
-        pred.resolvedPrice = 0;
-        pred.portfolio = portfolio;
-    }
-
-    // ------------------------------------------------------------
     // getUserEstimates
     // ------------------------------------------------------------
 
@@ -61,7 +42,10 @@ contract PredicterTestFuzz_a_01 is Test {
         //uint8 noNum = 7;
 
         uint40 exp = uint40(block.timestamp + 1 days);
-        Predicter.Prediction memory pred = _buildPrediction(exp, 1 ether, 100);
+        uint96 strikeAmount = 1_000_000;
+        uint96 predictedPrice = 100;
+        Predicter.Prediction memory pred = _buildPrediction(address(token), exp, strikeAmount, predictedPrice);
+
 
         vm.prank(creator);
         predicter.createPrediction(pred);
