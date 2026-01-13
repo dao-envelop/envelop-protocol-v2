@@ -28,17 +28,12 @@ contract PredicterTest_a_fork_1 is Test  {
 
         predicter = new Predicter(feeBeneficiary, address(oracle));
 
-        deal(usdt, creator, 1000 * 10**6);
         bytes memory mockCode = address(mock).code;
-
         vm.etch(usdt, mockCode);
-
         usdtContract = MockERC20(usdt);
     }
 
     function test_EndtoEnd() public {
-        uint256 gotPrice = oracle.getPriceInUSD(usdt);
-        //console2.log(gotPrice);
         uint40 exp = uint40(block.timestamp + 100);
         uint96 strikeAmount = 1_000_000;
         uint96 portfolioAmount = 1e8;
@@ -63,8 +58,6 @@ contract PredicterTest_a_fork_1 is Test  {
         vm.startPrank(userYes);
         usdtContract.approve(address(predicter), strikeAmount);
         predicter.vote(creator, true);
-        //console2.log('user = ', user);
-        //console2.log('user balance = ', predicter.balanceOf(user, 1002111867590296475548309107748372481));
         vm.stopPrank();
 
         // usersNo vote 
@@ -76,23 +69,19 @@ contract PredicterTest_a_fork_1 is Test  {
         vm.warp(block.timestamp + 200);
         vm.prank(userYes);
         predicter.claim(creator);
-        /*
 
-        // resolvedPrice should be set
-        (, , , uint96 resolvedPrice) = predicter.predictions(creator);
-        assertEq(resolvedPrice, oraclePrice);
-        uint256 inaccuracyAmount = 4000;
-        uint256 predicterBalance = token.balanceOf(address(predicter));
-        uint256 creatorBalance = token.balanceOf(address(creator));
-        uint256 beneficiaryBalance = token.balanceOf(address(feeBeneficiary));
-        assertLt(token.balanceOf(address(predicter)), inaccuracyAmount);
-        uint256 allStrikes = totalNoAmount + totalYesAmount;
-        uint256 expectedBalances = predicterBalance + creatorBalance + beneficiaryBalance + usersYesTotalBalance;
-        assertEq(allStrikes, expectedBalances);
-        uint256 calculatedBeneficiaryFee = ( totalNoAmount * predicter.FEE_PROTOCOL_PERCENT() )/ predicter.PERCENT_DENOMINATOR();
-        assertApproxEqAbs(calculatedBeneficiaryFee, beneficiaryBalance, 1500);
-        uint256 calculatedCreatorFee = ( totalNoAmount * predicter.FEE_CREATOR_PERCENT() )/ predicter.PERCENT_DENOMINATOR();
-        assertApproxEqAbs(calculatedCreatorFee, creatorBalance, 2500);*/
+        vm.prank(userNo);
+        predicter.claim(creator);
+
+        // check balances
+        assertEq(usdtContract.balanceOf(userNo), 0);
+        assertEq(usdtContract.balanceOf(address(predicter)), 0);
+        uint256 calculatedCreatorFee = predicter.FEE_CREATOR_PERCENT() * strikeAmount / predicter.PERCENT_DENOMINATOR();
+        uint256 calculatedProtocolFee = predicter.FEE_PROTOCOL_PERCENT() * strikeAmount / predicter.PERCENT_DENOMINATOR();
+        assertEq(usdtContract.balanceOf(creator), calculatedCreatorFee);
+        assertEq(usdtContract.balanceOf(predicter.FEE_PROTOCOL_BENEFICIARY()), calculatedProtocolFee);
+        uint256 reward = strikeAmount - calculatedCreatorFee - calculatedProtocolFee;
+        assertEq(usdtContract.balanceOf(userYes), reward + strikeAmount);
     }
 }
 
