@@ -5,9 +5,20 @@ All notable changes to this project are documented in this file.
 This changelog format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
-- Transient storage for several lock logic
 - Deployment script for full set of contracts 
 - Documentation (doc strings)
+
+## [2.2.0](https://github.com/dao-envelop/envelop-protocol-v2/tree/2.1.0) - 2025-01-15
+### Added
+ - WNFTV2Index implementation 
+ - Predicot base contract for implement users voting for index pric
+ - Simple onchain Oracle contract
+ - Upgrade OZ dependencies to 5.5.0
+### Fixed
+ - Minimize potential reentrancy
+ - Separate url for myshch wallets
+ - Transient storage added for several lock logic (EIP-1153)
+
 
 ## [2.1.0](https://github.com/dao-envelop/envelop-protocol-v2/tree/2.1.0) - 2024-12-19
 ### Added

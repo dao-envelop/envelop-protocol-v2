@@ -384,6 +384,43 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
         noId = (uint256(uint160(_prediction)) << 96);
     }
 
+    /**
+     * @notice Builds a Permit2 `PermitTransferFrom` struct and the corresponding EIP-712 digest
+     *         for signing an off-chain approval that allows staking via Permit2.
+     *
+     * @dev This helper is intended for frontend / off-chain usage.
+     *      It prepares:
+     *       - a Permit2-compatible permit allowing this contract to pull exactly
+     *         `strike.amount` of `strike.token` from the signer
+     *       - the EIP-712 digest that must be signed by the user
+     *
+     *      The resulting signature can later be passed to {voteWithPermit2}.
+     *
+     * @param _prediction Address of the prediction creator (prediction identifier).
+     * @param _deadline   Unix timestamp after which the permit becomes invalid.
+     *
+     * @return permit  Permit2 `PermitTransferFrom` struct containing:
+     *                 - token permissions (token + exact amount)
+     *                 - nonce
+     *                 - deadline
+     *
+     * @return digest  EIP-712 digest to be signed by the user for Permit2 execution.
+     *
+     * @custom:security
+     * - The nonce is derived from `(prediction, block.timestamp)` and is intended
+     *   for short-lived, UI-generated permits.
+     * - Frontends MUST ensure the signature is used promptly to avoid nonce reuse.
+     * - This function does NOT store any state and does NOT guarantee nonce uniqueness
+     *   across blocks or chains.
+     *
+     * @custom:integration
+     * - The returned `digest` must be signed using `eth_signTypedData_v4`.
+     * - The signed permit must be submitted via `voteWithPermit2`.
+     *
+     * @custom:warning
+     * - This helper assumes Permit2 DOMAIN_SEPARATOR is stable for the target chain.
+     * - Contracts relying on deterministic nonces should override this logic.
+     */
     function hlpGetPermitAndDigest(address _prediction, uint256 _deadline) 
         public 
         view 
