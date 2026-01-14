@@ -3,7 +3,6 @@
 
 pragma solidity ^0.8.24;
 
-
 import {ERC6909TokenSupply} from "@openzeppelin/contracts/token/ERC6909/extensions/ERC6909TokenSupply.sol";
 
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
@@ -18,8 +17,6 @@ import "../interfaces/IEnvelopOracle.sol";
 //import "../interfaces/IPermit2Minimal.sol";
 
 import "../interfaces/IPermit2Minimal.sol";
-
-
 
 /**
  * @title Predicter
@@ -46,7 +43,6 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
      * - resolvedPrice: oracle result after expiration, stored once and used for outcome.
      * - portfolio: array of underlying assets used by the oracle for pricing.
      */
-     
 
     struct Prediction {
         CompactAsset strike;
@@ -83,11 +79,11 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
     uint256 public constant MAX_PORTFOLIO_LEN = 100;
 
     /// @dev Hard cap for number of portfolio items, to avoid gas blow-ups.
-    uint40 public constant MAX_PREDICTION_PERIOD =  uint40(1000 days);
+    uint40 public constant MAX_PREDICTION_PERIOD = uint40(1000 days);
 
     /// @dev Uniswap Permit2 constant (reserved for future integrations, currently unused).
     address public constant PERMIT2 = 0x000000000022D473030F116dDEE9F6B43aC78BA3;
-    
+
     /// @dev for use with Uniswap Permit2, seconds
     uint256 public constant PERMIT2_TTL = 600;
 
@@ -121,7 +117,6 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
 
     /// @dev Thrown if prediction too long
     error TooLongPrediction(uint256 actualTimestamp);
-
 
     // ==================================
     //            EVENTS
@@ -191,7 +186,7 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
      * - Current time MUST be strictly less than `expirationTime`.
      * - Caller MUST have approved enough ERC20 to `this` for the strike amount.
      */
-    function vote(address _prediction, bool _agree) external nonReentrant() {
+    function vote(address _prediction, bool _agree) external nonReentrant {
         (address token, uint96 amount) = _vote(msg.sender, _prediction, _agree);
         IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
     }
@@ -224,7 +219,7 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
         IPermit2Minimal.PermitTransferFrom calldata permit,
         IPermit2Minimal.SignatureTransferDetails calldata transfer,
         bytes calldata signature
-    ) external nonReentrant() {
+    ) external nonReentrant {
         Prediction storage p = predictions[_prediction];
 
         // Basic sanity checks to bind Permit2 params to this prediction
@@ -237,20 +232,14 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
         if (transfer.requestedAmount != p.strike.amount) {
             revert("Permit2: insufficient amount");
         }
-        
-        _vote(msg.sender, _prediction, _agree);
-       
-        // 1) Move tokens from user to this contract via Permit2
-        IPermit2Minimal(PERMIT2).permitTransferFrom(
-            permit,
-            transfer,
-            msg.sender,
-            signature
-        );
 
+        _vote(msg.sender, _prediction, _agree);
+
+        // 1) Move tokens from user to this contract via Permit2
+        IPermit2Minimal(PERMIT2).permitTransferFrom(permit, transfer, msg.sender, signature);
     }
 
- /**
+    /**
      * @notice Cast a vote using Uniswap Permit2 signature-based transfer.
      * @dev Flow:
      *  1) User gives standard ERC20 approval to Permit2 once (off-chain setup).
@@ -272,30 +261,23 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
         bool _agree,
         IPermit2Minimal.PermitTransferFrom calldata permit,
         bytes calldata signature
-    ) external nonReentrant() {
-        
+    ) external nonReentrant {
         Prediction storage p = predictions[_prediction];
 
         // Basic sanity checks to bind Permit2 params to this prediction
         if (permit.permitted.token != p.strike.token) {
             revert("Permit2: wrong token");
         }
-        
+
         IPermit2Minimal.SignatureTransferDetails memory transfer = IPermit2Minimal.SignatureTransferDetails(
-            address(this), 
+            address(this),
             p.strike.amount //TODO check implicit uint256() ?
         );
 
         _vote(msg.sender, _prediction, _agree);
-       
-        // 1) Move tokens from user to this contract via Permit2
-        IPermit2Minimal(PERMIT2).permitTransferFrom(
-            permit,
-            transfer,
-            msg.sender,
-            signature
-        );
 
+        // 1) Move tokens from user to this contract via Permit2
+        IPermit2Minimal(PERMIT2).permitTransferFrom(permit, transfer, msg.sender, signature);
     }
 
     /**
@@ -312,13 +294,11 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
      * - Caller MUST hold a positive amount of winning share tokens (ERC6909),
      *   otherwise the call is a no-op.
      */
-    function claim(address _prediction) external nonReentrant(){
+    function claim(address _prediction) external nonReentrant {
         if (_resolvePrediction(_prediction)) {
-
-            if (_checkIsGameValidAndReturnStakesIfNot(msg.sender, _prediction)){
-                _claim(msg.sender, _prediction);    
+            if (_checkIsGameValidAndReturnStakesIfNot(msg.sender, _prediction)) {
+                _claim(msg.sender, _prediction);
             }
-            
         }
     }
 
@@ -353,15 +333,11 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
         noTotal = totalSupply(noToken);
 
         if (yesTotal > 0) {
-            yesReward =
-                noTotal *
-                (yesBalance * SCALE / yesTotal) / SCALE;
+            yesReward = noTotal * (yesBalance * SCALE / yesTotal) / SCALE;
         }
 
         if (noTotal > 0) {
-            noReward =
-                yesTotal *
-                (noBalance * SCALE / noTotal) / SCALE;
+            noReward = yesTotal * (noBalance * SCALE / noTotal) / SCALE;
         }
     }
 
@@ -375,11 +351,7 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
      *      yesId = (uint160(creator) << 96) | 1
      *      noId  = (uint160(creator) << 96)
      */
-    function hlpGet6909Ids(address _prediction)
-        public
-        pure
-        returns (uint256 yesId, uint256 noId)
-    {
+    function hlpGet6909Ids(address _prediction) public pure returns (uint256 yesId, uint256 noId) {
         yesId = (uint256(uint160(_prediction)) << 96) | 1;
         noId = (uint256(uint160(_prediction)) << 96);
     }
@@ -421,56 +393,37 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
      * - This helper assumes Permit2 DOMAIN_SEPARATOR is stable for the target chain.
      * - Contracts relying on deterministic nonces should override this logic.
      */
-    function hlpGetPermitAndDigest(address _prediction, uint256 _deadline) 
-        public 
-        view 
-        returns (IPermit2Minimal.PermitTransferFrom memory permit, bytes32 digest) 
+    function hlpGetPermitAndDigest(address _prediction, uint256 _deadline)
+        public
+        view
+        returns (IPermit2Minimal.PermitTransferFrom memory permit, bytes32 digest)
     {
         Prediction storage p = predictions[_prediction];
         bytes32 DOMAIN_SEPARATOR = IPermit2Minimal(PERMIT2).DOMAIN_SEPARATOR();
         IPermit2Minimal.TokenPermissions memory tp = IPermit2Minimal.TokenPermissions(p.strike.token, p.strike.amount);
         (uint256 yesToken, uint256 noToken) = hlpGet6909Ids(_prediction);
-        uint256 nonce = uint256(keccak256(
-            abi.encodePacked(_prediction, block.timestamp, block.chainid)
-        ));
-        permit = IPermit2Minimal.PermitTransferFrom(
-            tp,
-            nonce,
-            _deadline
-        );
+        uint256 nonce = uint256(keccak256(abi.encodePacked(_prediction, block.timestamp, block.chainid)));
+        permit = IPermit2Minimal.PermitTransferFrom(tp, nonce, _deadline);
         bytes32 tokenPermissions = keccak256(abi.encode(_TOKEN_PERMISSIONS_TYPEHASH, tp));
         digest = keccak256(
             abi.encodePacked(
                 "\x19\x01",
                 DOMAIN_SEPARATOR,
-                keccak256(
-                    abi.encode(
-                        _PERMIT_TRANSFER_FROM_TYPEHASH, tokenPermissions, address(this), nonce, _deadline
-                    )
-                )
+                keccak256(abi.encode(_PERMIT_TRANSFER_FROM_TYPEHASH, tokenPermissions, address(this), nonce, _deadline))
             )
         );
-
     }
 
     // ==================================
     //           INTERNAL LOGIC
     // ==================================
-    function _checkPrediction(address _creator, Prediction calldata _pred)
-        internal
-        virtual
-    {
-        
-    }
+    function _checkPrediction(address _creator, Prediction calldata _pred) internal virtual {}
 
     /**
      * @dev Internal implementation of prediction creation.
      *      Reverts if creator already has an active prediction.
      */
-    function _createPrediction(address _creator, Prediction calldata _pred)
-        internal
-        virtual
-    {
+    function _createPrediction(address _creator, Prediction calldata _pred) internal virtual {
         Prediction storage p = predictions[_creator];
         if (p.expirationTime != 0) {
             revert ActivePredictionExist(_creator);
@@ -485,10 +438,7 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
      * @param _prediction Prediction creator address.
      * @param _agree Vote type (true = yes, false = no).
      */
-    function _vote(address _user, address _prediction, bool _agree) 
-        internal 
-        returns(address, uint96) 
-    {
+    function _vote(address _user, address _prediction, bool _agree) internal returns (address, uint96) {
         Prediction storage p = predictions[_prediction];
         if (p.expirationTime == 0) revert PredictionNotExist(_prediction);
 
@@ -497,12 +447,10 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
             //CompactAsset storage s = p.strike;
 
             // Construct 6909 tokenId
-            uint256 tokenId =
-                (uint256(uint160(_prediction)) << 96) | (_agree ? 1 : 0);
+            uint256 tokenId = (uint256(uint160(_prediction)) << 96) | (_agree ? 1 : 0);
 
             // Mint share tokens equal to strike amount
             _mint(_user, tokenId, p.strike.amount);
-
         } else {
             revert PredictionExpired(_prediction, p.expirationTime);
         }
@@ -522,24 +470,18 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
      * - Current time MUST be >= expirationTime.
      * - Oracle price MUST fit into uint96.
      */
-    function _resolvePrediction(address _prediction)
-        internal
-        virtual
-        returns (bool isResolved)
-    {
+    function _resolvePrediction(address _prediction) internal virtual returns (bool isResolved) {
         Prediction storage p = predictions[_prediction];
 
         if (
-            p.expirationTime <= block.timestamp && // time to resolve came
-            p.resolvedPrice == 0 // implicit resolved flag
+            p.expirationTime <= block.timestamp // time to resolve came
+                && p.resolvedPrice == 0 // implicit resolved flag
         ) {
-            uint256 oraclePrice =
-                IEnvelopOracle(ORACLE).getIndexPrice(_prediction);
+            uint256 oraclePrice = IEnvelopOracle(ORACLE).getIndexPrice(_prediction);
             if (oraclePrice == 0) {
-                oraclePrice =
-                    IEnvelopOracle(ORACLE).getIndexPrice(p.portfolio);
+                oraclePrice = IEnvelopOracle(ORACLE).getIndexPrice(p.portfolio);
             }
-            
+
             if (oraclePrice > type(uint96).max) {
                 revert OraclePriceTooHigh(oraclePrice);
             }
@@ -553,14 +495,17 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
     /// @dev Handles the "no-contest" case: if either YES or NO totalSupply is zero,
     ///      user gets their stake refunded for both sides they hold, and their 6909 shares are pulled back.
     /// @return isValidGame True if both sides have non-zero totalSupply.
-    function _checkIsGameValidAndReturnStakesIfNot(address _user, address _prediction) internal returns (bool isValidGame){
+    function _checkIsGameValidAndReturnStakesIfNot(address _user, address _prediction)
+        internal
+        returns (bool isValidGame)
+    {
         (uint256 yesToken, uint256 noToken) = hlpGet6909Ids(_prediction);
         isValidGame = totalSupply(yesToken) > 0 && totalSupply(noToken) > 0;
         CompactAsset storage s = predictions[_prediction].strike;
 
         //if we have bets only one side then no game situation
         //and users can get back their bets
-        if (!isValidGame){    
+        if (!isValidGame) {
             uint256 y = balanceOf(_user, yesToken);
             uint256 n = balanceOf(_user, noToken);
             // 1. Pull back ERC6909 share tokens (not burned in this version)
@@ -571,7 +516,6 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
             // 2. Return original stake
             IERC20(s.token).safeTransfer(_user, y);
             IERC20(s.token).safeTransfer(_user, n);
-
         }
     }
 
@@ -587,39 +531,27 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
      * @param _prediction Address of the prediction creator.
      */
     function _claim(address _user, address _prediction) internal {
-        (
-            uint256 winTokenId,
-            uint256 winTokenBalance,
-            ,
-            uint256 winnerPrize
-        ) = _getWinnerShareAndAmount(_user, _prediction);
+        (uint256 winTokenId, uint256 winTokenBalance,, uint256 winnerPrize) =
+            _getWinnerShareAndAmount(_user, _prediction);
 
-        
         CompactAsset storage s = predictions[_prediction].strike;
-
 
         if (winnerPrize > 0) {
             uint256 paid;
-            uint256 fee;    
+            uint256 fee;
             // 1. Pull back ERC6909 share tokens (not burned in this version)
             _transfer(_user, address(this), winTokenId, winTokenBalance);
 
             // 2. Return original stake
             IERC20(s.token).safeTransfer(_user, winTokenBalance);
 
-            
-
             // 3. Creator fee
-            fee =
-                (winnerPrize * FEE_CREATOR_PERCENT * SCALE) /
-                PERCENT_DENOMINATOR / SCALE;
+            fee = (winnerPrize * FEE_CREATOR_PERCENT * SCALE) / PERCENT_DENOMINATOR / SCALE;
             paid += fee;
             IERC20(s.token).safeTransfer(_prediction, fee);
 
             // 4. Protocol fee
-            fee =
-                (winnerPrize * FEE_PROTOCOL_PERCENT * SCALE) /
-                PERCENT_DENOMINATOR / SCALE;
+            fee = (winnerPrize * FEE_PROTOCOL_PERCENT * SCALE) / PERCENT_DENOMINATOR / SCALE;
             paid += fee;
             IERC20(s.token).safeTransfer(FEE_PROTOCOL_BENEFICIARY, fee);
 
@@ -643,18 +575,10 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
      * @return sharesNonDenominated Fraction in PERCENT_DENOMINATOR units.
      * @return prizeAmount          Raw prize before fee splits.
      */
-    function _getWinnerShareAndAmount(
-        address _user,
-        address _prediction
-    )
+    function _getWinnerShareAndAmount(address _user, address _prediction)
         internal
         view
-        returns (
-            uint256 winTokenId,
-            uint256 winTokenBalance,
-            uint256 sharesNonDenominated,
-            uint256 prizeAmount
-        )
+        returns (uint256 winTokenId, uint256 winTokenBalance, uint256 sharesNonDenominated, uint256 prizeAmount)
     {
         Prediction storage p = predictions[_prediction];
 
@@ -662,28 +586,20 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
         bool predictedTrue = p.predictedPrice.amount <= p.resolvedPrice;
 
         // Determine winning and losing token IDs
-        winTokenId =
-            (uint256(uint160(_prediction)) << 96) |
-            (predictedTrue ? 1 : 0);
-        uint256 loserTokenId =
-            (uint256(uint160(_prediction)) << 96) |
-            (!predictedTrue ? 1 : 0);
+        winTokenId = (uint256(uint160(_prediction)) << 96) | (predictedTrue ? 1 : 0);
+        uint256 loserTokenId = (uint256(uint160(_prediction)) << 96) | (!predictedTrue ? 1 : 0);
 
         winTokenBalance = balanceOf(_user, winTokenId);
         if (winTokenBalance == 0) {
             return (winTokenId, 0, 0, 0);
         }
 
-
         // User share = userVotes / totalVotes
         uint256 totalWin = totalSupply(winTokenId);
-        sharesNonDenominated =
-            (winTokenBalance * SCALE) /
-            totalWin;
+        sharesNonDenominated = (winTokenBalance * SCALE) / totalWin;
 
         // Prize = share * totalLosingPool
         uint256 totalLose = totalSupply(loserTokenId);
-        prizeAmount =
-            (totalLose * sharesNonDenominated) / SCALE;
+        prizeAmount = (totalLose * sharesNonDenominated) / SCALE;
     }
 }

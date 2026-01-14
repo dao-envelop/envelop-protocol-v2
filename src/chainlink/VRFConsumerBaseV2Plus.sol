@@ -100,71 +100,67 @@ import {IVRFMigratableConsumerV2Plus} from "./interfaces/IVRFMigratableConsumerV
  * @dev and so remains effective only in the case of unmodified oracle software).
  */
 abstract contract VRFConsumerBaseV2Plus is IVRFMigratableConsumerV2Plus, ConfirmedOwner {
-  error OnlyCoordinatorCanFulfill(address have, address want);
-  error OnlyOwnerOrCoordinator(address have, address owner, address coordinator);
-  error ZeroAddress();
+    error OnlyCoordinatorCanFulfill(address have, address want);
+    error OnlyOwnerOrCoordinator(address have, address owner, address coordinator);
+    error ZeroAddress();
 
-  // s_vrfCoordinator should be used by consumers to make requests to vrfCoordinator
-  // so that coordinator reference is updated after migration
-  IVRFCoordinatorV2Plus public s_vrfCoordinator;
+    // s_vrfCoordinator should be used by consumers to make requests to vrfCoordinator
+    // so that coordinator reference is updated after migration
+    IVRFCoordinatorV2Plus public s_vrfCoordinator;
 
-  /**
-   * @param _vrfCoordinator address of VRFCoordinator contract
-   */
-  constructor(
-    address _vrfCoordinator
-  ) ConfirmedOwner(msg.sender) {
-    if (_vrfCoordinator == address(0)) {
-      revert ZeroAddress();
+    /**
+     * @param _vrfCoordinator address of VRFCoordinator contract
+     */
+    constructor(address _vrfCoordinator) ConfirmedOwner(msg.sender) {
+        if (_vrfCoordinator == address(0)) {
+            revert ZeroAddress();
+        }
+        s_vrfCoordinator = IVRFCoordinatorV2Plus(_vrfCoordinator);
     }
-    s_vrfCoordinator = IVRFCoordinatorV2Plus(_vrfCoordinator);
-  }
 
-  /**
-   * @notice fulfillRandomness handles the VRF response. Your contract must
-   * @notice implement it. See "SECURITY CONSIDERATIONS" above for important
-   * @notice principles to keep in mind when implementing your fulfillRandomness
-   * @notice method.
-   *
-   * @dev VRFConsumerBaseV2Plus expects its subcontracts to have a method with this
-   * @dev signature, and will call it once it has verified the proof
-   * @dev associated with the randomness. (It is triggered via a call to
-   * @dev rawFulfillRandomness, below.)
-   *
-   * @param requestId The Id initially returned by requestRandomness
-   * @param randomWords the VRF output expanded to the requested number of words
-   */
-  // solhint-disable-next-line chainlink-solidity/prefix-internal-functions-with-underscore
-  function fulfillRandomWords(uint256 requestId, uint256[] calldata randomWords) internal virtual;
+    /**
+     * @notice fulfillRandomness handles the VRF response. Your contract must
+     * @notice implement it. See "SECURITY CONSIDERATIONS" above for important
+     * @notice principles to keep in mind when implementing your fulfillRandomness
+     * @notice method.
+     *
+     * @dev VRFConsumerBaseV2Plus expects its subcontracts to have a method with this
+     * @dev signature, and will call it once it has verified the proof
+     * @dev associated with the randomness. (It is triggered via a call to
+     * @dev rawFulfillRandomness, below.)
+     *
+     * @param requestId The Id initially returned by requestRandomness
+     * @param randomWords the VRF output expanded to the requested number of words
+     */
+    // solhint-disable-next-line chainlink-solidity/prefix-internal-functions-with-underscore
+    function fulfillRandomWords(uint256 requestId, uint256[] calldata randomWords) internal virtual;
 
-  // rawFulfillRandomness is called by VRFCoordinator when it receives a valid VRF
-  // proof. rawFulfillRandomness then calls fulfillRandomness, after validating
-  // the origin of the call
-  function rawFulfillRandomWords(uint256 requestId, uint256[] calldata randomWords) external {
-    if (msg.sender != address(s_vrfCoordinator)) {
-      revert OnlyCoordinatorCanFulfill(msg.sender, address(s_vrfCoordinator));
+    // rawFulfillRandomness is called by VRFCoordinator when it receives a valid VRF
+    // proof. rawFulfillRandomness then calls fulfillRandomness, after validating
+    // the origin of the call
+    function rawFulfillRandomWords(uint256 requestId, uint256[] calldata randomWords) external {
+        if (msg.sender != address(s_vrfCoordinator)) {
+            revert OnlyCoordinatorCanFulfill(msg.sender, address(s_vrfCoordinator));
+        }
+        fulfillRandomWords(requestId, randomWords);
     }
-    fulfillRandomWords(requestId, randomWords);
-  }
 
-  /**
-   * @inheritdoc IVRFMigratableConsumerV2Plus
-   */
-  function setCoordinator(
-    address _vrfCoordinator
-  ) external override onlyOwnerOrCoordinator {
-    if (_vrfCoordinator == address(0)) {
-      revert ZeroAddress();
+    /**
+     * @inheritdoc IVRFMigratableConsumerV2Plus
+     */
+    function setCoordinator(address _vrfCoordinator) external override onlyOwnerOrCoordinator {
+        if (_vrfCoordinator == address(0)) {
+            revert ZeroAddress();
+        }
+        s_vrfCoordinator = IVRFCoordinatorV2Plus(_vrfCoordinator);
+
+        emit CoordinatorSet(_vrfCoordinator);
     }
-    s_vrfCoordinator = IVRFCoordinatorV2Plus(_vrfCoordinator);
 
-    emit CoordinatorSet(_vrfCoordinator);
-  }
-
-  modifier onlyOwnerOrCoordinator() {
-    if (msg.sender != owner() && msg.sender != address(s_vrfCoordinator)) {
-      revert OnlyOwnerOrCoordinator(msg.sender, owner(), address(s_vrfCoordinator));
+    modifier onlyOwnerOrCoordinator() {
+        if (msg.sender != owner() && msg.sender != address(s_vrfCoordinator)) {
+            revert OnlyOwnerOrCoordinator(msg.sender, owner(), address(s_vrfCoordinator));
+        }
+        _;
     }
-    _;
-  }
 }

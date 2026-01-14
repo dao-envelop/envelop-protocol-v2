@@ -88,8 +88,11 @@ contract EnvelopLegacyWrapperBaseV2 is Ownable, TokenService {
         string memory name_,
         string memory symbol_,
         string memory _baseurl
-    ) external payable 
-    //returns (ET.AssetItem[] memory wnfts) // stack too deep
+    )
+        external
+        payable
+        //returns (ET.AssetItem[] memory wnfts) // stack too deep
+
     {
         require(_inDataS.length == _receivers.length, "Array params must have equal length");
         //wnfts = new  ET.AssetItem[](_inDataS.length);
@@ -193,9 +196,9 @@ contract EnvelopLegacyWrapperBaseV2 is Ownable, TokenService {
         );
 
         // create wnft
-        address payable proxy = payable(
-            factory.createWNFT(implementation.contractAddress, initCallData, keccak256(abi.encode(implementation)))
-        );
+        address payable proxy = payable(factory.createWNFT(
+                implementation.contractAddress, initCallData, keccak256(abi.encode(implementation))
+            ));
 
         // must add native ONLY AFTER PROXY CREATED, becouse there is an event
         // fallback function for Envelop Oracle

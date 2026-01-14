@@ -15,12 +15,7 @@ contract MockOracle is IEnvelopOracle {
         return 0;
     }
 
-    function getIndexPrice(CompactAsset[] calldata)
-        external
-        view
-        override
-        returns (uint256)
-    {
+    function getIndexPrice(CompactAsset[] calldata) external view override returns (uint256) {
         return price;
     }
 }

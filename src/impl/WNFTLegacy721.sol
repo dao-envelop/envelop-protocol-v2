@@ -21,7 +21,7 @@ contract WNFTLegacy721 is Singleton721, TokenService, SmartWallet, IEnvelopV2wNF
         "(bytes1,uint256,address)[]," "(bytes1,uint256)[]," "(address,uint16)[]," "bytes2" ")" ")";
     uint256 public constant ORACLE_TYPE = 2001;
     bytes2 public constant SUPPORTED_RULES = 0x0105; // Bin 0000000100000101; Dec 261
-        // #### Envelop ProtocolV1 Rules !!! NOT All support in this implementation V2
+    // #### Envelop ProtocolV1 Rules !!! NOT All support in this implementation V2
     // 15   14   13   12   11   10   9   8   7   6   5   4   3   2   1   0  <= Bit number(dec)
     // ------------------------------------------------------------------------------------
     //  1    1    1    1    1    1   1   1   1   1   1   1   1   1   1   1
@@ -272,6 +272,7 @@ contract WNFTLegacy721 is Singleton721, TokenService, SmartWallet, IEnvelopV2wNF
         r = super._executeEncodedTxBatch(_targetArray, _valueArray, _dataArray);
         _checkInAssetSafety();
     }
+
     ////////////////////////////////////////////////////////////////////////////
     /////                    GETTERS                                       /////
     ////////////////////////////////////////////////////////////////////////////
@@ -317,6 +318,7 @@ contract WNFTLegacy721 is Singleton721, TokenService, SmartWallet, IEnvelopV2wNF
             }
         }
     }
+
     ////////////////////////////////////////////////////////////////
     //    ******************* internals ***********************   //
     //    ******************* internals ***********************   //

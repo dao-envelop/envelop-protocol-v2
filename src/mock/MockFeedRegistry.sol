@@ -37,31 +37,17 @@ contract MockFeedRegistry is FeedRegistryInterface {
         });
     }
 
-    function latestRoundData(
-        address base,
-        address quote
-    )
+    function latestRoundData(address base, address quote)
         external
         view
         override
-        returns (
-            uint80 roundId,
-            int256 answer,
-            uint256 startedAt,
-            uint256 updatedAt,
-            uint80 answeredInRound
-        )
+        returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound)
     {
         FeedData memory d = feeds[base][quote];
         return (d.roundId, d.answer, d.startedAt, d.updatedAt, d.answeredInRound);
     }
 
-    function decimals(address base, address quote)
-        external
-        view
-        override
-        returns (uint8)
-    {
+    function decimals(address base, address quote) external view override returns (uint8) {
         return feeds[base][quote].decimals;
     }
 }

@@ -45,7 +45,7 @@ interface IEnvelopV2wNFT is IERC165 {
         uint256 _value,
         bytes memory _data,
         bytes memory _signature
-    ) 
-        external 
+    )
+        external
         returns (bytes memory r); */
 }

@@ -61,7 +61,6 @@ interface AggregatorInterface {
 /// @dev ALWAYS prefer using AggregatorV3Interface when available.
 ///      It guarantees consistent structure and safer use.
 interface AggregatorV3Interface {
-
     /**
      * @notice Returns the number of decimals used by the price.
      * @dev Consumers must use this for correct normalization.
@@ -91,18 +90,10 @@ interface AggregatorV3Interface {
      * @return updatedAt Timestamp when the round reported an answer.
      * @return answeredInRound Round ID in which the answer was actually computed.
      */
-    function getRoundData(
-        uint80 _roundId
-    )
+    function getRoundData(uint80 _roundId)
         external
         view
-        returns (
-            uint80 roundId,
-            int256 answer,
-            uint256 startedAt,
-            uint256 updatedAt,
-            uint80 answeredInRound
-        );
+        returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound);
 
     /**
      * @notice Returns data for the latest round.
@@ -116,21 +107,13 @@ interface AggregatorV3Interface {
     function latestRoundData()
         external
         view
-        returns (
-            uint80 roundId,
-            int256 answer,
-            uint256 startedAt,
-            uint256 updatedAt,
-            uint80 answeredInRound
-        );
+        returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound);
 }
 
 /// @title Combined Chainlink Aggregator V2/V3 interface
 /// @notice This interface is implemented by all modern Chainlink aggregators.
 /// @dev Allows using both V2 and V3 style methods depending on feed capabilities.
 interface AggregatorV2V3Interface is AggregatorInterface, AggregatorV3Interface {}
-
-
 
 /// @title Chainlink Feed Registry Interface
 /// @notice Interface for interacting with the Chainlink Feed Registry,
@@ -206,10 +189,7 @@ interface FeedRegistryInterface {
      * @param quote Quote asset address.
      * @return The number of decimals for the price.
      */
-    function decimals(
-        address base,
-        address quote
-    ) external view returns (uint8);
+    function decimals(address base, address quote) external view returns (uint8);
 
     /**
      * @notice Returns the description string of the price feed for (base, quote).
@@ -217,10 +197,7 @@ interface FeedRegistryInterface {
      * @param quote Quote asset address.
      * @return Human-readable description for the feed.
      */
-    function description(
-        address base,
-        address quote
-    ) external view returns (string memory);
+    function description(address base, address quote) external view returns (string memory);
 
     /**
      * @notice Returns the version number of the feed for (base, quote).
@@ -228,10 +205,7 @@ interface FeedRegistryInterface {
      * @param quote Quote asset address.
      * @return Version of the underlying aggregator contract.
      */
-    function version(
-        address base,
-        address quote
-    ) external view returns (uint256);
+    function version(address base, address quote) external view returns (uint256);
 
     /**
      * @notice Returns the latest round data for the (base, quote) pair.
@@ -244,19 +218,10 @@ interface FeedRegistryInterface {
      * @return updatedAt Timestamp when this round was last updated.
      * @return answeredInRound The round ID in which the answer was computed.
      */
-    function latestRoundData(
-        address base,
-        address quote
-    )
+    function latestRoundData(address base, address quote)
         external
         view
-        returns (
-            uint80 roundId,
-            int256 answer,
-            uint256 startedAt,
-            uint256 updatedAt,
-            uint80 answeredInRound
-        );
+        returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound);
 
     /**
      * @notice Returns data for a specific round ID for the (base, quote) pair.
@@ -270,20 +235,10 @@ interface FeedRegistryInterface {
      * @return updatedAt Timestamp when the round was last updated.
      * @return answeredInRound The round ID in which the answer was computed.
      */
-    function getRoundData(
-        address base,
-        address quote,
-        uint80 _roundId
-    )
+    function getRoundData(address base, address quote, uint80 _roundId)
         external
         view
-        returns (
-            uint80 roundId,
-            int256 answer,
-            uint256 startedAt,
-            uint256 updatedAt,
-            uint80 answeredInRound
-        );
+        returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound);
 
     // ================================================================
     //                     V2 Aggregator Interface
@@ -296,10 +251,7 @@ interface FeedRegistryInterface {
      * @param quote Quote asset address.
      * @return answer The latest price answer.
      */
-    function latestAnswer(
-        address base,
-        address quote
-    ) external view returns (int256 answer);
+    function latestAnswer(address base, address quote) external view returns (int256 answer);
 
     /**
      * @notice Returns the timestamp of the latest round for (base, quote).
@@ -308,10 +260,7 @@ interface FeedRegistryInterface {
      * @param quote Quote asset address.
      * @return timestamp The timestamp of the latest round.
      */
-    function latestTimestamp(
-        address base,
-        address quote
-    ) external view returns (uint256 timestamp);
+    function latestTimestamp(address base, address quote) external view returns (uint256 timestamp);
 
     /**
      * @notice Returns the latest round ID for (base, quote).
@@ -320,10 +269,7 @@ interface FeedRegistryInterface {
      * @param quote Quote asset address.
      * @return roundId The latest round ID.
      */
-    function latestRound(
-        address base,
-        address quote
-    ) external view returns (uint256 roundId);
+    function latestRound(address base, address quote) external view returns (uint256 roundId);
 
     /**
      * @notice Returns the price answer for a specific round for (base, quote).
@@ -333,11 +279,7 @@ interface FeedRegistryInterface {
      * @param roundId The round ID.
      * @return answer The price answer for that round.
      */
-    function getAnswer(
-        address base,
-        address quote,
-        uint256 roundId
-    ) external view returns (int256 answer);
+    function getAnswer(address base, address quote, uint256 roundId) external view returns (int256 answer);
 
     /**
      * @notice Returns the timestamp of a specific round for (base, quote).
@@ -347,11 +289,7 @@ interface FeedRegistryInterface {
      * @param roundId The round ID.
      * @return timestamp The timestamp for the given round.
      */
-    function getTimestamp(
-        address base,
-        address quote,
-        uint256 roundId
-    ) external view returns (uint256 timestamp);
+    function getTimestamp(address base, address quote, uint256 roundId) external view returns (uint256 timestamp);
 
     // ================================================================
     //                        Registry getters
@@ -363,10 +301,7 @@ interface FeedRegistryInterface {
      * @param quote Quote asset address.
      * @return aggregator The AggregatorV2V3Interface instance for the pair.
      */
-    function getFeed(
-        address base,
-        address quote
-    ) external view returns (AggregatorV2V3Interface aggregator);
+    function getFeed(address base, address quote) external view returns (AggregatorV2V3Interface aggregator);
 
     /**
      * @notice Returns the aggregator contract for a specific phase for (base, quote).
@@ -375,20 +310,17 @@ interface FeedRegistryInterface {
      * @param phaseId The phase ID.
      * @return aggregator The AggregatorV2V3Interface instance for that phase.
      */
-    function getPhaseFeed(
-        address base,
-        address quote,
-        uint16 phaseId
-    ) external view returns (AggregatorV2V3Interface aggregator);
+    function getPhaseFeed(address base, address quote, uint16 phaseId)
+        external
+        view
+        returns (AggregatorV2V3Interface aggregator);
 
     /**
      * @notice Checks if a given aggregator address is enabled in the registry.
      * @param aggregator Address of the aggregator contract.
      * @return True if the aggregator is enabled, false otherwise.
      */
-    function isFeedEnabled(
-        address aggregator
-    ) external view returns (bool);
+    function isFeedEnabled(address aggregator) external view returns (bool);
 
     /**
      * @notice Returns Phase metadata for a given (base, quote, phaseId).
@@ -397,11 +329,7 @@ interface FeedRegistryInterface {
      * @param phaseId The phase ID.
      * @return phase The Phase struct describing the phase.
      */
-    function getPhase(
-        address base,
-        address quote,
-        uint16 phaseId
-    ) external view returns (Phase memory phase);
+    function getPhase(address base, address quote, uint16 phaseId) external view returns (Phase memory phase);
 
     // ================================================================
     //                         Round helpers
@@ -414,11 +342,10 @@ interface FeedRegistryInterface {
      * @param roundId The global round ID (across phases).
      * @return aggregator The AggregatorV2V3Interface that served this round.
      */
-    function getRoundFeed(
-        address base,
-        address quote,
-        uint80 roundId
-    ) external view returns (AggregatorV2V3Interface aggregator);
+    function getRoundFeed(address base, address quote, uint80 roundId)
+        external
+        view
+        returns (AggregatorV2V3Interface aggregator);
 
     /**
      * @notice Returns the starting and ending round IDs for a specific phase.
@@ -428,11 +355,10 @@ interface FeedRegistryInterface {
      * @return startingRoundId The first round ID in this phase.
      * @return endingRoundId The last round ID in this phase.
      */
-    function getPhaseRange(
-        address base,
-        address quote,
-        uint16 phaseId
-    ) external view returns (uint80 startingRoundId, uint80 endingRoundId);
+    function getPhaseRange(address base, address quote, uint16 phaseId)
+        external
+        view
+        returns (uint80 startingRoundId, uint80 endingRoundId);
 
     /**
      * @notice Returns the previous round ID before a given round.
@@ -441,11 +367,10 @@ interface FeedRegistryInterface {
      * @param roundId The reference round ID.
      * @return previousRoundId The previous round ID.
      */
-    function getPreviousRoundId(
-        address base,
-        address quote,
-        uint80 roundId
-    ) external view returns (uint80 previousRoundId);
+    function getPreviousRoundId(address base, address quote, uint80 roundId)
+        external
+        view
+        returns (uint80 previousRoundId);
 
     /**
      * @notice Returns the next round ID after a given round.
@@ -454,11 +379,7 @@ interface FeedRegistryInterface {
      * @param roundId The reference round ID.
      * @return nextRoundId The next round ID.
      */
-    function getNextRoundId(
-        address base,
-        address quote,
-        uint80 roundId
-    ) external view returns (uint80 nextRoundId);
+    function getNextRoundId(address base, address quote, uint80 roundId) external view returns (uint80 nextRoundId);
 
     // ================================================================
     //                         Feed management
@@ -471,11 +392,7 @@ interface FeedRegistryInterface {
      * @param quote Quote asset address.
      * @param aggregator Address of the proposed aggregator contract.
      */
-    function proposeFeed(
-        address base,
-        address quote,
-        address aggregator
-    ) external;
+    function proposeFeed(address base, address quote, address aggregator) external;
 
     /**
      * @notice Confirms and activates a previously proposed aggregator for (base, quote).
@@ -484,11 +401,7 @@ interface FeedRegistryInterface {
      * @param quote Quote asset address.
      * @param aggregator Address of the aggregator contract to confirm.
      */
-    function confirmFeed(
-        address base,
-        address quote,
-        address aggregator
-    ) external;
+    function confirmFeed(address base, address quote, address aggregator) external;
 
     // ================================================================
     //                       Proposed aggregators
@@ -500,10 +413,10 @@ interface FeedRegistryInterface {
      * @param quote Quote asset address.
      * @return proposedAggregator The proposed AggregatorV2V3Interface instance.
      */
-    function getProposedFeed(
-        address base,
-        address quote
-    ) external view returns (AggregatorV2V3Interface proposedAggregator);
+    function getProposedFeed(address base, address quote)
+        external
+        view
+        returns (AggregatorV2V3Interface proposedAggregator);
 
     /**
      * @notice Returns round data from the proposed aggregator for (base, quote).
@@ -516,20 +429,10 @@ interface FeedRegistryInterface {
      * @return updatedAt Timestamp when the round was last updated.
      * @return answeredInRound The round in which the answer was computed.
      */
-    function proposedGetRoundData(
-        address base,
-        address quote,
-        uint80 roundId
-    )
+    function proposedGetRoundData(address base, address quote, uint80 roundId)
         external
         view
-        returns (
-            uint80 id,
-            int256 answer,
-            uint256 startedAt,
-            uint256 updatedAt,
-            uint80 answeredInRound
-        );
+        returns (uint80 id, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound);
 
     /**
      * @notice Returns the latest round data from the proposed aggregator for (base, quote).
@@ -541,19 +444,10 @@ interface FeedRegistryInterface {
      * @return updatedAt Timestamp when it was last updated.
      * @return answeredInRound The round ID in which the answer was computed.
      */
-    function proposedLatestRoundData(
-        address base,
-        address quote
-    )
+    function proposedLatestRoundData(address base, address quote)
         external
         view
-        returns (
-            uint80 id,
-            int256 answer,
-            uint256 startedAt,
-            uint256 updatedAt,
-            uint80 answeredInRound
-        );
+        returns (uint80 id, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound);
 
     // ================================================================
     //                              Phases
@@ -565,8 +459,5 @@ interface FeedRegistryInterface {
      * @param quote Quote asset address.
      * @return currentPhaseId The current phase ID.
      */
-    function getCurrentPhaseId(
-        address base,
-        address quote
-    ) external view returns (uint16 currentPhaseId);
+    function getCurrentPhaseId(address base, address quote) external view returns (uint16 currentPhaseId);
 }

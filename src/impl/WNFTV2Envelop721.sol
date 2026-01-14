@@ -34,11 +34,11 @@ contract WNFTV2Envelop721 is Singleton721, SmartWallet, IEnvelopV2wNFT {
     address private immutable __self = address(this);
     address public immutable FACTORY;
     uint256 public constant ORACLE_TYPE = 2002;
-    string public constant INITIAL_SIGN_STR =
-        "initialize(" "(address,string,string,string,address[],bytes32[],uint256[],bytes)" ")";
+    string public constant INITIAL_SIGN_STR = "initialize("
+        "(address,string,string,string,address[],bytes32[],uint256[],bytes)" ")";
 
     bytes2 public constant SUPPORTED_RULES = 0xffff; // All rules are suupported. But implemented only No_Transfer
-        // #### Envelop ProtocolV1 Rules !!! NOT All support in this implementation V2
+    // #### Envelop ProtocolV1 Rules !!! NOT All support in this implementation V2
     // 15   14   13   12   11   10   9   8   7   6   5   4   3   2   1   0  <= Bit number(dec)
     // ------------------------------------------------------------------------------------
     //  1    1    1    1    1    1   1   1   1   1   1   1   1   1   1   1
@@ -129,9 +129,8 @@ contract WNFTV2Envelop721 is Singleton721, SmartWallet, IEnvelopV2wNFT {
      */
     function createWNFTonFactory2(InitParams memory _init) public virtual notDelegated returns (address wnft) {
         bytes32 salt = keccak256(abi.encode(address(this), msg.sender, ++nonce[msg.sender]));
-        wnft = IEnvelopWNFTFactory(FACTORY).createWNFT(
-            address(this), abi.encodeWithSignature(INITIAL_SIGN_STR, _init), salt
-        );
+        wnft = IEnvelopWNFTFactory(FACTORY)
+            .createWNFT(address(this), abi.encodeWithSignature(INITIAL_SIGN_STR, _init), salt);
     }
 
     ////////////////////////////////////////////////////////////////////////
@@ -272,6 +271,7 @@ contract WNFTV2Envelop721 is Singleton721, SmartWallet, IEnvelopV2wNFT {
         $.trustedSigners[_address] = _status;
         emit EnvelopChangeSignerStatus(_address, _status);
     }
+
     ////////////////////////////////////////////////////////////////////////////
     /////                    GETTERS                                       /////
     ////////////////////////////////////////////////////////////////////////////
