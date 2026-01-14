@@ -87,6 +87,9 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
 
     /// @dev Uniswap Permit2 constant (reserved for future integrations, currently unused).
     address public constant PERMIT2 = 0x000000000022D473030F116dDEE9F6B43aC78BA3;
+    
+    /// @dev for use with Uniswap Permit2, seconds
+    uint256 public constant PERMIT2_TTL = 600;
 
     /// @notice Protocol-level fee receiver.
     address public immutable FEE_PROTOCOL_BENEFICIARY;
@@ -193,13 +196,13 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
         IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
     }
 
-        /**
+    /**
      * @notice Cast a vote using Uniswap Permit2 signature-based transfer.
      * @dev Flow:
      *  1) User gives standard ERC20 approval to Permit2 once (off-chain setup).
-     *  2) Для конкретного dApp вызова подписывает EIP-712 под Permit2.
-     *  3) В этом методе мы вызываем Permit2.permitTransferFrom, который
-     *     переводит stake с пользователя на контракт, и затем минтим 6909-шары.
+     *  2) Prerpare and sign digest for Permit2.
+     *  3) In this method we call Permit2.permitTransferFrom, wich
+     *     transfer stake from user to this contract, then mint 6909-shares.
      *
      * @param _prediction Address of the prediction creator.
      * @param _agree      Whether the user votes “yes” (true) or “no” (false).
@@ -218,33 +221,27 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
     function voteWithPermit2(
         address _prediction,
         bool _agree,
-        IPermit2.PermitTransferFrom calldata permit,
-        IPermit2.SignatureTransferDetails calldata transfer,
+        IPermit2Minimal.PermitTransferFrom calldata permit,
+        IPermit2Minimal.SignatureTransferDetails calldata transfer,
         bytes calldata signature
     ) external nonReentrant() {
         Prediction storage p = predictions[_prediction];
-        if (p.expirationTime == 0) revert PredictionNotExist(_prediction);
-        if (p.expirationTime <= block.timestamp + STOP_BEFORE_EXPIRED) {
-            revert PredictionExpired(_prediction, p.expirationTime);
-        }
-
-        CompactAsset storage s = p.strike;
 
         // Basic sanity checks to bind Permit2 params to this prediction
-        if (permit.permitted.token != s.token) {
+        if (permit.permitted.token != p.strike.token) {
             revert("Permit2: wrong token");
         }
         if (transfer.to != address(this)) {
             revert("Permit2: wrong recipient");
         }
-        if (transfer.requestedAmount != s.amount) {
+        if (transfer.requestedAmount != p.strike.amount) {
             revert("Permit2: insufficient amount");
         }
         
         _vote(msg.sender, _prediction, _agree);
        
         // 1) Move tokens from user to this contract via Permit2
-        IPermit2(PERMIT2).permitTransferFrom(
+        IPermit2Minimal(PERMIT2).permitTransferFrom(
             permit,
             transfer,
             msg.sender,
@@ -253,6 +250,53 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
 
     }
 
+ /**
+     * @notice Cast a vote using Uniswap Permit2 signature-based transfer.
+     * @dev Flow:
+     *  1) User gives standard ERC20 approval to Permit2 once (off-chain setup).
+     *  2) Prerpare and sign digest for Permit2.
+     *  3) In this method we call Permit2.permitTransferFrom, wich
+     *     transfer stake from user to this contract, then mint 6909-shares.
+     *
+     * @param _prediction Address of the prediction creator.
+     * @param _agree      Whether the user votes “yes” (true) or “no” (false).
+     * @param permit      Permit2 permit struct (token, max amount, nonce, deadline).
+     * @param signature   User EIP-712 signature for Permit2.
+     *
+     * Requirements:
+     * - Prediction MUST exist.
+     * - owner (msg.sender) MUST have given ERC20 approve to Permit2 beforehand.
+     */
+    function voteWithPermit2(
+        address _prediction,
+        bool _agree,
+        IPermit2Minimal.PermitTransferFrom calldata permit,
+        bytes calldata signature
+    ) external nonReentrant() {
+        
+        Prediction storage p = predictions[_prediction];
+
+        // Basic sanity checks to bind Permit2 params to this prediction
+        if (permit.permitted.token != p.strike.token) {
+            revert("Permit2: wrong token");
+        }
+        
+        IPermit2Minimal.SignatureTransferDetails memory transfer = IPermit2Minimal.SignatureTransferDetails(
+            address(this), 
+            p.strike.amount //TODO check implicit uint256() ?
+        );
+
+        _vote(msg.sender, _prediction, _agree);
+       
+        // 1) Move tokens from user to this contract via Permit2
+        IPermit2Minimal(PERMIT2).permitTransferFrom(
+            permit,
+            transfer,
+            msg.sender,
+            signature
+        );
+
+    }
 
     /**
      * @dev If only one side has any votes (no-contest), voters can refund their stake instead of rewards.
@@ -338,6 +382,38 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
     {
         yesId = (uint256(uint160(_prediction)) << 96) | 1;
         noId = (uint256(uint160(_prediction)) << 96);
+    }
+
+    function hlpGetPermitAndDigest(address _prediction, uint256 _deadline) 
+        public 
+        view 
+        returns (IPermit2Minimal.PermitTransferFrom memory permit, bytes32 digest) 
+    {
+        Prediction storage p = predictions[_prediction];
+        bytes32 DOMAIN_SEPARATOR = IPermit2Minimal(PERMIT2).DOMAIN_SEPARATOR();
+        IPermit2Minimal.TokenPermissions memory tp = IPermit2Minimal.TokenPermissions(p.strike.token, p.strike.amount);
+        (uint256 yesToken, uint256 noToken) = hlpGet6909Ids(_prediction);
+        uint256 nonce = uint256(keccak256(
+            abi.encodePacked(_prediction, block.timestamp)
+        ));
+        permit = IPermit2Minimal.PermitTransferFrom(
+            tp,
+            nonce,
+            _deadline
+        );
+        bytes32 tokenPermissions = keccak256(abi.encode(_TOKEN_PERMISSIONS_TYPEHASH, tp));
+        digest = keccak256(
+            abi.encodePacked(
+                "\x19\x01",
+                DOMAIN_SEPARATOR,
+                keccak256(
+                    abi.encode(
+                        _PERMIT_TRANSFER_FROM_TYPEHASH, tokenPermissions, address(this), nonce, _deadline
+                    )
+                )
+            )
+        );
+
     }
 
     // ==================================

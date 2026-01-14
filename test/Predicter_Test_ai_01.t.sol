@@ -7,7 +7,7 @@ import "./helpers/PredictionBuilder.sol";
 import "../src/mock/MockOracle.sol";
 import "../src/mock/MockERC20.sol";
 
-contract MockPermit2 is IPermit2 {
+contract MockPermit2 is IPermit2Minimal {
     function permitTransferFrom(
         PermitTransferFrom calldata permit,
         SignatureTransferDetails calldata transferDetails,
@@ -21,6 +21,12 @@ contract MockPermit2 is IPermit2 {
             transferDetails.requestedAmount
         );
     }
+
+    function DOMAIN_SEPARATOR() external view returns (bytes32){}
+
+    function nonceBitmap(address, uint256) external view returns (uint256){}
+
+
 }
 
 contract PredicterTest_ai is Test, PredictionBuilder {
@@ -127,15 +133,15 @@ contract PredicterTest_ai is Test, PredictionBuilder {
         token.approve(predicter.PERMIT2(), 10 ether);
 
         // Prepare Permit2-structs (this mock not check it)
-        IPermit2.PermitTransferFrom memory permit;
-        permit.permitted = IPermit2.TokenPermissions({
+        IPermit2Minimal.PermitTransferFrom memory permit;
+        permit.permitted = IPermit2Minimal.TokenPermissions({
             token: address(token),
             amount: 10 ether
         });
         permit.nonce = 0;
         permit.deadline = block.timestamp + 1 days;
 
-        IPermit2.SignatureTransferDetails memory transferDetails = IPermit2.SignatureTransferDetails({
+        IPermit2Minimal.SignatureTransferDetails memory transferDetails = IPermit2Minimal.SignatureTransferDetails({
             to: address(predicter),
             requestedAmount: 10 ether
         });
