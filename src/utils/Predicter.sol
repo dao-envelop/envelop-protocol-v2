@@ -431,7 +431,7 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
         IPermit2Minimal.TokenPermissions memory tp = IPermit2Minimal.TokenPermissions(p.strike.token, p.strike.amount);
         (uint256 yesToken, uint256 noToken) = hlpGet6909Ids(_prediction);
         uint256 nonce = uint256(keccak256(
-            abi.encodePacked(_prediction, block.timestamp)
+            abi.encodePacked(_prediction, block.timestamp, block.chainid)
         ));
         permit = IPermit2Minimal.PermitTransferFrom(
             tp,
