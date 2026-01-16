@@ -5,9 +5,10 @@ import "forge-std/Test.sol";
 import "../../src/utils/Predicter.sol";
 import "../../src/utils/EnvelopOracle.sol";
 import "../../src/mock/MockERC20.sol";
+import "./BaseForkTest.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract PredicterTest_a_fork_1 is Test  {
+contract PredicterTest_a_fork_1 is BaseForkTest  {
     MockERC20 internal mock;
     EnvelopOracle internal oracle;
     Predicter internal predicter;
@@ -33,7 +34,7 @@ contract PredicterTest_a_fork_1 is Test  {
         usdtContract = MockERC20(usdt);
     }
 
-    function test_EndtoEnd() public {
+    function test_EndtoEnd() public onlyOnFork {
         uint40 exp = uint40(block.timestamp + 100);
         uint96 strikeAmount = 1_000_000;
         uint96 portfolioAmount = 1e8;
