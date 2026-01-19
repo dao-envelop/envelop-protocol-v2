@@ -27,7 +27,6 @@ contract WNFTV2Index_Test_a_01 is Test {
     receive() external payable virtual {}
 
     function setUp() public {
-        erc721 = new MockERC721("Mock ERC721", "ERC721");
         erc20 = new MockERC20("Mock ERC20", "ERC20");
         factory = new EnvelopWNFTFactory();
         impl_index = new WNFTV2Index(address(factory));
