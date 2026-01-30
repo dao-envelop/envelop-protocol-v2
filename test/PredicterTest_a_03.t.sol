@@ -493,4 +493,113 @@ contract PredicterTest_a_03 is Test, PredictionBuilder  {
         (, , , resolvedPrice) = predicter.predictions(creator);
         assertLt(resolvedPrice, oraclePrice);
     }
+
+    function test_resolvePrediction_by_other_user() public {
+        uint40 exp = uint40(block.timestamp + 1 days);
+        uint96 strikeAmount = 1_000_000;
+        uint96 predictedPrice = 100;
+        Predicter.Prediction memory pred = _buildPrediction(address(token), exp, strikeAmount, predictedPrice);
+
+        vm.prank(creator);
+        predicter.createPrediction(pred);
+
+        // userYes votes
+        token.mint(userYes, strikeAmount);
+        vm.startPrank(userYes);
+        token.approve(address(predicter), strikeAmount);
+        predicter.vote(creator, true);
+        vm.stopPrank();
+        
+        // userNo votes
+        vm.startPrank(userNo);
+        token.mint(userNo, strikeAmount);
+        token.approve(address(predicter), strikeAmount);
+        predicter.vote(creator, false);
+        vm.stopPrank();
+
+        // set oracle price > predictedPrice => predictedTrue = true (yes wins)
+        uint256 oraclePrice = 200;
+        oracle.setPrice(oraclePrice);
+
+        // jump after expiration
+        vm.warp(exp + 1);
+        
+        uint256 beforeUserBalance = token.balanceOf(userYes);
+        address claimer = address(100);
+        vm.prank(claimer);
+        predicter.claim(creator);
+        
+        assertEq(token.balanceOf(claimer), 0);        
+
+        // resolvedPrice should be set
+        (, , , uint96 resolvedPrice) = predicter.predictions(creator);
+        assertEq(resolvedPrice, oraclePrice);
+
+        vm.prank(userYes);
+        predicter.claim(creator);
+
+        assertEq(token.balanceOf(address(predicter)), 0);
+        uint256 calculatedCreatorFee = ( strikeAmount * predicter.FEE_CREATOR_PERCENT() )/ predicter.PERCENT_DENOMINATOR();
+        uint256 calculatedBeneficiaryFee = ( strikeAmount * predicter.FEE_PROTOCOL_PERCENT() )/ predicter.PERCENT_DENOMINATOR();
+
+        assertEq(calculatedBeneficiaryFee, token.balanceOf(predicter.FEE_PROTOCOL_BENEFICIARY()));
+        assertEq(calculatedCreatorFee, token.balanceOf(creator));
+        
+        uint256 calculatedUserBalance = beforeUserBalance + 2 * strikeAmount - calculatedCreatorFee - calculatedBeneficiaryFee;
+        assertEq(token.balanceOf(userYes), calculatedUserBalance);
+    }
+
+    function test_resolvePrediction_by_creator() public {
+        uint40 exp = uint40(block.timestamp + 1 days);
+        uint96 strikeAmount = 1_000_000;
+        uint96 predictedPrice = 100;
+        Predicter.Prediction memory pred = _buildPrediction(address(token), exp, strikeAmount, predictedPrice);
+
+        vm.prank(creator);
+        predicter.createPrediction(pred);
+
+        // userYes votes
+        token.mint(userYes, strikeAmount);
+        vm.startPrank(userYes);
+        token.approve(address(predicter), strikeAmount);
+        predicter.vote(creator, true);
+        vm.stopPrank();
+        
+        // userNo votes
+        vm.startPrank(userNo);
+        token.mint(userNo, strikeAmount);
+        token.approve(address(predicter), strikeAmount);
+        predicter.vote(creator, false);
+        vm.stopPrank();
+
+        // set oracle price > predictedPrice => predictedTrue = true (yes wins)
+        uint256 oraclePrice = 200;
+        oracle.setPrice(oraclePrice);
+
+        // jump after expiration
+        vm.warp(exp + 1);
+        
+        uint256 beforeUserBalance = token.balanceOf(userYes);
+        vm.prank(creator);
+        predicter.claim(creator);
+        
+        assertEq(token.balanceOf(creator), 0);        
+
+        // resolvedPrice should be set
+        (, , , uint96 resolvedPrice) = predicter.predictions(creator);
+        assertEq(resolvedPrice, oraclePrice);
+
+        vm.prank(userYes);
+        predicter.claim(creator);
+
+        assertEq(token.balanceOf(address(predicter)), 0);
+        uint256 calculatedCreatorFee = ( strikeAmount * predicter.FEE_CREATOR_PERCENT() )/ predicter.PERCENT_DENOMINATOR();
+        uint256 calculatedBeneficiaryFee = ( strikeAmount * predicter.FEE_PROTOCOL_PERCENT() )/ predicter.PERCENT_DENOMINATOR();
+
+        assertEq(calculatedBeneficiaryFee, token.balanceOf(predicter.FEE_PROTOCOL_BENEFICIARY()));
+        assertEq(calculatedCreatorFee, token.balanceOf(creator));
+        
+        uint256 calculatedUserBalance = beforeUserBalance + 2 * strikeAmount - calculatedCreatorFee - calculatedBeneficiaryFee;
+        assertEq(token.balanceOf(userYes), calculatedUserBalance);
+    }
 }
