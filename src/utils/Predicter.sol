@@ -396,7 +396,7 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
     function hlpGetPermitAndDigest(address _prediction, uint256 _deadline)
         public
         view
-        returns (IPermit2Minimal.PermitTransferFrom memory permit, bytes32 digest)
+        returns (IPermit2Minimal.PermitTransferFrom memory permit, bytes32 digest, bytes32 hashedDigest)
     {
         Prediction storage p = predictions[_prediction];
         bytes32 DOMAIN_SEPARATOR = IPermit2Minimal(PERMIT2).DOMAIN_SEPARATOR();
@@ -405,12 +405,11 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
         uint256 nonce = uint256(keccak256(abi.encodePacked(_prediction, block.timestamp, block.chainid)));
         permit = IPermit2Minimal.PermitTransferFrom(tp, nonce, _deadline);
         bytes32 tokenPermissions = keccak256(abi.encode(_TOKEN_PERMISSIONS_TYPEHASH, tp));
-        digest = keccak256(
-            abi.encodePacked(
-                "\x19\x01",
-                DOMAIN_SEPARATOR,
-                keccak256(abi.encode(_PERMIT_TRANSFER_FROM_TYPEHASH, tokenPermissions, address(this), nonce, _deadline))
-            )
+        
+        digest = keccak256(abi.encode(_PERMIT_TRANSFER_FROM_TYPEHASH, tokenPermissions, address(this), nonce, _deadline));
+
+        hashedDigest = keccak256(
+            abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR, digest)
         );
     }
 
