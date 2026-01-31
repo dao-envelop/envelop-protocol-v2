@@ -261,7 +261,7 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
         bool _agree,
         IPermit2Minimal.PermitTransferFrom calldata permit,
         bytes calldata signature
-    ) external nonReentrant {
+    ) external virtual nonReentrant {
         Prediction storage p = predictions[_prediction];
 
         // Basic sanity checks to bind Permit2 params to this prediction
@@ -414,25 +414,6 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
     }
 
      
-    function hlpGetPermitAndDigest(address _prediction, uint256 _deadline, address _signerAddress)
-        public
-        view
-        returns (IPermit2Minimal.PermitTransferFrom memory permit, bytes32 digest, bytes32 hashedDigest)
-    {
-        Prediction storage p = predictions[_prediction];
-        bytes32 DOMAIN_SEPARATOR = IPermit2Minimal(PERMIT2).DOMAIN_SEPARATOR();
-        IPermit2Minimal.TokenPermissions memory tp = IPermit2Minimal.TokenPermissions(p.strike.token, p.strike.amount);
-        (uint256 yesToken, uint256 noToken) = hlpGet6909Ids(_prediction);
-        uint256 nonce = uint256(keccak256(abi.encodePacked(_prediction, block.timestamp, block.chainid)));
-        permit = IPermit2Minimal.PermitTransferFrom(tp, nonce, _deadline);
-        bytes32 tokenPermissions = keccak256(abi.encode(_TOKEN_PERMISSIONS_TYPEHASH, tp));
-        
-        digest = keccak256(abi.encode(_PERMIT_TRANSFER_FROM_TYPEHASH, tokenPermissions, _signerAddress, nonce, _deadline));
-
-        hashedDigest = keccak256(
-            abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR, digest)
-        );
-    }
 
     // ==================================
     //           INTERNAL LOGIC
