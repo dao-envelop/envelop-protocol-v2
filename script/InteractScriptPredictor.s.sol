@@ -51,8 +51,10 @@ contract InteractScriptPredictor is Script {
         uint256 deadline = block.timestamp + 1 days;
         (IPermit2Minimal.PermitTransferFrom memory permit, bytes32 digest) = predicter.hlpGetPermitAndDigest(predictionCreator, deadline);
 
+        console2.logBytes32(digest);
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(fromPrivateKey, digest);
         bytes memory signature =  bytes.concat(r, s, bytes1(v));
+        console2.logBytes(signature);
 
         predicter.voteWithPermit2(
             predictionCreator,

@@ -414,6 +414,26 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
         );
     }
 
+    function hlpGetPermitAndDigest1(address _prediction, uint256 _deadline)
+        public
+        view
+        returns (IPermit2Minimal.PermitTransferFrom memory permit, bytes32 digest)
+    {
+        Prediction storage p = predictions[_prediction];
+        bytes32 DOMAIN_SEPARATOR = IPermit2Minimal(PERMIT2).DOMAIN_SEPARATOR();
+        IPermit2Minimal.TokenPermissions memory tp = IPermit2Minimal.TokenPermissions(p.strike.token, p.strike.amount);
+        (uint256 yesToken, uint256 noToken) = hlpGet6909Ids(_prediction);
+        uint256 nonce = uint256(keccak256(abi.encodePacked(_prediction, block.timestamp, block.chainid)));
+        permit = IPermit2Minimal.PermitTransferFrom(tp, nonce, _deadline);
+        bytes32 tokenPermissions = keccak256(abi.encode(_TOKEN_PERMISSIONS_TYPEHASH, tp));
+        digest = keccak256(
+            abi.encodePacked(
+                DOMAIN_SEPARATOR,
+                keccak256(abi.encode(_PERMIT_TRANSFER_FROM_TYPEHASH, tokenPermissions, address(this), nonce, _deadline))
+            )
+        );
+    }
+
     // ==================================
     //           INTERNAL LOGIC
     // ==================================
