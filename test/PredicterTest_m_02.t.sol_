@@ -2,17 +2,18 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
-import "../../src/utils/Predicter.sol";
-import "../../src/interfaces/IPermit2Minimal.sol";
-import "../../src/utils/EnvelopOracle.sol";
-import "../../src/mock/MockERC20.sol";
-import "./BaseForkTest.sol";
+import "../src/utils/Predicter.sol";
+import "../src/interfaces/IPermit2Minimal.sol";
+import "../src/utils/EnvelopOracle.sol";
+import "../src/mock/MockERC20.sol";
+import "../src/mock/MockPermit2Verifier.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract PredicterTest_a_fork_2 is BaseForkTest  {
+contract PredicterTest_m_02  is Test {
     MockERC20 internal usdt;
     EnvelopOracle internal oracle;
     Predicter internal predicter;
+    SignatureTransfer public permit2;
 
     address internal creator = address(0xC0FFEE);
     address public constant userYes = 0x4b664eD07D19d0b192A037Cfb331644cA536029d;
@@ -26,9 +27,10 @@ contract PredicterTest_a_fork_2 is BaseForkTest  {
         usdt = new MockERC20("Mock", "MOCK");  
         oracle = new EnvelopOracle(feedRegistry, maxStale);
         predicter = new Predicter(feeBeneficiary, address(oracle));
+        permit2 = new SignatureTransfer();
     }
 
-    function test_voteWithPermit() public onlyOnFork {
+    function test_voteWithPermit() public  {
         
         uint40 exp = uint40(block.timestamp + 100);
         uint96 strikeAmount = 1_000_000;

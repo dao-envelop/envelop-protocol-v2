@@ -49,7 +49,7 @@ contract InteractScriptPredictor is Script {
         //token.approve(predicter.PERMIT2(), type(uint256).max);
 
         uint256 deadline = block.timestamp + 1 days;
-        (IPermit2Minimal.PermitTransferFrom memory permit, bytes32 digest) = predicter.hlpGetPermitAndDigest(predictionCreator, deadline);
+        (IPermit2Minimal.PermitTransferFrom memory permit, bytes32 digest, ) = predicter.hlpGetPermitAndDigest(predictionCreator, deadline);
 
         console2.logBytes32(digest);
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(fromPrivateKey, digest);
