@@ -104,7 +104,8 @@ contract PredicterTestFuzz_a_01 is Test, PredictionBuilder {
             uint256 yesTotal,
             uint256 noTotal,
             uint256 yesReward,
-            uint256 noReward
+            uint256 noReward,
+            uint256 currentPrice
             ) = predicter.getUserEstimates(usersNo[i], creator);
             calculatedYesTotal += noReward;
         }

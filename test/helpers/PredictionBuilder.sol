@@ -14,7 +14,7 @@ contract PredictionBuilder {
         portfolio[0] = CompactAsset({token: erc20, amount: 1 ether});
 
         pred.strike = CompactAsset({token: erc20, amount: strikeAmount});
-        pred.predictedPrice = CompactAsset({token: erc20, amount: predictedAmount});
+        pred.predictedPrice = OracleData({oracle: erc20, amount: predictedAmount});
         pred.expirationTime = expiration;
         pred.resolvedPrice = 0;
         pred.portfolio = portfolio;
