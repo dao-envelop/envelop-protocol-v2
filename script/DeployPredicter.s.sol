@@ -10,12 +10,13 @@ contract DeployPredicter is Script {
     
     function run() external {
         if (block.chainid == 42161) {
-            oracle = 0x32A676146bCF15397285d4bCb0CcaBa8C64F415c;
+            //oracle = 0x32A676146bCF15397285d4bCb0CcaBa8C64F415c;
+            oracle = 0x60c0A71A991aAe273c4ACD017Bb03d4FfdFb4996;
         } 
   
         vm.startBroadcast();
 
-        Predicter predicter = new Predicter(oracle, msg.sender);
+        Predicter predicter = new Predicter(msg.sender, oracle);
 
         console2.log("Predicter deployed at:", address(predicter));
 
@@ -23,3 +24,4 @@ contract DeployPredicter is Script {
     }
 }
 
+// forge script script/DeployPredicter.s.sol:DeployPredicter --rpc-url arbitrum  --account secret2 --sender 0x5992Fe461F81C8E0aFFA95b831E50e9b3854BA0E --verify --priority-gas-price 300000 --etherscan-api-key $ETHERSCAN_TOKEN --broadcast
