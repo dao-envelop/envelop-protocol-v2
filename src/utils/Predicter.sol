@@ -49,7 +49,7 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
         /// @dev predictedPrice.amount is a threshold value.
         ///      Outcome is YES if predictedPrice.amount <= resolvedPrice, otherwise NO.
         ///      resolvedPrice must be in the same units/decimals as predictedPrice.amount.
-        CompactAsset predictedPrice;
+        OracleData predictedPrice;
         uint40 expirationTime;
         uint96 resolvedPrice;
         CompactAsset[] portfolio;
@@ -91,7 +91,7 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
     address public immutable FEE_PROTOCOL_BENEFICIARY;
 
     /// @notice Oracle used for resolving predictions.
-    address public immutable ORACLE;
+    //address public immutable ORACLE;
 
     /// @notice Mapping of prediction creator → prediction data.
     mapping(address creator => Prediction) public predictions;
@@ -144,7 +144,7 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
      */
     constructor(address _feeBeneficiary, address _oracle) {
         FEE_PROTOCOL_BENEFICIARY = _feeBeneficiary;
-        ORACLE = _oracle;
+        //ORACLE = _oracle;
     }
 
     // ==================================
@@ -323,22 +323,40 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
             uint256 yesTotal,
             uint256 noTotal,
             uint256 yesReward,
-            uint256 noReward
+            uint256 noReward,
+            uint256 currentPrice
         )
     {
+        Prediction storage p = predictions[_prediction];
         (uint256 yesToken, uint256 noToken) = hlpGet6909Ids(_prediction);
         yesBalance = balanceOf(_user, yesToken);
         noBalance = balanceOf(_user, noToken);
         yesTotal = totalSupply(yesToken);
         noTotal = totalSupply(noToken);
 
-        if (yesTotal > 0) {
-            yesReward = noTotal * (yesBalance * SCALE / yesTotal) / SCALE;
-        }
+        uint256 estimateFee;
+        currentPrice = p.resolvedPrice;
+        if (currentPrice > 0) {
+            // if we here then prediction already resolved and we can
+            // show reward to user
+            if (yesTotal > 0) {
+                yesReward = noTotal * (yesBalance * SCALE / yesTotal) / SCALE;
+                estimateFee = (yesReward * (FEE_CREATOR_PERCENT + FEE_PROTOCOL_PERCENT) * SCALE)
+                   / PERCENT_DENOMINATOR / SCALE;
+                yesReward -= estimateFee;
+            }
 
-        if (noTotal > 0) {
-            noReward = yesTotal * (noBalance * SCALE / noTotal) / SCALE;
+            if (noTotal > 0) {
+                noReward = yesTotal * (noBalance * SCALE / noTotal) / SCALE;
+                estimateFee = (noReward * (FEE_CREATOR_PERCENT + FEE_PROTOCOL_PERCENT) * SCALE) 
+                   / PERCENT_DENOMINATOR / SCALE;
+                noReward -= estimateFee;   
+            }
+
+        } else {
+            currentPrice = _getCurrentOraclePrice(_prediction, p);
         }
+            
     }
 
     /**
@@ -476,11 +494,7 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
             p.expirationTime <= block.timestamp // time to resolve came
                 && p.resolvedPrice == 0 // implicit resolved flag
         ) {
-            uint256 oraclePrice = IEnvelopOracle(ORACLE).getIndexPrice(_prediction);
-            if (oraclePrice == 0) {
-                oraclePrice = IEnvelopOracle(ORACLE).getIndexPrice(p.portfolio);
-            }
-
+            uint256 oraclePrice = _getCurrentOraclePrice(_prediction, p);
             if (oraclePrice > type(uint96).max) {
                 revert OraclePriceTooHigh(oraclePrice);
             }
@@ -600,5 +614,18 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
         // Prize = share * totalLosingPool
         uint256 totalLose = totalSupply(loserTokenId);
         prizeAmount = (totalLose * sharesNonDenominated) / SCALE;
+    }
+
+    function _getCurrentOraclePrice(address _prediction, Prediction storage p) 
+        internal 
+        view 
+        returns (uint256 oraclePrice) 
+    {
+        address oracleAddress = p.predictedPrice.oracle;
+        oraclePrice = IEnvelopOracle(oracleAddress).getIndexPrice(_prediction);
+        if (oraclePrice == 0) {
+            oraclePrice = IEnvelopOracle(oracleAddress).getIndexPrice(p.portfolio);
+        }
+
     }
 }

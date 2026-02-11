@@ -9,6 +9,10 @@ struct CompactAsset {
     uint96 amount; // Amount with token decimals (12 bytes)
 }
 
+struct OracleData {
+    address oracle; // ERC20 token address (20 bytes)
+    uint96 amount; // Amount with token decimals (12 bytes)
+}
 /// @dev Oracle interface for retrieving index prices.
 /// Supports:
 /// - price by index address
