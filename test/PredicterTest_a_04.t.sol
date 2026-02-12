@@ -28,6 +28,17 @@ contract PredicterTest_a_04 is Test  {
     address[] public usersYes;
     address[] public usersNo;
 
+    struct Fees {
+        uint256 calculatedCreatorFee;
+        uint256 calculatedBeneficiaryFee;
+    }
+
+    struct IndexCallParams {
+        bytes data;
+        address target;
+        uint256 value;
+    }
+
 
     function setUp() public {
         strikeToken = new MockERC20("MockS", "MOCKS");
@@ -76,11 +87,13 @@ contract PredicterTest_a_04 is Test  {
         pred.resolvedPrice = 0;
         pred.portfolio = portfolio;
 
-        bytes memory data = abi.encodeWithSelector(Predicter.createPrediction.selector, pred);
-        address target = address(predicter);
-        uint256 value = 0;
+        IndexCallParams memory indexData;
 
-        index.executeEncodedTx(target, value, data);
+        indexData.data = abi.encodeWithSelector(Predicter.createPrediction.selector, pred);
+        indexData.target = address(predicter);
+        indexData.value = 0;
+
+        index.executeEncodedTx(indexData.target, indexData.value, indexData.data);
 
         // userYes votes
         strikeToken.mint(userYes, strikeAmount);
@@ -102,7 +115,6 @@ contract PredicterTest_a_04 is Test  {
 
         // jump after expiration
         vm.warp(exp + 1);
-        uint256 beforeUserBalance = strikeToken.balanceOf(userYes);
         vm.prank(userYes);
         predicter.claim(_wnftIndex);
         // resolvedPrice should be set
@@ -110,10 +122,11 @@ contract PredicterTest_a_04 is Test  {
         assertEq(resolvedPrice, oraclePrice);
 
         assertEq(strikeToken.balanceOf(address(predicter)), 0);
-        uint256 calculatedCreatorFee = ( strikeAmount * predicter.FEE_CREATOR_PERCENT() )/ predicter.PERCENT_DENOMINATOR();
-        uint256 calculatedBeneficiaryFee = ( strikeAmount * predicter.FEE_PROTOCOL_PERCENT() )/ predicter.PERCENT_DENOMINATOR();
+        Fees memory fees;
+        fees.calculatedCreatorFee = ( strikeAmount * predicter.FEE_CREATOR_PERCENT() )/ predicter.PERCENT_DENOMINATOR();
+        fees.calculatedBeneficiaryFee = ( strikeAmount * predicter.FEE_PROTOCOL_PERCENT() )/ predicter.PERCENT_DENOMINATOR();
 
-        assertEq(calculatedBeneficiaryFee, strikeToken.balanceOf(predicter.FEE_PROTOCOL_BENEFICIARY()));
-        assertEq(calculatedCreatorFee, strikeToken.balanceOf(_wnftIndex));
+        assertEq(fees.calculatedBeneficiaryFee, strikeToken.balanceOf(predicter.FEE_PROTOCOL_BENEFICIARY()));
+        assertEq(fees.calculatedCreatorFee, strikeToken.balanceOf(_wnftIndex));
     }
 }

@@ -102,7 +102,6 @@ contract PredicterTest_ai is Test, PredictionBuilder {
             uint256 noTotal,
             uint256 yesReward,
             uint256 noReward,
-            uint256 currentPrice
         ) = predicter.getUserEstimates(userYes, creator);
 
         (uint256 yesId, uint256 noId) = predicter.hlpGet6909Ids(creator);

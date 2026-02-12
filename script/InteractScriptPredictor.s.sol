@@ -16,7 +16,7 @@ contract InteractScriptPredictor is Script {
         
         MockERC20 token = MockERC20(0xa9b1a94d8ddBa49193e50174D4f87ee108F5e4cD);
         MockOracle oracle = MockOracle(0x60c0A71A991aAe273c4ACD017Bb03d4FfdFb4996);
-        Predicter predicter = Predicter(0xA20a6c39507718325d6ED1C50D0FDDd8026EBd7F);
+        Predicter predicter = Predicter(0x2f1487ffB78FcB29e4bA4811750A1709BE76DBa9);
 
         uint256 strikeAmount = 1 ether; 
         address predictionCreator = 0xf315B9006C20913D6D8498BDf657E778d4Ddf2c4; 
@@ -35,7 +35,7 @@ contract InteractScriptPredictor is Script {
         portfolio[0] = CompactAsset({token: address(token), amount: portfolioAmount96});
         Predicter.Prediction memory newPrediction = Predicter.Prediction(
             CompactAsset(address(token), strikeAmount96), 
-            CompactAsset(address(token), predictedAmount96), 
+            OracleData(address(oracle), predictedAmount96), 
             uint40(block.timestamp + 36000000), 
             0, 
             portfolio
@@ -49,10 +49,10 @@ contract InteractScriptPredictor is Script {
         //token.approve(predicter.PERMIT2(), type(uint256).max);
 
         uint256 deadline = block.timestamp + 1 days;
-        (IPermit2Minimal.PermitTransferFrom memory permit, bytes32 digest, ) = predicter.hlpGetPermitAndDigest(predictionCreator, deadline);
+        (IPermit2Minimal.PermitTransferFrom memory permit, ,  bytes32 hashedDigest) = predicter.hlpGetPermitAndDigest(predictionCreator, deadline);
 
-        console2.logBytes32(digest);
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(fromPrivateKey, digest);
+        console2.logBytes32(hashedDigest);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(fromPrivateKey, hashedDigest);
         bytes memory signature =  bytes.concat(r, s, bytes1(v));
         console2.logBytes(signature);
 
@@ -70,6 +70,7 @@ contract InteractScriptPredictor is Script {
 
 //to run vote with permit2
 /*forge script script/InteractScriptPredictor.s.sol:InteractScriptPredictor --rpc-url https://arbitrum-one.public.blastapi.io  --account secret2 --sender 0x5992Fe461F81C8E0aFFA95b831E50e9b3854BA0E --broadcast -vvvv --via-ir*/
+/*forge script script/InteractScriptPredictor.s.sol:InteractScriptPredictor --rpc-url https://arbitrum-one.public.blastapi.io  --account secret1 --sender 0xf315B9006C20913D6D8498BDf657E778d4Ddf2c4 --broadcast -vvvv --via-ir*/
 
 
 
