@@ -27,7 +27,7 @@ contract PredicterTest_a_fork_1 is BaseForkTest  {
         mock = new MockERC20("Mock", "MOCK");  
         oracle = new EnvelopOracle(feedRegistry, maxStale);
 
-        predicter = new Predicter(feeBeneficiary, address(oracle));
+        predicter = new Predicter(feeBeneficiary);
 
         bytes memory mockCode = address(mock).code;
         vm.etch(usdt, mockCode);
@@ -48,7 +48,7 @@ contract PredicterTest_a_fork_1 is BaseForkTest  {
         portfolio[0] = CompactAsset({token: usdt, amount: portfolioAmount});
 
         pred.strike = CompactAsset({token: usdt, amount: strikeAmount});
-        pred.predictedPrice = CompactAsset({token: usdt, amount: predictedPrice});
+        pred.predictedPrice = OracleData({oracle: address(oracle), amount: predictedPrice});
         pred.expirationTime = exp;
         pred.resolvedPrice = 0;
         pred.portfolio = portfolio;

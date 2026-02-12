@@ -35,7 +35,7 @@ contract PredicterTest_a_04 is Test  {
         priceToken = new MockERC20("MockPr", "MOCKPR");
         oracle = new MockOracle();
 
-        predicter = new Predicter(feeBeneficiary, address(oracle));
+        predicter = new Predicter(feeBeneficiary);
 
         // erc20 = new MockERC20("Mock ERC20", "ERC20");
         factory = new EnvelopWNFTFactory();
@@ -71,7 +71,7 @@ contract PredicterTest_a_04 is Test  {
         portfolio[0] = CompactAsset({token: address(portfolioToken), amount: portfolioAmount});
 
         pred.strike = CompactAsset({token: address(strikeToken), amount: strikeAmount});
-        pred.predictedPrice = CompactAsset({token: address(priceToken), amount: predictedPrice});
+        pred.predictedPrice = OracleData({oracle: address(oracle), amount: predictedPrice});
         pred.expirationTime = exp;
         pred.resolvedPrice = 0;
         pred.portfolio = portfolio;

@@ -31,7 +31,7 @@ contract PredicterTest_m_01 is Test, PredictionBuilder {
         token = new MockERC20("Mock", "MOCK");
         oracle = new MockOracle();
 
-        predicter = new Predicter(feeBeneficiary, address(oracle));
+        predicter = new Predicter(feeBeneficiary);
 
         // Give users some tokens and approvals
         token.mint(userYes, 1_000 ether);
@@ -42,7 +42,7 @@ contract PredicterTest_m_01 is Test, PredictionBuilder {
         uint40 exp = uint40(block.timestamp + 1 days);
         uint96 strikeAmount = 1_000_000;
         uint96 predictedPrice = 100;
-        Predicter.Prediction memory pred = _buildPrediction(address(token), exp, strikeAmount, predictedPrice);
+        Predicter.Prediction memory pred = _buildPrediction(address(token), exp, strikeAmount, predictedPrice, address(oracle));
 
         vm.prank(creator);
         predicter.createPrediction(pred);
@@ -119,7 +119,7 @@ contract PredicterTest_m_01 is Test, PredictionBuilder {
         uint40 exp = uint40(block.timestamp + 1 days);
         uint96 strikeAmount = 1_000_000;
         uint96 predictedPrice = 100;
-        Predicter.Prediction memory pred = _buildPrediction(address(token), exp, strikeAmount, predictedPrice);
+        Predicter.Prediction memory pred = _buildPrediction(address(token), exp, strikeAmount, predictedPrice, address(oracle));
 
         vm.prank(creator);
         predicter.createPrediction(pred);
@@ -185,7 +185,7 @@ contract PredicterTest_m_01 is Test, PredictionBuilder {
         uint40 exp = uint40(block.timestamp + 1 days);
         uint96 strikeAmount = 1_000_000;
         uint96 predictedPrice = 100;
-        Predicter.Prediction memory pred = _buildPrediction(address(token), exp, strikeAmount, predictedPrice);
+        Predicter.Prediction memory pred = _buildPrediction(address(token), exp, strikeAmount, predictedPrice, address(oracle));
 
         vm.prank(creator);
         predicter.createPrediction(pred);
@@ -261,7 +261,7 @@ contract PredicterTest_m_01 is Test, PredictionBuilder {
         uint40 exp = uint40(block.timestamp + 1 days);
         uint96 strikeAmount = 1_000_000;
         uint96 predictedPrice = 100;
-        Predicter.Prediction memory pred = _buildPrediction(address(token), exp, strikeAmount, predictedPrice);
+        Predicter.Prediction memory pred = _buildPrediction(address(token), exp, strikeAmount, predictedPrice, address(oracle));
 
         vm.prank(creator);
         predicter.createPrediction(pred);

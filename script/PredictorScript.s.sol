@@ -15,7 +15,7 @@ contract PredictorScript is Script {
         console2.log("Chain id: %s", vm.toString(block.chainid));
         vm.startBroadcast();
         MockOracle oracle = MockOracle(0x60c0A71A991aAe273c4ACD017Bb03d4FfdFb4996);
-        Predicter predicter = new Predicter(0x5992Fe461F81C8E0aFFA95b831E50e9b3854BA0E, address(oracle));
+        Predicter predicter = new Predicter(0x5992Fe461F81C8E0aFFA95b831E50e9b3854BA0E);
         vm.stopBroadcast();
         console2.log("Initialisation finished");
         //console2.log("token = ", address(token));

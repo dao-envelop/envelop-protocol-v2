@@ -26,7 +26,7 @@ contract PredicterTest_m_02  is Test {
         
         usdt = new MockERC20("Mock", "MOCK");  
         oracle = new EnvelopOracle(feedRegistry, maxStale);
-        predicter = new Predicter(feeBeneficiary, address(oracle));
+        predicter = new Predicter(feeBeneficiary);
         permit2 = new SignatureTransfer();
     }
 
@@ -44,7 +44,7 @@ contract PredicterTest_m_02  is Test {
         portfolio[0] = CompactAsset({token: address(usdt), amount: portfolioAmount});
 
         pred.strike = CompactAsset({token: address(usdt), amount: strikeAmount});
-        pred.predictedPrice = CompactAsset({token: address(usdt), amount: predictedPrice});
+        pred.predictedPrice = OracleData({oracle: address(oracle), amount: predictedPrice});
         pred.expirationTime = exp;
         pred.resolvedPrice = 0;
         pred.portfolio = portfolio;

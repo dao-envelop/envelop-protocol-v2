@@ -16,7 +16,7 @@ contract DeployPredicter is Script {
   
         vm.startBroadcast();
 
-        Predicter predicter = new Predicter(msg.sender, oracle);
+        Predicter predicter = new Predicter(msg.sender);
 
         console2.log("Predicter deployed at:", address(predicter));
 

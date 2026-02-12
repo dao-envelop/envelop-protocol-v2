@@ -20,7 +20,7 @@ contract PredicterTest_a_01 is Test, PredictionBuilder {
     function setUp() public {
         oracle = new MockOracle();
         token = new MockERC20("Mock", "MOCK");
-        predicter = new Predicter(feeBeneficiary, address(oracle));
+        predicter = new Predicter(feeBeneficiary);
     }
 
     // ------------------------------------------------------------
@@ -31,7 +31,7 @@ contract PredicterTest_a_01 is Test, PredictionBuilder {
         uint40 exp = uint40(block.timestamp + 1 days);
         uint96 strikeAmount = 10e18;
         uint96 predictedAmount = 100;
-        Predicter.Prediction memory pred = _buildPrediction(address(token), exp, strikeAmount, predictedAmount);
+        Predicter.Prediction memory pred = _buildPrediction(address(token), exp, strikeAmount, predictedAmount, address(oracle));
 
         vm.prank(creator);
         vm.expectEmit();
@@ -42,7 +42,7 @@ contract PredicterTest_a_01 is Test, PredictionBuilder {
         predicter.createPrediction(pred);
 
         (CompactAsset memory strike,
-         CompactAsset memory predictedPrice,
+         OracleData memory predictedPrice,
          uint40 expirationTime,
          uint96 resolvedPrice) = predicter.predictions(creator);
 
@@ -62,7 +62,7 @@ contract PredicterTest_a_01 is Test, PredictionBuilder {
 
         Predicter.Prediction memory pred;
         pred.strike = CompactAsset({token: address(token), amount: 1 ether});
-        pred.predictedPrice = CompactAsset({token: address(token), amount: 100});
+        pred.predictedPrice = OracleData({oracle: address(oracle), amount: 100});
         pred.expirationTime = uint40(block.timestamp + 1 days);
         pred.portfolio = portfolio;
 
@@ -77,7 +77,7 @@ contract PredicterTest_a_01 is Test, PredictionBuilder {
         uint40 exp = uint40(block.timestamp + 1 days);
         uint96 strikeAmount = 10e18;
         uint96 predictedPrice = 100;
-        Predicter.Prediction memory pred = _buildPrediction(address(token), exp, strikeAmount, predictedPrice);
+        Predicter.Prediction memory pred = _buildPrediction(address(token), exp, strikeAmount, predictedPrice, address(oracle));
 
         vm.startPrank(creator);
         predicter.createPrediction(pred);
@@ -96,7 +96,7 @@ contract PredicterTest_a_01 is Test, PredictionBuilder {
         uint40 exp = uint40(block.timestamp + period);
         uint96 strikeAmount = 10e18;
         uint96 predictedPrice = 100;
-        Predicter.Prediction memory pred = _buildPrediction(address(token), exp, strikeAmount, predictedPrice);
+        Predicter.Prediction memory pred = _buildPrediction(address(token), exp, strikeAmount, predictedPrice, address(oracle));
 
         vm.startPrank(creator);
         vm.expectRevert(
