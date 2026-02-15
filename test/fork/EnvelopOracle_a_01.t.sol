@@ -20,7 +20,7 @@ contract EnvelopOracle_fork_a_01 is BaseForkTest {
         oracle = new EnvelopOracle(feedRegistry, maxStale);
     }
 
-    function test_getPriceInUSD_success() public onlyOnFork {
+    function test_getPriceInUSD_success() public view onlyOnFork {
         uint256 gotPrice = oracle.getPriceInUSD(usdt);
         assertApproxEqAbs(gotPrice, 10**usdtDecimals, 10**(usdtDecimals - 2));
     }
@@ -30,7 +30,7 @@ contract EnvelopOracle_fork_a_01 is BaseForkTest {
         oracle.getPriceInUSD(niftsy);
     }
 
-    function test_getPriceInUSDWithMeta() public onlyOnFork {
+    function test_getPriceInUSDWithMeta() public view onlyOnFork {
         (uint256 priceUsd, uint80 roundId, uint256 updatedAt, uint8 decimals) = oracle.getPriceInUSDWithMeta(usdt);
         assertApproxEqAbs(priceUsd, 10**usdtDecimals, 10**(usdtDecimals - 2));
         assertGt(roundId, 0);
@@ -43,7 +43,7 @@ contract EnvelopOracle_fork_a_01 is BaseForkTest {
         oracle.getPriceInUSDWithMeta(niftsy);
     }    
 
-    function test_getIndexPrice_success() public onlyOnFork {
+    function test_getIndexPrice_success() public view onlyOnFork {
         CompactAsset[] memory assets = new CompactAsset[](2);
         assets[0] = CompactAsset({token: usdt, amount: 1});
         assets[1] = CompactAsset({token: dai, amount: 1});
@@ -59,3 +59,4 @@ contract EnvelopOracle_fork_a_01 is BaseForkTest {
         oracle.getIndexPrice(assets);
     }  
 }
+/* forge test --match-contract EnvelopOracle_fork_a_01 --rpc-url mainnet -vvvv */

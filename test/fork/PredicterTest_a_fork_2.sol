@@ -55,9 +55,9 @@ contract PredicterTest_a_fork_2 is BaseForkTest  {
         usdt.approve(predicter.PERMIT2(), type(uint256).max);
         
         uint256 deadline = block.timestamp + 1 days;
-        (IPermit2Minimal.PermitTransferFrom memory permit, bytes32 digest,) = predicter.hlpGetPermitAndDigest(creator, deadline);
+        (IPermit2Minimal.PermitTransferFrom memory permit, , bytes32 hashedDigest) = predicter.hlpGetPermitAndDigest(creator, deadline);
 
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(userYesPRIVKEY, digest);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(userYesPRIVKEY, hashedDigest);
         bytes memory signature =  bytes.concat(r, s, bytes1(v));
 
         predicter.voteWithPermit2(
