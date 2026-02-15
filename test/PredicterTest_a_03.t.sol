@@ -306,7 +306,7 @@ contract PredicterTest_a_03 is Test, PredictionBuilder  {
         uint256 balanceCreator = token.balanceOf(creator);
         uint256 balanceProtocol = token.balanceOf(predicter.FEE_PROTOCOL_BENEFICIARY());
         assertGt(balanceCreator, 0);
-        assertGt(balanceProtocol, 0);
+        assertEq(balanceProtocol, 0);
 
         // claim by yesVoter1 - second time
         balanceBeforeYesVoter1 = token.balanceOf(address(yesVoter1));
