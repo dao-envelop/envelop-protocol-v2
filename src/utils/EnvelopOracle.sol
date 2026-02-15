@@ -6,10 +6,6 @@ import "../interfaces/IEnvelopOracle.sol";
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-// interface IEnvelopOracle {
-//     function getIndexPrice(address _v2Index) external view returns (uint256);
-//     function getIndexPrice(CompactAsset[] calldata _assets) external view returns (uint256);
-// }
 // ---- Chainlink Feed Registry minimal interface ----
 interface FeedRegistryInterface {
     function latestRoundData(address base, address quote)
@@ -64,7 +60,7 @@ contract EnvelopOracle is IEnvelopOracle, Ownable {
     /**
      * @notice Get latest price for a base asset in USD, normalized to 1e18.
      * @param base Asset address (e.g., token address) to query.
-     * @return priceUsd Latest price in 1e18 decimals.
+     * @return priceUsd Latest price in 1e8 decimals.
      */
     function getPriceInUSD(address base) public view returns (uint256 priceUsd) {
         (priceUsd,,,) = _getLatestPriceInUSD(base);
@@ -126,7 +122,7 @@ contract EnvelopOracle is IEnvelopOracle, Ownable {
 
         dec = FEED_REGISTRY.decimals(base, DENOMINATION_USD);
 
-        // Normalize to 1e18
+        // Normalize to 1e8
         priceUsd = uint256(answer);
         roundId = _roundId;
         updatedAt = _updatedAt;

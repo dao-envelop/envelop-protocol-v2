@@ -63,10 +63,10 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
     uint40 public constant STOP_BEFORE_EXPIRED = 0;
 
     /// @dev Creator fee in bps. 200 = 2%
-    uint96 public constant FEE_CREATOR_PERCENT = 200;
+    uint96 public constant FEE_CREATOR_PERCENT = 100;
 
     /// @dev Protocol fee  in bps. 100 = 1%.
-    uint96 public constant FEE_PROTOCOL_PERCENT = 100;
+    uint96 public constant FEE_PROTOCOL_PERCENT = 0;
 
     /// @dev Percentage denominator (basis points = 10_000).
     uint96 public constant PERCENT_DENOMINATOR = 10_000;
