@@ -1,12 +1,18 @@
 {   
     "1": {
         "chain_name": "Ethereum Mainnet",
-        "wl_items": [
-            "0x7728cd70b3dD86210e2bd321437F448231B81733", 
-            "0x6b175474e89094c44da98b954eedeac495271d0f", 
-            "0xdAC17F958D2ee523a2206206994597C13D831ec7", 
-            "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
-        ]
+        "need_test_tx": "false",
+        "erc20":[
+            "0x7728cd70b3dD86210e2bd321437F448231B81733"
+        ],
+        "factory": "0x0A55A8e0Ee3d58e8D7d82803d70092903c593a96",
+        "myshch_factory": "0xd97e06E6F23Bce9Cd2e32b090DA7308ee7D0a4D3",
+        "legacy_wrapper": "0x62D51DFF0c264a5aF8452A10789E4C98b7413A3c",
+        "impl_legacy": "0x03Ed05c589B567D94d2dc0157A8D8DC365f82bc7",
+        "impl_native": "0xD1A8980A0d4881c1E6594Ac08B244BE3B2310540",
+        "impl_myshch": "0xCf284f67290c098057F51c773cC981E3B81ad1c0",
+        "impl_index": "0xe738Cd578E1Adc6C7da7F0796775F4cEfb37D146",
+        "impl_erc20": "0x77923344511195431F7301673A17af6735f4D569"
     }, 
 
     "56":{

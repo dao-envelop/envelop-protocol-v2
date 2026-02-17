@@ -99,4 +99,17 @@ $ forge script script/DeployEnvelopOracle.s.sol:DeployEnvelopOracle_Arb --rpc-ur
 
 $ #Deploy Predicter
 $ forge script script/DeployPredicter.s.sol:DeployPredicter --rpc-url mainnet  --account env_deploy_2025 --sender 0x13B9cBcB46aD79878af8c9faa835Bee19B977D3D --broadcast --verify  --etherscan-api-key $ETHERSCAN_TOKEN 
+
+$ #Check chain params
+$ forge script script/CheckChainParam.s.sol:CheckChainParam --rpc-url mainnet
+
+$ #Deploy
+$ forge script script/Deploy.s.sol:DeployScript --rpc-url mainnet  --account env_deploy_2025 --sender 0x13B9cBcB46aD79878af8c9faa835Bee19B977D3D --broadcast --verify  --etherscan-api-key $ETHERSCAN_TOKEN 
+$ # for verify just deployed
+$ forge script script/Deploy.s.sol:DeployScript --rpc-url mainnet  --account env_deploy_2025 --sender 0x13B9cBcB46aD79878af8c9faa835Bee19B977D3D --resume --verify  --etherscan-api-key $ETHERSCAN_TOKEN
+
+$ # Test Tx Script
+$ forge script script/Deploy.s.sol:TestTxScript --rpc-url mainnet  --account env_deploy_2025 --sender 0x13B9cBcB46aD79878af8c9faa835Bee19B977D3D --broadcast --verify  --etherscan-api-key $ETHERSCAN_TOKEN  
+
+$ cast send --value 1e14  --rpc-url mainnet --from 0x13B9cBcB46aD79878af8c9faa835Bee19B977D3D 0xa0cff013918ddaED7F2e6066D0403C6D50a58a7c
 ```

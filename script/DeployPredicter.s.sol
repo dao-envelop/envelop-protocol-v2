@@ -11,7 +11,7 @@ contract DeployPredicter is Script {
     function run() external {
         if (block.chainid == 42161) {
             //oracle = 0x32A676146bCF15397285d4bCb0CcaBa8C64F415c;
-            oracle = 0x60c0A71A991aAe273c4ACD017Bb03d4FfdFb4996;
+            //oracle = 0x60c0A71A991aAe273c4ACD017Bb03d4FfdFb4996;
         } 
   
         vm.startBroadcast();
