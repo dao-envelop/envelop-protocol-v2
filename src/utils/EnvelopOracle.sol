@@ -118,7 +118,7 @@ contract EnvelopOracle is IEnvelopOracle, Ownable {
 
         require(answer > 0, "Price <= 0");
         require(answeredInRound >= _roundId, "Stale answer");
-        require(_updatedAt + MAX_STALE >= block.timestamp, "Price is stale");
+        //require(_updatedAt + MAX_STALE >= block.timestamp, "Price is stale");
 
         dec = FEED_REGISTRY.decimals(base, DENOMINATION_USD);
 

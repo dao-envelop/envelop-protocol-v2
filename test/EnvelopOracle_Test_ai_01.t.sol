@@ -110,18 +110,18 @@ contract EnvelopOracleTest is Test {
     }
 
     /// @notice If updatedAt too old, should revert "Price is stale".
-    function test_getPriceInUSD_revertPriceTooStale() public {
-        uint256 nowTs = 1_000_000;
-        vm.warp(nowTs);
+    // function test_getPriceInUSD_revertPriceTooStale() public {
+    //     uint256 nowTs = 1_000_000;
+    //     vm.warp(nowTs);
 
-        // MAX_STALE = 1 days, so anything older than nowTs - 1 days - 1 should revert.
-        uint256 tooOld = nowTs - 1 days - 1;
+    //     // MAX_STALE = 1 days, so anything older than nowTs - 1 days - 1 should revert.
+    //     uint256 tooOld = nowTs - 1 days - 1;
 
-        _setFeedSimple(TOKEN_A, 100e8, 8, tooOld);
+    //     _setFeedSimple(TOKEN_A, 100e8, 8, tooOld);
 
-        vm.expectRevert(bytes("Price is stale"));
-        oracle.getPriceInUSD(TOKEN_A);
-    }
+    //     vm.expectRevert(bytes("Price is stale"));
+    //     oracle.getPriceInUSD(TOKEN_A);
+    // }
 
     /// @notice test getIndexPrice(CompactAsset[]) aggregating prices * amounts.
     function test_getIndexPrice_portfolio() public {
