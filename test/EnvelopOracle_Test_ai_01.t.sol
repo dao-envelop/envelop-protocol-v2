@@ -108,6 +108,7 @@ contract EnvelopOracle_Test_ai_01 is Test {
         // ETH/USD = 2,000 * 1e8
         // USDC/USD = 1 * 1e8
         // DAI/USD = 1 * 1e8
+        vm.warp(1234455666);
         reg.setFeed(address(usdcLike), USD, 10, int256(1e8),   block.timestamp - 10, block.timestamp - 5, 10, 8);
         reg.setFeed(address(daiLike),  USD, 11, int256(1e8),   block.timestamp - 10, block.timestamp - 5, 11, 8);
         reg.setFeed(ETH_BASE,         USD, 12, int256(2000e8), block.timestamp - 10, block.timestamp - 5, 12, 8);
@@ -164,7 +165,7 @@ contract EnvelopOracle_Test_ai_01 is Test {
         // Use 2 USDC (6 decimals): amount = 2_000000
         // price = 1e8
         // total = 2e6 * 1e8 / 1e6 = 2e8
-        CompactAsset[] memory a = new CompactAsset[](2);
+        CompactAsset[] memory a = new CompactAsset[](1);
         a[0] = CompactAsset({token: address(usdcLike), amount: 2_000000});
 
         uint256 total = oracle.getIndexPrice(a);
@@ -176,7 +177,7 @@ contract EnvelopOracle_Test_ai_01 is Test {
         // Use 0.5 ETH: amount = 0.5e18
         // price = 2000e8
         // total = 0.5e18 * 2000e8 / 1e18 = 1000e8
-        CompactAsset[] memory a = new CompactAsset[](2);
+        CompactAsset[] memory a = new CompactAsset[](1);
         a[0] = CompactAsset({token: ETH_BASE, amount: uint96(0.5 ether)});
 
         uint256 total = oracle.getIndexPrice(a);
