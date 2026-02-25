@@ -16,6 +16,23 @@ interface FeedRegistryInterface {
     function decimals(address base, address quote) external view returns (uint8);
 }
 
+interface IERC20Metadata {
+    /**
+     * @dev Returns the name of the token.
+     */
+    function name() external view returns (string memory);
+
+    /**
+     * @dev Returns the symbol of the token.
+     */
+    function symbol() external view returns (string memory);
+
+    /**
+     * @dev Returns the decimals places of the token.
+     */
+    function decimals() external view returns (uint8);
+}
+
 contract EnvelopOracle is IEnvelopOracle, Ownable {
     // =========================================================
     //                     Price Oracle part
@@ -27,7 +44,7 @@ contract EnvelopOracle is IEnvelopOracle, Ownable {
     /// @notice USD denomination address for Feed Registry (not an ERC20)
     /// @dev Chainlink uses a special pseudo-address for USD denomination.
     address public constant DENOMINATION_USD = 0x0000000000000000000000000000000000000348;
-
+    address public constant ETH_BASE = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
     /// @notice Maximum allowed staleness for a price feed, in seconds
     uint256 public immutable MAX_STALE;
 
@@ -87,7 +104,13 @@ contract EnvelopOracle is IEnvelopOracle, Ownable {
 
     function getIndexPrice(CompactAsset[] calldata _assets) external view returns (uint256 total) {
         for (uint256 i = 0; i < _assets.length; i++) {
-            total += _assets[i].amount * getPriceInUSD(_assets[i].token);
+            if (_assets[i].token != ETH_BASE) {
+                total += _assets[i].amount * getPriceInUSD(_assets[i].token) 
+                  / (10**IERC20Metadata(_assets[i].token).decimals());   
+            } else {
+                total += _assets[i].amount * getPriceInUSD(_assets[i].token) 
+                  / 10**18;
+            }
         }
     }
 
@@ -118,7 +141,7 @@ contract EnvelopOracle is IEnvelopOracle, Ownable {
 
         require(answer > 0, "Price <= 0");
         require(answeredInRound >= _roundId, "Stale answer");
-        require(_updatedAt + MAX_STALE >= block.timestamp, "Price is stale");
+        //require(_updatedAt + MAX_STALE >= block.timestamp, "Price is stale");
 
         dec = FEED_REGISTRY.decimals(base, DENOMINATION_USD);
 

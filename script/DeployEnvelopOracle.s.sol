@@ -6,6 +6,8 @@ import "../src/utils/EnvelopOracle.sol";
 
 /// @notice Deployment script for ChainlinkOracleAndVRF_DirectFunding on Arbitrum One.
 contract DeployEnvelopOracle_Arb is Script {
+     //address constant public newOwner = address(0);
+     address constant public newOwner = 0x5992Fe461F81C8E0aFFA95b831E50e9b3854BA0E;
      address public feedRegistry;
 
     function run() external {
@@ -16,7 +18,10 @@ contract DeployEnvelopOracle_Arb is Script {
         vm.startBroadcast();
 
         EnvelopOracle oracle = new EnvelopOracle(feedRegistry, 3600);
-
+        if (newOwner != address(0)) {
+            oracle.transferOwnership(newOwner);    
+        }
+        
         console2.log("EnvelopOracle deployed at:", address(oracle));
 
         vm.stopBroadcast();

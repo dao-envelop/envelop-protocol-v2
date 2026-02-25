@@ -287,8 +287,12 @@ contract WNFTV2Envelop721 is Singleton721, SmartWallet, IEnvelopV2wNFT {
         override(ERC721Upgradeable, ERC1155Holder, IERC165)
         returns (bool)
     {
-        //TODO  add current contract interface
-        return interfaceId == type(IEnvelopV2wNFT).interfaceId || super.supportsInterface(interfaceId);
+        //TODO  add current contract interfaceinterfaceId == type(IERC721).interfaceId ||
+        return 
+            interfaceId == type(IERC721).interfaceId || 
+            interfaceId == type(IERC721Metadata).interfaceId ||
+            interfaceId == type(IEnvelopV2wNFT).interfaceId  || 
+            super.supportsInterface(interfaceId);
     }
 
     /**
