@@ -45,7 +45,8 @@ pragma solidity ^0.8.28;
 /**
  * @dev Adapter interface for AMM-based price sources.
  * Concrete adapters (UniswapV3Adapter, CurveAdapter, etc.) are deployed separately.
- * The adapter address is stored in SmartIndexStorage.amm.
+ * The adapter address is set as immutable AMM_ADAPTER in the WNFTV2SmartIndex constructor.
+ * Each AMM requires a separate implementation deployment; the factory creates proxies from it.
  */
 interface IAMMPriceAdapter {
     /**
@@ -70,7 +71,27 @@ interface IAMMPriceAdapter {
 **Inherits:** `WNFTV2Envelop721`, `IIndexAssets`
 **Pragma:** `^0.8.28`
 
-### 2.1 Constants
+### 2.1 Constructor & immutables
+
+```solidity
+/// @notice IAMMPriceAdapter address; address(0) = Chainlink only
+address public immutable AMM_ADAPTER;
+
+constructor(address _defaultFactory, address _ammAdapter)
+    WNFTV2Envelop721(_defaultFactory)
+{
+    AMM_ADAPTER = _ammAdapter;
+}
+```
+
+Deploy once per AMM:
+- `WNFTV2SmartIndex(factory, address(0))` — Chainlink pricing
+- `WNFTV2SmartIndex(factory, uniV3Adapter)` — Uniswap V3
+- `WNFTV2SmartIndex(factory, curveAdapter)` — Curve
+
+The factory creates EIP-1167 proxies from the needed implementation.
+
+### 2.2 Constants
 
 ```solidity
 string  public constant nftName      = "Envelop wNFT V2 Smart Index";
