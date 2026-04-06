@@ -115,14 +115,13 @@ struct SmartIndexStorage {
     address oracle;
     uint40  createdAt;
     bool    isFixed;
-    // slot 2: amm(20) + startPrice(12) = 32 bytes exact
-    address amm;         // IAMMPriceAdapter; address(0) = use Chainlink
-    uint96  startPrice;  // 1e8 decimals; max ~7.9e20 USD
-    // slot 3: baseAsset(20) (12 free)
+    // slot 2: baseAsset(20) + startPrice(12) = 32 bytes exact
     address baseAsset;   // base token for AMM pricing (e.g. USDC, WETH)
                          // address(0) = USD denomination (Chainlink path)
+    uint96  startPrice;  // 1e8 decimals; max ~7.9e20 USD
 }
-// 4 slots total. CompactAsset=(address,uint96) = 32 bytes per element.
+// 3 slots total. AMM adapter is immutable AMM_ADAPTER, not in storage.
+// CompactAsset=(address,uint96) = 32 bytes per element.
 
 function _getSmartIndexStorage() private pure returns (SmartIndexStorage storage $) {
     assembly { $.slot := SMART_INDEX_STORAGE_LOCATION }
@@ -145,7 +144,6 @@ event EnvelopIndexFixed(
 function fixIndex(
     IEnvelopOracle.CompactAsset[] calldata _assets,
     address _oracle,
-    address _amm,
     address _baseAsset
 ) external onlyWnftOwner
 ```
@@ -154,7 +152,7 @@ Execution order:
 1. `require(!$.isFixed, "Already fixed")`
 2. `require(_assets.length > 0 && _assets.length <= MAX_ASSETS)`
 3. Copy `_assets` into `$.assets`
-4. `$.oracle = _oracle`, `$.amm = _amm`, `$.baseAsset = _baseAsset`
+4. `$.oracle = _oracle`, `$.baseAsset = _baseAsset`
 5. `$.createdAt = uint40(block.timestamp)`, `$.isFixed = true`
 6. `IEnvelopOracle(_oracle).registerIndex()` — oracle registers `msg.sender`
 7. `$.startPrice = SafeCast.toUint96(IEnvelopOracle(_oracle).getIndexPrice(address(this)))` — **AFTER** registration so oracle uses correct price source (AMM or Chainlink via callback)
@@ -180,7 +178,7 @@ function getIndexAssets() external view returns (IEnvelopOracle.CompactAsset[] m
 }
 
 function getIndexAmm() external view returns (address) {
-    return _getSmartIndexStorage().amm;
+    return AMM_ADAPTER;  // immutable, not from storage
 }
 
 function getIndexBaseAsset() external view returns (address) {
@@ -334,9 +332,9 @@ Factory overrides clear `nftName`/`nftSymbol`/`tokenUri` before calling `super` 
 ## 3. Price source flow
 
 ```
-fixIndex(_assets, _oracle, _amm, _baseAsset)
+fixIndex(_assets, _oracle, _baseAsset)
     │
-    ├─► store assets, oracle, amm, baseAsset in SmartIndexStorage
+    ├─► store assets, oracle, baseAsset in SmartIndexStorage (amm is immutable)
     ├─► isFixed = true
     ├─► oracle.registerIndex()              // oracle marks msg.sender as registered
     └─► startPrice = oracle.getIndexPrice(address(this))
