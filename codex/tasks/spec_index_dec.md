@@ -9,6 +9,8 @@
 
 Does **not** modify `WNFTV2Index.sol`.
 
+See implementation plan: [`codex/tasks/plan_index_dec.md`](plan_index_dec.md)
+
 ---
 
 ## 1. New interfaces
