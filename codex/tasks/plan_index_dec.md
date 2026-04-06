@@ -4,84 +4,84 @@
 
 | Action | Path |
 |--------|------|
+| Create | `src/interfaces/IIndexAssets.sol` |
 | Create | `src/interfaces/IAMMPriceAdapter.sol` |
-| Create | `src/impl/WNFTV2SmartIndex.sol` |
 | Modify | `src/interfaces/IEnvelopOracle.sol` |
 | Modify | `src/utils/EnvelopOracle.sol` |
+| Create | `src/impl/WNFTV2SmartIndex.sol` |
 | Create | `test/WNFTV2SmartIndex_Test_a_01.sol` |
-| Create | `test/EnvelopOracle_Test_a_ext.sol` (oracle extension tests) |
 
 `WNFTV2Index.sol` — not modified.
 
 ---
 
-## Step 1 — `src/interfaces/IAMMPriceAdapter.sol`
+## Step 1 — `src/interfaces/IIndexAssets.sol`
 
-New file, ~15 lines. Interface with one function:
+New file. Three-method callback interface for oracle → wNFT:
+- `getIndexAssets() → CompactAsset[] memory`
+- `getIndexAmm() → address`
+- `getIndexBaseAsset() → address`
 
-```solidity
-function getTokenPriceUSD(address token, uint96 amount) external view returns (uint256);
-```
-
-See full spec in `spec_index_dec.md §1`.
+See full spec in `spec_index_dec.md §1.1`.
 
 ---
 
-## Step 2 — `src/interfaces/IEnvelopOracle.sol`
+## Step 2 — `src/interfaces/IAMMPriceAdapter.sol`
+
+New file. Single function:
+```solidity
+function getTokenPriceUSD(address token, uint96 amount, address baseAsset)
+    external view returns (uint256 price, uint8 decimals);
+```
+
+Returns `(price, decimals)` — oracle normalizes to 1e8 during summation.
+
+See full spec in `spec_index_dec.md §1.2`.
+
+---
+
+## Step 3 — `src/interfaces/IEnvelopOracle.sol`
 
 Add to existing interface (do not remove anything):
 
 ```solidity
-function registerIndex(address _wNFT, CompactAsset[] calldata _assets, address _amm) external;
+function registerIndex() external;
 function setIndexUpdater(address _wNFT, address _updater) external;
 function setIndexPrice(address _wNFT, uint256 _price) external;
 function isRegistered(address _wNFT) external view returns (bool);
-function indexAmm(address _wNFT) external view returns (address);
 ```
 
 ---
 
-## Step 3 — `src/utils/EnvelopOracle.sol`
+## Step 4 — `src/utils/EnvelopOracle.sol`
 
-### 3.1 New storage variables
+### 4.1 New storage
 
 ```solidity
-mapping(address => IEnvelopOracle.CompactAsset[]) internal _indexAssets;
 mapping(address => bool)    public isRegistered;
-mapping(address => address) public indexAmm;
 mapping(address => address) public authorizedUpdater;
 ```
 
-Add after existing `mapping(address object => uint256 overrided)`.
+No `CompactAsset[]` storage — assets fetched via `IIndexAssets` callback.
 
-### 3.2 New events
+### 4.2 New imports
 
 ```solidity
-event IndexRegistered(address indexed wNFT, IEnvelopOracle.CompactAsset[] assets, address amm);
-event IndexPriceSet(address indexed wNFT, uint256 price, address indexed setter);
+import "../interfaces/IIndexAssets.sol";
+import "../interfaces/IAMMPriceAdapter.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 ```
 
-### 3.3 Implement `registerIndex`
+### 4.3 Implement `registerIndex`
 
 ```solidity
-function registerIndex(
-    address _wNFT,
-    IEnvelopOracle.CompactAsset[] calldata _assets,
-    address _amm
-) external {
-    require(msg.sender == _wNFT, "Only wNFT itself");
-    // clear and copy
-    delete _indexAssets[_wNFT];
-    for (uint i = 0; i < _assets.length; i++) {
-        _indexAssets[_wNFT].push(_assets[i]);
-    }
-    isRegistered[_wNFT] = true;
-    indexAmm[_wNFT] = _amm;
-    emit IndexRegistered(_wNFT, _assets, _amm);
+function registerIndex() external {
+    isRegistered[msg.sender] = true;
+    emit EnvelopIndexRegistered(msg.sender);
 }
 ```
 
-### 3.4 Implement `setIndexUpdater`
+### 4.4 Implement `setIndexUpdater`
 
 ```solidity
 function setIndexUpdater(address _wNFT, address _updater) external {
@@ -90,7 +90,7 @@ function setIndexUpdater(address _wNFT, address _updater) external {
 }
 ```
 
-### 3.5 Implement `setIndexPrice`
+### 4.5 Implement `setIndexPrice`
 
 ```solidity
 function setIndexPrice(address _wNFT, uint256 _price) external {
@@ -99,33 +99,38 @@ function setIndexPrice(address _wNFT, uint256 _price) external {
         "Not authorized"
     );
     overrided[_wNFT] = _price;
-    emit IndexPriceSet(_wNFT, _price, msg.sender);
+    emit EnvelopIndexPriceSet(_wNFT, _price, msg.sender);
 }
 ```
 
-Note: existing `overrideIndexPrice(address, uint256)` (owner-only) can remain as a separate convenience function pointing to the same storage slot.
+### 4.6 Modify `getIndexPrice(address _v2Index)`
 
-### 3.6 Modify `getIndexPrice(address _v2Index)`
-
-Replace body with:
+Replace body:
 
 ```solidity
 function getIndexPrice(address _v2Index) external view returns (uint256) {
-    // 1. Manual override takes precedence
+    // 1. Manual/Predicter override
     if (overrided[_v2Index] != 0) return overrided[_v2Index];
 
-    // 2. Auto-compute from registered portfolio
+    // 2. Auto-compute via callback
     if (isRegistered[_v2Index]) {
-        IEnvelopOracle.CompactAsset[] storage assets = _indexAssets[_v2Index];
-        address amm = indexAmm[_v2Index];
+        IEnvelopOracle.CompactAsset[] memory assets = IIndexAssets(_v2Index).getIndexAssets();
+        address amm       = IIndexAssets(_v2Index).getIndexAmm();
+        address baseAsset = IIndexAssets(_v2Index).getIndexBaseAsset();
         uint256 total = 0;
-        for (uint i = 0; i < assets.length; i++) {
+        for (uint256 i = 0; i < assets.length; i++) {
             if (amm != address(0)) {
-                total += IAMMPriceAdapter(amm).getTokenPriceUSD(assets[i].token, assets[i].amount);
+                (uint256 price, uint8 dec) = IAMMPriceAdapter(amm)
+                    .getTokenPriceUSD(assets[i].token, assets[i].amount, baseAsset);
+                if (dec <= 8) {
+                    total += price * 10 ** (8 - dec);
+                } else {
+                    total += price / 10 ** (dec - 8);
+                }
             } else {
-                uint8 dec = IERC20Metadata(assets[i].token).decimals();
+                uint8 tokenDec = IERC20Metadata(assets[i].token).decimals();
                 uint256 unitPrice = _getLatestPriceInUSD(assets[i].token); // 1e8
-                total += unitPrice * uint256(assets[i].amount) / (10 ** uint256(dec));
+                total += unitPrice * uint256(assets[i].amount) / (10 ** uint256(tokenDec));
             }
         }
         return total;
@@ -135,88 +140,93 @@ function getIndexPrice(address _v2Index) external view returns (uint256) {
 }
 ```
 
-Add import: `import "../interfaces/IAMMPriceAdapter.sol";` and `import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";`
+### 4.7 New events
+
+```solidity
+event EnvelopIndexRegistered(address indexed wNFT);
+event EnvelopIndexPriceSet(address indexed wNFT, uint256 price, address indexed setter);
+```
 
 ---
 
-## Step 4 — `src/impl/WNFTV2SmartIndex.sol`
+## Step 5 — `src/impl/WNFTV2SmartIndex.sol`
 
 Implement in this order:
 
-### 4.1 Storage struct + accessor
+### 5.1 Storage struct + accessor
 
-```solidity
-bytes32 private constant SMART_INDEX_STORAGE_LOCATION =
-    keccak256(abi.encode(uint256(keccak256("envelop.storage.WNFTV2SmartIndex")) - 1))
-    & ~bytes32(uint256(0xff));
-```
+Namespaced slot, `SmartIndexStorage` with 4 storage slots.
+See `spec_index_dec.md §2.2`.
 
-### 4.2 `fixIndex`
+### 5.2 `fixIndex`
 
-Parameters: `(CompactAsset[] calldata _assets, address _oracle, address _amm)`
+Parameters: `(CompactAsset[] calldata _assets, address _oracle, address _amm, address _baseAsset)`
 
-Steps:
+Execution order:
 1. `require(!$.isFixed, "Already fixed")`
-2. `require(_assets.length > 0)`
+2. `require(_assets.length > 0 && _assets.length <= MAX_ASSETS)`
 3. Copy `_assets` into `$.assets`
-4. `$.startPrice = IEnvelopOracle(_oracle).getIndexPrice(_assets)` — use existing overload
-5. Store oracle + amm, set `isFixed = true`, `createdAt = block.timestamp`
-6. `IEnvelopOracle(_oracle).registerIndex(address(this), _assets, _amm)` — this call is made FROM the wNFT, so `msg.sender == address(this)` satisfies the oracle check
-7. Emit `IndexFixed`
+4. Store `$.oracle`, `$.amm`, `$.baseAsset`
+5. `$.createdAt = uint40(block.timestamp)`, `$.isFixed = true`
+6. `IEnvelopOracle(_oracle).registerIndex()` — registers `msg.sender` in oracle
+7. `$.startPrice = SafeCast.toUint96(IEnvelopOracle(_oracle).getIndexPrice(address(this)))` — **after** registration so oracle uses AMM/Chainlink via callback
+8. Emit `EnvelopIndexFixed`
 
-### 4.3 Price helpers
+### 5.3 `IIndexAssets` implementation
+
+Three view functions returning from `SmartIndexStorage`:
+- `getIndexAssets()` → `$.assets`
+- `getIndexAmm()` → `$.amm`
+- `getIndexBaseAsset()` → `$.baseAsset`
+
+### 5.4 Price helpers
 
 **`_formatPrice(uint256 raw, uint8 dec)`**
-
 ```
 intPart  = raw / 10**dec
 fracPart = raw % 10**dec  → left-pad to `dec` digits → strip trailing zeros
-if fracPart == 0: return Strings.toString(intPart)
-else: return concat(intPart, ".", fracPart_string)
+return concat(intPart, ".", fracPart)
 ```
 
 **`_formatPriceDiff(uint256 start, uint256 current)`**
-
 ```
 if start == 0: return ""
 absDiff = current >= start ? current - start : start - current
-bps     = absDiff * 10000 / start   // e.g. 150 = 1.50%
+bps     = absDiff * 10000 / start
 sign    = current >= start ? "+" : "-"
 return concat("(", sign, bps/100, ".", pad2(bps%100), "%)")
 ```
 
-**`_chainName(uint256 chainId)`** — pure lookup table, see spec §2.9.
+**`_chainName(uint256 chainId)`** — pure lookup, see `spec_index_dec.md §2.9`.
 
-### 4.4 `_generateSVG`
+### 5.5 `_generateSVG`
 
-Translate `codex/tasks/default.svg` Jinja2 template to Solidity `string.concat()` calls.
+Translate `codex/tasks/default.svg` Jinja2 → Solidity `string.concat()`.
 
 Key points:
-- Determine gradient IDs: `isFixed && getCurrentPrice() < $.startPrice` → `paint_linear_1_red`, else `paint_linear_1`
-- Inline ALL gradient `<defs>` from the template (green + red variants, plus the 5 linear gradients for info boxes `paint2..paint6_linear_5869_12693`)
-- Envelop logo paths: copy verbatim from SVG template (both `logo-bg` opacity group and `logo` group)
-- Animated border text: `string.concat("Index \xE2\x80\xA2 ", Strings.toHexString(uint160(address(this)), 20))`
-- Collateral rows: loop up to `min(4, assets.length)`, call `IERC20Metadata.symbol()` and `IERC20.balanceOf(address(this))` per asset
-- If `assets.length > 4`: add "+ N more" row
-- If `!isFixed`: render "Waiting for assets..." placeholder
-- Price section: only rendered if `isFixed`
-- Token info section (chain, chain ID, token ID): always rendered
+- Gradient: `isFixed && getCurrentPrice() < $.startPrice` → red, else green
+- All `<defs>` gradients inlined (green + red + info-box gradients)
+- Logo paths: verbatim from SVG template
+- Animated border: `"Index \xE2\x80\xA2 " + address hex`
+- Collateral rows: loop `min(MAX_SVG_COLLATERAL_ROWS, assets.length)`, Y = `100 + i * 26`
+- "+ N more" if `assets.length > MAX_SVG_COLLATERAL_ROWS`
+- If `!isFixed`: "Waiting for assets..." placeholder
+- Price section: rendered only if `isFixed`
+- Token info: always rendered (chain, chainId, tokenId)
 
-### 4.5 `_generateJSON`
+### 5.6 `_generateJSON`
 
-Build with `string.concat`. Sub-sections:
+Build via `string.concat()`. Sub-sections:
+- header: name, description, indexVersion, image (embed SVG base64), external_url
+- attributes: start/current price, isFixed, per-asset symbol+amount+price
+- collateral: per-asset — `tokenId=0`, `assetType=2`, decimals, price with `base_asset` and `price_decimals`
+- locks: from `_getWNFTV2Envelop721Storage().wnftData.locks`
+- updatedAt: `block.timestamp`
 
-```
-header:     name, description, indexVersion, image (embed _generateSVG output base64), external_url
-attributes: loop assets[] for per-asset attributes + start/current price + isFixed
-collateral: loop assets[] — for each: amount, tokenId=0, assetType=2, contractAddress, decimals, price object
-locks:      loop _getWNFTV2Envelop721Storage().wnftData.locks
-updatedAt:  block.timestamp
-```
+For `price.price` per asset: `IEnvelopOracle($.oracle).getPriceInUSD(asset.token)` if oracle set, else `"0"`.
+For `price.price_decimals`: `8` for Chainlink path; from `IAMMPriceAdapter` return for AMM path.
 
-For `price.price` per asset: call `IEnvelopOracle($.oracle).getPriceInUSD(asset.token)` if `$.oracle != address(0)`, else `"0"`. This gets Chainlink price for the asset regardless of whether the index uses AMM for total pricing — it's informational metadata.
-
-### 4.6 `tokenURI` + factory overrides
+### 5.7 `tokenURI` + factory overrides
 
 ```solidity
 function tokenURI(uint256 tokenId) public view override returns (string memory) {
@@ -232,38 +242,37 @@ function createWNFTonFactory(InitParams memory _init) public override notDelegat
 
 ---
 
-## Step 5 — Tests
+## Step 6 — Tests
 
 ### `test/WNFTV2SmartIndex_Test_a_01.sol`
 
 Setup:
-- Deploy `MockERC20` tokens (already in `src/mock/`)
-- Deploy `MockOracle` or `MockFeedRegistry` (already in `src/mock/`)
+- Deploy `MockERC20` tokens (from `src/mock/`)
+- Deploy `MockOracle` or `MockFeedRegistry` (from `src/mock/`)
 - Deploy `EnvelopWNFTFactory` + `WNFTV2SmartIndex` implementation
 - Create proxy via `factory.createWNFT()`
 
 Test cases:
-1. `test_fixIndex_stores_data` — call `fixIndex`, assert `getIndexRecord()` fields
-2. `test_fixIndex_reverts_twice` — second `fixIndex` call reverts `"Already fixed"`
-3. `test_fixIndex_registers_in_oracle` — assert `oracle.isRegistered(wNFT) == true`
-4. `test_fixIndex_with_amm` — pass a mock AMM adapter, assert `oracle.indexAmm(wNFT) == mockAmm`
-5. `test_tokenURI_prefix` — `tokenURI(1)` starts with `"data:application/json;base64,"`
-6. `test_tokenURI_json_valid` — base64 decode + `vm.parseJson`, check `name`, `indexVersion`, `updatedAt`
-7. `test_tokenURI_image_svg` — check `image` field starts with `"data:image/svg+xml;base64,"`
-8. `test_tokenURI_collateral_populated` — after fixIndex, collateral array length matches assets
-9. `test_svg_green_when_price_up` — mock oracle returns higher current price → no "red" in SVG
-10. `test_svg_red_when_price_down` — mock oracle returns lower current price → contains `paint_linear_1_red`
+1. `test_fixIndex_stores_data` — call `fixIndex`, assert `getIndexRecord()` fields match
+2. `test_fixIndex_reverts_twice` — second call reverts `"Already fixed"`
+3. `test_fixIndex_enforces_max_assets` — array > `MAX_ASSETS` reverts
+4. `test_fixIndex_registers_in_oracle` — assert `oracle.isRegistered(wNFT) == true`
+5. `test_fixIndex_with_amm` — pass mock AMM adapter, assert `getIndexAmm() == mockAmm`
+6. `test_fixIndex_startPrice_uses_amm` — mock AMM returns different price than Chainlink, assert startPrice matches AMM
+7. `test_tokenURI_prefix` — `tokenURI(1)` starts with `"data:application/json;base64,"`
+8. `test_tokenURI_json_valid` — base64 decode + `vm.parseJson`, check `name`, `indexVersion`, `updatedAt`
+9. `test_tokenURI_image_svg` — check `image` field starts with `"data:image/svg+xml;base64,"`
+10. `test_tokenURI_collateral_populated` — collateral array length matches assets
+11. `test_svg_green_when_price_up` — mock oracle returns higher current price → no `paint_linear_1_red` in SVG
+12. `test_svg_red_when_price_down` — mock oracle returns lower current price → contains `paint_linear_1_red`
+13. `test_setIndexPrice_by_updater` — authorized updater can set override price
+14. `test_setIndexPrice_reverts_unauthorized` — random address reverts
 
-### `test/EnvelopOracle_Test_a_ext.sol`
+### Oracle regression
 
-Test cases for oracle extensions:
-1. `test_registerIndex_only_by_wNFT` — calling from other address reverts
-2. `test_getIndexPrice_uses_chainlink` — registered without AMM → price from mock feed
-3. `test_getIndexPrice_uses_amm` — registered with mock AMM adapter → price from adapter
-4. `test_getIndexPrice_override_takes_precedence` — override set → override returned regardless of AMM
-5. `test_setIndexPrice_by_authorized_updater`
-6. `test_setIndexPrice_reverts_unauthorized`
-7. `test_existing_oracle_tests_unaffected` — import + run existing `EnvelopOracle_Test_a_01`
+```bash
+forge test --match-contract EnvelopOracle_Test -vvv  # existing tests must pass
+```
 
 ---
 
@@ -275,10 +284,12 @@ Test cases for oracle extensions:
 | `ET.Lock` | `src/utils/LibET.sol` |
 | `Strings` | already imported in `WNFTV2Index.sol` |
 | `Base64` | `@openzeppelin/contracts/utils/Base64.sol` (new import) |
+| `SafeCast` | `@openzeppelin/contracts/utils/math/SafeCast.sol` (new import) |
+| `IERC20Metadata` | `@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol` |
 | `onlyWnftOwner` | `Singleton721` |
 | `_getWNFTV2Envelop721Storage()` | `WNFTV2Envelop721` — for `wnftData.locks` |
 | `MockERC20`, `MockOracle`, `MockFeedRegistry` | `src/mock/` |
-| `_getLatestPriceInUSD` | reused in oracle's new `getIndexPrice(address)` Chainlink path |
+| `_getLatestPriceInUSD` | reused in oracle's `getIndexPrice(address)` Chainlink path |
 
 ---
 
@@ -290,14 +301,9 @@ forge build
 # New implementation tests
 forge test --match-contract WNFTV2SmartIndex_Test -vvv
 
-# Oracle extension tests
-forge test --match-contract EnvelopOracle_Test_a_ext -vvv
-
-# Regression: existing oracle tests must still pass
+# Oracle regression
 forge test --match-contract EnvelopOracle_Test -vvv
 
 # Full suite
 forge test -vvv
 ```
-
-Manual verification: copy `tokenURI(1)` output, paste into browser address bar — JSON renders; `image` field renders as SVG with correct colors.

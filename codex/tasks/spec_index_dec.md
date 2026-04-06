@@ -2,18 +2,41 @@
 
 ## Overview
 
-Specification for:
-1. New wNFT implementation `WNFTV2SmartIndex` — on-chain `tokenURI` + index asset registry inside the wNFT proxy
-2. New interface `IAMMPriceAdapter` — abstraction over AMM price sources
-3. Extensions to `EnvelopOracle` — auto-compute index price from registered assets, AMM price source support, ACL for Predicter
+1. New wNFT implementation `WNFTV2SmartIndex` — on-chain `tokenURI`, index asset registry inside the wNFT proxy
+2. New interface `IIndexAssets` — callback for oracle to fetch assets from wNFT
+3. New interface `IAMMPriceAdapter` — abstraction over AMM price sources
+4. Extensions to `EnvelopOracle` — auto-compute index price via callback, AMM support, ACL for Predicter
 
-This spec does **not** modify `WNFTV2Index.sol`.
+Does **not** modify `WNFTV2Index.sol`.
 
 ---
 
-## 1. `IAMMPriceAdapter` interface
+## 1. New interfaces
 
-**File:** `src/interfaces/IAMMPriceAdapter.sol`
+### 1.1 `src/interfaces/IIndexAssets.sol`
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.28;
+
+import "./IEnvelopOracle.sol";
+
+interface IIndexAssets {
+    /// @notice Returns the fixed portfolio of the index
+    function getIndexAssets() external view returns (IEnvelopOracle.CompactAsset[] memory);
+
+    /// @notice Returns the IAMMPriceAdapter address; address(0) = use Chainlink
+    function getIndexAmm() external view returns (address);
+
+    /// @notice Returns the base token for AMM pricing (e.g. USDC, WETH); address(0) = USD
+    function getIndexBaseAsset() external view returns (address);
+}
+```
+
+`WNFTV2SmartIndex` implements this. `EnvelopOracle` imports it for callbacks in `getIndexPrice(address)`.
+No asset duplication — assets live only in the wNFT.
+
+### 1.2 `src/interfaces/IAMMPriceAdapter.sol`
 
 ```solidity
 // SPDX-License-Identifier: MIT
@@ -21,38 +44,40 @@ pragma solidity ^0.8.28;
 
 /**
  * @dev Adapter interface for AMM-based price sources.
- * Each supported DEX (Uniswap V3, Curve, etc.) is wrapped in a concrete
- * adapter contract that implements this interface.
- * The adapter address is stored in the index as the `amm` field and registered
- * in EnvelopOracle. This decouples the oracle from any specific DEX interface.
+ * Concrete adapters (UniswapV3Adapter, CurveAdapter, etc.) are deployed separately.
+ * The adapter address is stored in SmartIndexStorage.amm.
  */
 interface IAMMPriceAdapter {
     /**
-     * @dev Returns the USD value of `amount` units of `token` via the AMM.
-     * @param token   ERC20 token address
-     * @param amount  Token amount in native units (same as CompactAsset.amount)
-     * @return        USD value with 1e8 decimals (same scale as Chainlink)
+     * @dev Returns USD value of `amount` units of `token` via the AMM.
+     * @param token     ERC20 token address
+     * @param amount    Token amount in native units (same as CompactAsset.amount)
+     * @param baseAsset Intermediate token in the AMM pair (e.g. USDC, WETH).
+     *                  Adapter resolves baseAsset → USD internally.
+     * @return price    USD value
+     * @return decimals Price decimals (may differ from Chainlink's 8)
      */
-    function getTokenPriceUSD(address token, uint96 amount) external view returns (uint256);
+    function getTokenPriceUSD(address token, uint96 amount, address baseAsset)
+        external view returns (uint256 price, uint8 decimals);
 }
 ```
-
-The `amm` field in the index stores an `IAMMPriceAdapter` adapter address — **not** the raw DEX address. Concrete adapters are deployed separately. This allows reusing the same adapter for multiple indexes on the same DEX.
 
 ---
 
 ## 2. `WNFTV2SmartIndex`
 
-**File:** `src/impl/WNFTV2SmartIndex.sol`  
-**Inherits:** `WNFTV2Envelop721`  
+**File:** `src/impl/WNFTV2SmartIndex.sol`
+**Inherits:** `WNFTV2Envelop721`, `IIndexAssets`
 **Pragma:** `^0.8.28`
 
 ### 2.1 Constants
 
 ```solidity
-string public constant nftName      = "Envelop wNFT V2 Smart Index";
-string public constant nftSymbol    = "ENVELOPV2";
-string public constant indexVersion = "2.1.0";
+string  public constant nftName      = "Envelop wNFT V2 Smart Index";
+string  public constant nftSymbol    = "ENVELOPV2";
+string  public constant indexVersion = "2.1.0";
+uint256 public constant MAX_ASSETS   = 100;  // portfolio cap (same as Predicter)
+uint256 internal constant MAX_SVG_COLLATERAL_ROWS = 4;
 ```
 
 ### 2.2 Namespaced storage
@@ -63,17 +88,21 @@ bytes32 private constant SMART_INDEX_STORAGE_LOCATION =
     & ~bytes32(uint256(0xff));
 
 struct SmartIndexStorage {
-    IEnvelopOracle.CompactAsset[] assets; // fixed portfolio (token addr + amount)
-    address oracle;   // IEnvelopOracle implementation used for pricing
-    address amm;      // IAMMPriceAdapter address; address(0) = use Chainlink in oracle
-    uint256 startPrice; // total portfolio USD price at fixation, 1e8 decimals
-    uint40  createdAt;  // block.timestamp of fixIndex() call
-    bool    isFixed;    // once true: assets/startPrice cannot change
+    // slot 0: dynamic array (always full slot)
+    IEnvelopOracle.CompactAsset[] assets;
+    // slot 1: oracle(20) + createdAt(5) + isFixed(1) = 26 bytes (6 free)
+    address oracle;
+    uint40  createdAt;
+    bool    isFixed;
+    // slot 2: amm(20) + startPrice(12) = 32 bytes exact
+    address amm;         // IAMMPriceAdapter; address(0) = use Chainlink
+    uint96  startPrice;  // 1e8 decimals; max ~7.9e20 USD
+    // slot 3: baseAsset(20) (12 free)
+    address baseAsset;   // base token for AMM pricing (e.g. USDC, WETH)
+                         // address(0) = USD denomination (Chainlink path)
 }
-```
+// 4 slots total. CompactAsset=(address,uint96) = 32 bytes per element.
 
-Accessor:
-```solidity
 function _getSmartIndexStorage() private pure returns (SmartIndexStorage storage $) {
     assembly { $.slot := SMART_INDEX_STORAGE_LOCATION }
 }
@@ -82,12 +111,10 @@ function _getSmartIndexStorage() private pure returns (SmartIndexStorage storage
 ### 2.3 Events
 
 ```solidity
-event IndexFixed(
+event EnvelopIndexFixed(
     address indexed creator,
-    uint256 startPrice,
-    IEnvelopOracle.CompactAsset[] assets,
-    address oracle,
-    address amm   // IAMMPriceAdapter, or address(0)
+    uint96  startPrice,
+    IEnvelopOracle.CompactAsset[] assets
 );
 ```
 
@@ -97,37 +124,47 @@ event IndexFixed(
 function fixIndex(
     IEnvelopOracle.CompactAsset[] calldata _assets,
     address _oracle,
-    address _amm        // IAMMPriceAdapter address, or address(0) to use Chainlink
+    address _amm,
+    address _baseAsset
 ) external onlyWnftOwner
 ```
 
-Execution:
-1. Require `!$.isFixed` — revert `"Already fixed"`
-2. Require `_assets.length > 0`
+Execution order:
+1. `require(!$.isFixed, "Already fixed")`
+2. `require(_assets.length > 0 && _assets.length <= MAX_ASSETS)`
 3. Copy `_assets` into `$.assets`
-4. Write `$.oracle = _oracle`, `$.amm = _amm`
-5. Call `IEnvelopOracle(_oracle).getIndexPrice(_assets)` → store in `$.startPrice`
-6. Set `$.createdAt = uint40(block.timestamp)`, `$.isFixed = true`
-7. Call `IEnvelopOracle(_oracle).registerIndex(address(this), _assets, _amm)` — registers portfolio + AMM source in oracle
-8. Emit `IndexFixed(msg.sender, $.startPrice, _assets, _oracle, _amm)`
+4. `$.oracle = _oracle`, `$.amm = _amm`, `$.baseAsset = _baseAsset`
+5. `$.createdAt = uint40(block.timestamp)`, `$.isFixed = true`
+6. `IEnvelopOracle(_oracle).registerIndex()` — oracle registers `msg.sender`
+7. `$.startPrice = SafeCast.toUint96(IEnvelopOracle(_oracle).getIndexPrice(address(this)))` — **AFTER** registration so oracle uses correct price source (AMM or Chainlink via callback)
+8. Emit `EnvelopIndexFixed(msg.sender, $.startPrice, _assets)`
 
-**Rationale for AMM parameter**: For option-style indexes the settlement price must come from the specific DEX where the swap will execute. Passing `_amm` (an `IAMMPriceAdapter`) to `fixIndex` and forwarding it to the oracle ensures that both `getCurrentPrice()` and `Predicter` resolution use the same price source as the actual settlement.
-
-### 2.5 Function: `getCurrentPrice`
+### 2.5 View functions
 
 ```solidity
 function getCurrentPrice() public view returns (uint256)
 ```
-
 - If `isFixed && oracle != address(0)`: return `IEnvelopOracle(oracle).getIndexPrice(address(this))`
 - Else: return `0`
 
-The oracle resolves the price using the registered AMM adapter or Chainlink depending on what was passed at `fixIndex` time (see §4.4).
-
-### 2.6 View functions
-
 ```solidity
 function getIndexRecord() external view returns (SmartIndexStorage memory)
+```
+
+### 2.6 `IIndexAssets` implementation
+
+```solidity
+function getIndexAssets() external view returns (IEnvelopOracle.CompactAsset[] memory) {
+    return _getSmartIndexStorage().assets;
+}
+
+function getIndexAmm() external view returns (address) {
+    return _getSmartIndexStorage().amm;
+}
+
+function getIndexBaseAsset() external view returns (address) {
+    return _getSmartIndexStorage().baseAsset;
+}
 ```
 
 ### 2.7 `tokenURI` and helpers
@@ -140,12 +177,7 @@ Returns `_encodeBase64JSON(tokenId)`.
 ```solidity
 function _encodeBase64JSON(uint256 tokenId) internal view returns (string memory)
 ```
-```solidity
-return string.concat(
-    "data:application/json;base64,",
-    Base64.encode(bytes(_generateJSON(tokenId)))
-);
-```
+Returns `string.concat("data:application/json;base64,", Base64.encode(bytes(_generateJSON(tokenId))))`.
 
 ```solidity
 function _generateJSON(uint256 tokenId) internal view returns (string memory)
@@ -162,24 +194,26 @@ Assembles full SVG string. See §2.9.
 ```solidity
 import "./WNFTV2Envelop721.sol";
 import "../interfaces/IEnvelopOracle.sol";
+import "../interfaces/IIndexAssets.sol";
 import "../interfaces/IAMMPriceAdapter.sol";
 import "@openzeppelin/contracts/utils/Base64.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
+import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 ```
 
 ### 2.9 SVG specification
 
-**Canvas:** 300×500, `viewBox="0 0 300 500"`, `rx="20"`, no external resources.
+**Canvas:** 300x500, `viewBox="0 0 300 500"`, `rx="20"`, no external resources.
 
-**Gradient selection** (evaluated at render time):
+**Gradient selection:**
 
 | Condition | Gradient IDs |
 |---|---|
 | `!isFixed` OR `getCurrentPrice() >= startPrice` | `paint_linear_1`, `paint_linear_2` (green) |
 | `isFixed && getCurrentPrice() < startPrice` | `paint_linear_1_red`, `paint_linear_2_red` (red) |
 
-Both gradient definitions (green + red, as in `default.svg`) must be inlined in `<defs>`. Yellow variant is reserved for future use.
+Both gradient definitions inlined in `<defs>`. Yellow variant reserved for future.
 
 **Template variable mapping:**
 
@@ -187,10 +221,10 @@ Both gradient definitions (green + red, as in `default.svg`) must be inlined in 
 |---|---|
 | Animated border text | `"Index \u2022 " + Strings.toHexString(uint160(address(this)), 20)` |
 | Title | `symbol()` |
-| Collateral row symbol | `IERC20Metadata(asset.token).symbol()` |
-| Collateral row balance | `Strings.toString(IERC20(asset.token).balanceOf(address(this)))` |
-| Max collateral rows | 4 (if `assets.length > 4` → show "+ N more") |
-| Empty state | shown if `!isFixed` |
+| Collateral rows | loop `i` in `0..min(MAX_SVG_COLLATERAL_ROWS, assets.length)`: symbol via `IERC20Metadata(asset.token).symbol()`, balance via `IERC20(asset.token).balanceOf(address(this))` |
+| Y-coordinate per row | `100 + i * 26` |
+| "+ N more" row | if `assets.length > MAX_SVG_COLLATERAL_ROWS`: N = `assets.length - MAX_SVG_COLLATERAL_ROWS` |
+| Empty state | shown if `!isFixed`: "Waiting for assets..." |
 | Start price | `"$" + _formatPrice(startPrice, 8)` |
 | Current price | `"$" + _formatPrice(getCurrentPrice(), 8)` |
 | Price diff | `_formatPriceDiff(startPrice, getCurrentPrice())` |
@@ -201,14 +235,11 @@ Both gradient definitions (green + red, as in `default.svg`) must be inlined in 
 
 **Helper: `_formatPrice(uint256 raw, uint8 dec) internal pure returns (string memory)`**
 
-Renders `raw` as a decimal string with `dec` fractional digits.  
-Example: `raw=123456789, dec=8` → `"1.23456789"`.  
-Algorithm: integer part = `raw / 10**dec`; fractional part = `raw % 10**dec`, left-padded with zeros to `dec` digits; strip trailing zeros.
+Renders `raw` as decimal string: integer part = `raw / 10**dec`, fractional = `raw % 10**dec` left-padded to `dec` digits, trailing zeros stripped.
 
 **Helper: `_formatPriceDiff(uint256 start, uint256 current) internal pure returns (string memory)`**
 
-Returns `"(+X.XX%)"` or `"(-X.XX%)"`. Returns `""` if `start == 0`.  
-Compute: `absDiff = |current - start|`; `bps = absDiff * 10000 / start` (basis-points × 100 for 2 decimal places); format as `X.XX`.
+Returns `"(+X.XX%)"` / `"(-X.XX%)"`. Returns `""` if `start == 0`.
 
 **Helper: `_chainName(uint256 chainId) internal pure returns (string memory)`**
 
@@ -234,12 +265,11 @@ Compute: `absDiff = |current - start|`; `bps = absDiff * 10000 / start` (basis-p
   "image": "data:image/svg+xml;base64,<Base64(_generateSVG(tokenId))>",
   "external_url": "https://app.envelop.is/token/<chainId>/<contractAddress>/<tokenId>",
   "attributes": [
-    {"trait_type": "Start Price",   "value": <startPrice/1e8 decimal>,   "display_type": "number"},
-    {"trait_type": "Current Price", "value": <currentPrice/1e8 decimal>, "display_type": "number"},
+    {"trait_type": "Start Price",   "value": <startPrice/1e8>,   "display_type": "number"},
+    {"trait_type": "Current Price", "value": <currentPrice/1e8>, "display_type": "number"},
     {"trait_type": "Is Fixed",      "value": "<true|false>"},
-    // per asset:
-    {"trait_type": "<symbol> Amount",    "value": <amount/10^decimals decimal>, "display_type": "number"},
-    {"trait_type": "<symbol> Price USD", "value": <oracle_price/1e8 decimal>,   "display_type": "number"}
+    {"trait_type": "<symbol> Amount",    "value": <amount/10^decimals>, "display_type": "number"},
+    {"trait_type": "<symbol> Price USD", "value": <price/1e8>,          "display_type": "number"}
   ],
   "collateral": [
     {
@@ -249,82 +279,81 @@ Compute: `absDiff = |current - start|`; `bps = absDiff * 10000 / start` (basis-p
       "contractAddress": "<asset.token lowercase hex>",
       "decimals":        <IERC20Metadata(asset.token).decimals()>,
       "price": {
-        "base_asset":     "0x0000000000000000000000000000000000000348",
-        "price":          "<IEnvelopOracle(oracle).getPriceInUSD(asset.token) as uint string, or 0>",
-        "price_decimals": 8
+        "base_asset":     "<SmartIndexStorage.baseAsset; address(0) = USD>",
+        "price":          "<oracle/AMM price raw as uint string>",
+        "price_decimals": "<Chainlink: 8; AMM: decimals from IAMMPriceAdapter>"
       }
     }
-    // one entry per asset in assets[]
   ],
   "locks": [
     {"param": <lock.param>, "lockType": <uint8(lock.lockType)>}
-    // one entry per lock in _getWNFTV2Envelop721Storage().wnftData.locks
   ],
   "updatedAt": <block.timestamp>
 }
 ```
 
 Notes:
+- `CompactAsset` is ERC20-only → `tokenId` always `0`, `assetType` always `2`
 - If `!isFixed`: `collateral = []`, price attribute values = `0`
-- Numeric values in JSON are unquoted decimal strings (e.g. `"value": 1.23`)
-- String fields are JSON-escaped; contract addresses are lowercase hex
-- All building via `string.concat()` / `abi.encodePacked()`
+- `wnftData.locks` accessed via `_getWNFTV2Envelop721Storage().wnftData.locks`
+- `price_decimals`: `8` for Chainlink path; value from `IAMMPriceAdapter` return for AMM path
+- `base_asset`: from `SmartIndexStorage.baseAsset`
 
 ### 2.11 `name` / `symbol` / factory overrides
 
 ```solidity
 function name()   public pure override returns (string memory) { return nftName; }
 function symbol() public pure override returns (string memory) { return nftSymbol; }
-
-// Same pattern as WNFTV2Index: clear name/symbol/tokenUri before proxy init
-function createWNFTonFactory(InitParams memory _init) public override notDelegated returns (address)
-function createWNFTonFactory2(InitParams memory _init) public override notDelegated returns (address)
 ```
+
+Factory overrides clear `nftName`/`nftSymbol`/`tokenUri` before calling `super` (same pattern as `WNFTV2Index`).
 
 ---
 
-## 3. `IAMMPriceAdapter` usage in the system
+## 3. Price source flow
 
 ```
-fixIndex(_assets, _oracle, _amm)
+fixIndex(_assets, _oracle, _amm, _baseAsset)
     │
-    ├─► oracle.registerIndex(address(this), _assets, _amm)
-    │       stores: _indexAssets[wNFT] = _assets
-    │               indexAmm[wNFT]     = _amm        ← price source for this index
-    │               isRegistered[wNFT] = true
-    │
-    └─► getCurrentPrice()
-            └─► oracle.getIndexPrice(address(this))
-                    └─► for each asset:
-                          if indexAmm[wNFT] != 0:
-                            IAMMPriceAdapter(amm).getTokenPriceUSD(token, amount)
-                          else:
-                            Chainlink via _getLatestPriceInUSD(token)
+    ├─► store assets, oracle, amm, baseAsset in SmartIndexStorage
+    ├─► isFixed = true
+    ├─► oracle.registerIndex()              // oracle marks msg.sender as registered
+    └─► startPrice = oracle.getIndexPrice(address(this))
+            │
+            └─► oracle callback to wNFT:
+                  assets    = wNFT.getIndexAssets()
+                  amm       = wNFT.getIndexAmm()
+                  baseAsset = wNFT.getIndexBaseAsset()
+                  for each asset:
+                    if amm != 0:
+                      IAMMPriceAdapter(amm).getTokenPriceUSD(token, amount, baseAsset)
+                    else:
+                      Chainlink via _getLatestPriceInUSD(token)
 ```
 
-`Predicter` can also call `oracle.getIndexPrice(wNFT)` when resolving a prediction, getting the same price source as `getCurrentPrice()` — ensuring consistency between display, settlement, and prediction resolution.
+`Predicter` can call `oracle.getIndexPrice(wNFT)` → same callback → same price source.
 
 ---
 
 ## 4. `EnvelopOracle` extensions
 
-**File:** `src/utils/EnvelopOracle.sol`  
+**File:** `src/utils/EnvelopOracle.sol`
 **File:** `src/interfaces/IEnvelopOracle.sol`
 
 ### 4.1 New storage
 
 ```solidity
-mapping(address wNFT => IEnvelopOracle.CompactAsset[]) internal _indexAssets;
 mapping(address wNFT => bool)    public isRegistered;
-mapping(address wNFT => address) public indexAmm;          // IAMMPriceAdapter or address(0)
 mapping(address wNFT => address) public authorizedUpdater; // e.g. Predicter
 ```
+
+No `CompactAsset[]` storage — assets fetched via `IIndexAssets` callback.
 
 ### 4.2 New events
 
 ```solidity
-event IndexRegistered(address indexed wNFT, IEnvelopOracle.CompactAsset[] assets, address amm);
-event IndexPriceSet(address indexed wNFT, uint256 price, address indexed setter);
+event EnvelopIndexRegistered(address indexed wNFT);
+event EnvelopIndexPriceSet(address indexed wNFT, uint256 price, address indexed setter);
 ```
 
 ### 4.3 New functions
@@ -332,81 +361,74 @@ event IndexPriceSet(address indexed wNFT, uint256 price, address indexed setter)
 #### `registerIndex`
 
 ```solidity
-function registerIndex(
-    address _wNFT,
-    IEnvelopOracle.CompactAsset[] calldata _assets,
-    address _amm   // IAMMPriceAdapter address, or address(0)
-) external
+function registerIndex() external
 ```
+- Sets `isRegistered[msg.sender] = true`
+- Emits `EnvelopIndexRegistered(msg.sender)`
 
-- Requires `msg.sender == _wNFT` — the index contract registers itself
-- Copies `_assets` into `_indexAssets[_wNFT]`
-- Sets `isRegistered[_wNFT] = true`, `indexAmm[_wNFT] = _amm`
-- Emits `IndexRegistered(_wNFT, _assets, _amm)`
+No parameters — the wNFT calls this, oracle registers `msg.sender`.
 
 #### `setIndexUpdater`
 
 ```solidity
 function setIndexUpdater(address _wNFT, address _updater) external
 ```
-
 - Requires `msg.sender == _wNFT`
-- Sets `authorizedUpdater[_wNFT] = _updater` (e.g. a deployed `Predicter` address)
-- Allows `Predicter` to later call `setIndexPrice` after prediction resolution
+- Sets `authorizedUpdater[_wNFT] = _updater`
 
 #### `setIndexPrice`
 
 ```solidity
 function setIndexPrice(address _wNFT, uint256 _price) external
 ```
-
 - Requires `msg.sender == authorizedUpdater[_wNFT]` OR `msg.sender == owner()`
 - Sets `overrided[_wNFT] = _price`
-- Emits `IndexPriceSet(_wNFT, _price, msg.sender)`
+- Emits `EnvelopIndexPriceSet(_wNFT, _price, msg.sender)`
 
 ### 4.4 Modified `getIndexPrice(address _v2Index)`
 
 ```
 Priority order:
 1. overrided[_v2Index] != 0
-       → return overrided[_v2Index]               // manual/Predicter override
+       → return overrided[_v2Index]                   // manual/Predicter override
 
 2. isRegistered[_v2Index]
-       → uint256 total = 0
-         address amm = indexAmm[_v2Index]
-         for each asset in _indexAssets[_v2Index]:
+       → assets    = IIndexAssets(_v2Index).getIndexAssets()
+         amm       = IIndexAssets(_v2Index).getIndexAmm()
+         baseAsset = IIndexAssets(_v2Index).getIndexBaseAsset()
+         uint256 total = 0
+         for each asset:
            if amm != address(0):
-             total += IAMMPriceAdapter(amm).getTokenPriceUSD(asset.token, asset.amount)
+             (price, dec) = IAMMPriceAdapter(amm).getTokenPriceUSD(
+                                asset.token, asset.amount, baseAsset)
+             // normalize to 1e8:
+             if dec <= 8: total += price * 10**(8 - dec)
+             else:        total += price / 10**(dec - 8)
            else:
-             uint8 dec = IERC20Metadata(asset.token).decimals()
-             uint256 unitPrice = _getLatestPriceInUSD(asset.token)  // 1e8
-             total += unitPrice * asset.amount / (10 ** dec)
-         return total
+             uint8 tokenDec = IERC20Metadata(asset.token).decimals()
+             uint256 unitPrice = _getLatestPriceInUSD(asset.token) // 1e8
+             total += unitPrice * uint256(asset.amount) / (10 ** uint256(tokenDec))
+         return total  // always 1e8 scale
 
 3. else → return 0
 ```
 
-`IAMMPriceAdapter.getTokenPriceUSD` already accounts for the `amount`, so its return value is added directly to `total` (no further scaling needed).
-
-For the Chainlink path, `asset.amount` is in native token units, so division by `10**decimals` converts to human units before multiplying by the per-unit USD price (1e8).
+New imports for `EnvelopOracle.sol`:
+```solidity
+import "../interfaces/IIndexAssets.sol";
+import "../interfaces/IAMMPriceAdapter.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+```
 
 ### 4.5 Updated `IEnvelopOracle.sol`
 
 Add to interface:
 
 ```solidity
-function registerIndex(
-    address _wNFT,
-    CompactAsset[] calldata _assets,
-    address _amm
-) external;
-
+function registerIndex() external;
 function setIndexUpdater(address _wNFT, address _updater) external;
-
 function setIndexPrice(address _wNFT, uint256 _price) external;
-
 function isRegistered(address _wNFT) external view returns (bool);
-function indexAmm(address _wNFT) external view returns (address);
 ```
 
 ---
@@ -415,12 +437,15 @@ function indexAmm(address _wNFT) external view returns (address);
 
 | # | Constraint |
 |---|---|
-| 1 | No HTTP/IPFS in `tokenURI` output except `external_url` field |
+| 1 | No HTTP/IPFS in `tokenURI` output except `external_url` |
 | 2 | `tokenURI` must be `view` — no state changes |
-| 3 | SVG fully inline — no external fonts, images, scripts |
-| 4 | `fixIndex` callable only once per wNFT (`isFixed` guard) |
-| 5 | `registerIndex` callable only by the wNFT itself (`msg.sender == _wNFT`) |
-| 6 | `setIndexPrice` callable only by `authorizedUpdater` or oracle owner |
-| 7 | Existing `EnvelopOracle` tests must continue to pass |
-| 8 | `pragma solidity ^0.8.28`, OpenZeppelin v5 |
-| 9 | `IAMMPriceAdapter` returns values at 1e8 scale (same as Chainlink) |
+| 3 | SVG fully inline — no external resources |
+| 4 | `fixIndex` callable once per wNFT (`isFixed` guard) |
+| 5 | `assets.length <= MAX_ASSETS` enforced in `fixIndex` |
+| 6 | SVG displays at most `MAX_SVG_COLLATERAL_ROWS` collateral rows |
+| 7 | `registerIndex()` uses `msg.sender` — no parameter |
+| 8 | `startPrice` stored as `uint96` via `SafeCast.toUint96` |
+| 9 | AMM adapter returns `(price, decimals)` — oracle normalizes to 1e8 |
+| 10 | `CompactAsset` is ERC20-only → collateral `tokenId=0`, `assetType=2` |
+| 11 | Existing `EnvelopOracle` tests must continue to pass |
+| 12 | `pragma solidity ^0.8.28`, OpenZeppelin v5 |
