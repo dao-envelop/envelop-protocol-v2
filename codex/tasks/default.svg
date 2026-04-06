@@ -1,0 +1,339 @@
+<svg width="300" height="500" viewBox="0 0 300 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+   <g id="index-svg-v3">
+      <g clip-path="url(#clip0_5869_12693)">
+         {% if replace_color is not none %}
+            <rect id="gradient-v1" width="300" height="500" rx="20" fill="url(#paint_linear_1_yellow)"/>
+            <rect id="gradient-v2" width="300" height="500" rx="20" fill="url(#paint_linear_2_yellow"/>
+         {% else %}
+            {% if start_price is not none and current_price is not none %}
+               {% if (start_price|float > current_price|float) %}
+                  <rect id="gradient-v1" width="300" height="500" rx="20" fill="url(#paint_linear_1_red)"/>
+                  <rect id="gradient-v2" width="300" height="500" rx="20" fill="url(#paint_linear_2_red"/>
+               {% else %}
+                  <rect id="gradient-v1" width="300" height="500" rx="20" fill="url(#paint_linear_1)"/>
+                  <rect id="gradient-v2" width="300" height="500" rx="20" fill="url(#paint_linear_2"/>
+               {% endif %}
+            {% else %}
+               <rect id="gradient-v1" width="300" height="500" rx="20" fill="url(#paint_linear_1)"/>
+               <rect id="gradient-v2" width="300" height="500" rx="20" fill="url(#paint_linear_2"/>
+            {% endif %}
+         {% endif %}
+         <g id="logo-bg" opacity="0.2">
+            <path d="M231.283 135.386C228.699 133.344 228.259 129.593 230.301 127.009L240.412 114.212C242.454 111.628 246.204 111.188 248.789 113.23C251.373 115.272 251.813 119.023 249.771 121.607L239.66 134.404C237.618 136.988 233.868 137.428 231.283 135.386Z" fill="white"/>
+            <path d="M299.137 157.713C299.137 168.559 290.344 177.352 279.498 177.352C268.653 177.352 259.86 168.559 259.86 157.713C259.86 146.867 268.653 138.075 279.498 138.075C290.344 138.075 299.137 146.867 299.137 157.713Z" fill="white"/>
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M292.518 238.036C285.696 246.065 273.303 246.065 266.481 238.036L209.997 171.562C204.577 165.184 204.577 155.817 209.997 149.438L215.648 142.788C218.702 139.193 224.093 138.754 227.688 141.809C231.283 144.864 231.721 150.255 228.666 153.85L223.016 160.5L279.5 226.974L295.868 207.71C298.923 204.115 304.314 203.677 307.909 206.732C311.504 209.787 311.942 215.177 308.887 218.773L292.518 238.036ZM327.831 183.287C324.236 180.232 323.798 174.842 326.852 171.246L335.984 160.5L279.5 94.026L267.603 108.026C264.549 111.621 259.158 112.059 255.563 109.004C251.969 105.949 251.53 100.559 254.585 96.9637L266.481 82.9638C273.303 74.9351 285.696 74.9351 292.518 82.9638L349.003 149.438C354.423 155.817 354.423 165.184 349.003 171.562L339.871 182.309C336.816 185.904 331.426 186.342 327.831 183.287Z" fill="white"/>
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M279.5 57.0838C222.385 57.0838 176.084 103.385 176.084 160.5C176.084 217.615 222.385 263.916 279.5 263.916C284.217 263.916 288.041 267.74 288.041 272.458C288.041 277.176 284.217 281 279.5 281C212.949 281 159 227.05 159 160.5C159 93.9497 212.949 40 279.5 40C284.217 40 288.041 43.8243 288.041 48.5419C288.041 53.2594 284.217 57.0838 279.5 57.0838Z" fill="white"/>
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M352.233 246.043C348.913 242.691 348.938 237.283 352.289 233.963C371.211 215.212 382.916 189.231 382.916 160.5C382.916 131.769 371.211 105.787 352.289 87.0375C348.938 83.717 348.913 78.3087 352.233 74.9576C355.554 71.6066 360.962 71.5818 364.313 74.9023C386.341 96.729 400 127.027 400 160.5C400 193.973 386.341 224.271 364.313 246.098C360.962 249.418 355.554 249.394 352.233 246.043Z" fill="white"/>
+            <path d="M330.324 263.953C330.324 269.024 326.213 273.135 321.142 273.135C316.07 273.135 311.959 269.024 311.959 263.953C311.959 258.881 316.07 254.77 321.142 254.77C326.213 254.77 330.324 258.881 330.324 263.953Z" fill="white"/>
+         </g>
+         <g id="logo">
+            <path d="M232.797 437.207C232.304 436.817 232.22 436.101 232.609 435.608L234.539 433.165C234.929 432.672 235.645 432.588 236.138 432.978C236.631 433.367 236.715 434.083 236.326 434.576L234.396 437.019C234.006 437.512 233.29 437.596 232.797 437.207Z" fill="white"/>
+            <path d="M245.748 441.468C245.748 443.538 244.07 445.217 242 445.217C239.93 445.217 238.251 443.538 238.251 441.468C238.251 439.398 239.93 437.72 242 437.72C244.07 437.72 245.748 439.398 245.748 441.468Z" fill="white"/>
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M244.485 456.799C243.183 458.332 240.817 458.332 239.515 456.799L228.734 444.111C227.699 442.894 227.699 441.106 228.734 439.889L229.813 438.619C230.396 437.933 231.425 437.849 232.111 438.433C232.797 439.016 232.88 440.044 232.297 440.731L231.219 442L242 454.688L245.124 451.011C245.707 450.325 246.736 450.241 247.423 450.824C248.109 451.407 248.192 452.436 247.609 453.123L244.485 456.799ZM251.225 446.349C250.539 445.766 250.455 444.737 251.038 444.051L252.781 442L242 429.312L239.729 431.984C239.146 432.67 238.117 432.754 237.431 432.171C236.745 431.588 236.661 430.559 237.245 429.873L239.515 427.201C240.817 425.668 243.183 425.668 244.485 427.201L255.266 439.889C256.301 441.106 256.301 442.894 255.266 444.111L253.523 446.163C252.94 446.849 251.911 446.932 251.225 446.349Z" fill="white"/>
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M242 422.261C231.098 422.261 222.261 431.098 222.261 442C222.261 452.902 231.098 461.739 242 461.739C242.9 461.739 243.63 462.469 243.63 463.37C243.63 464.27 242.9 465 242 465C229.297 465 219 454.703 219 442C219 429.297 229.297 419 242 419C242.9 419 243.63 419.73 243.63 420.63C243.63 421.531 242.9 422.261 242 422.261Z" fill="white"/>
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M255.883 458.328C255.249 457.688 255.254 456.656 255.893 456.022C259.505 452.443 261.739 447.484 261.739 442C261.739 436.516 259.505 431.557 255.893 427.978C255.254 427.344 255.249 426.312 255.883 425.672C256.517 425.033 257.549 425.028 258.189 425.662C262.393 429.828 265 435.611 265 442C265 448.389 262.393 454.172 258.189 458.338C257.549 458.972 256.517 458.967 255.883 458.328Z" fill="white"/>
+            <path d="M251.701 461.746C251.701 462.714 250.916 463.499 249.948 463.499C248.98 463.499 248.196 462.714 248.196 461.746C248.196 460.778 248.98 459.993 249.948 459.993C250.916 459.993 251.701 460.778 251.701 461.746Z" fill="white"/>
+         </g>
+         <g id="contract-animation">
+            <path id="animation-path" d="M15 473V27C15 20.3726 20.3726 15 27 15H273C279.627 15 285 20.3726 285 27V473C285 479.627 279.627 485 273 485H27C20.3726 485 15 479.627 15 473Z" stroke="transparent"/>
+            <path id="stroke-path" d="M20 468V32C20 25.3726 25.3726 20 32 20H268C274.627 20 280 25.3726 280 32V468C280 474.627 274.627 480 268 480H32C25.3726 480 20 474.627 20 468Z" stroke="white"/>
+            {% if replace_around_text is none %}
+               <text text-rendering="optimizeSpeed">
+                  <textPath startOffset="-100%" fill="#141616" font-family="ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, 'DejaVu Sans Mono', monospace, Montserrat, Corbel, 'URW Gothic', source-sans-pro, sans-serif" font-size="11px" href="#animation-path">
+                     Index • {{ contract_address }}
+                     <animate additive="sum" attributeName="startOffset" from="100%" to="0%" begin="0s" dur="30s" repeatCount="indefinite"/>
+                  </textPath>
+                  <textPath startOffset="0%" fill="#141616" font-family="ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, 'DejaVu Sans Mono', monospace, Montserrat, Corbel, 'URW Gothic', source-sans-pro, sans-serif" font-size="11px" href="#animation-path">
+                     Index • {{ contract_address }}
+                     <animate additive="sum" attributeName="startOffset" from="100%" to="0%" begin="0s" dur="30s" repeatCount="indefinite"/>
+                  </textPath>
+               </text>
+            {% else %}
+               <text text-rendering="optimizeSpeed">
+                  <textPath startOffset="-100%" fill="#141616" font-family="ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, 'DejaVu Sans Mono', monospace, Montserrat, Corbel, 'URW Gothic', source-sans-pro, sans-serif" font-size="11px" href="#animation-path">
+                     {{ replace_around_text }}
+                     <animate additive="sum" attributeName="startOffset" from="100%" to="0%" begin="0s" dur="30s" repeatCount="indefinite"/>
+                  </textPath>
+                  <textPath startOffset="0%" fill="#141616" font-family="ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, 'DejaVu Sans Mono', monospace, Montserrat, Corbel, 'URW Gothic', source-sans-pro, sans-serif" font-size="11px" href="#animation-path">
+                     {{ replace_around_text }}
+                     <animate additive="sum" attributeName="startOffset" from="100%" to="0%" begin="0s" dur="30s" repeatCount="indefinite"/>
+                  </textPath>
+               </text>
+            {% endif %}
+         </g>
+         <text id="index-name" fill="#141616" font-family="system-ui, sans-serif" font-size="24" font-weight="700">
+            <tspan x="40" y="64.108">{{ contract_symbol }}</tspan>
+         </text>
+         <g id="collateral">
+            {% if collaterals['list_to_render']|length %}
+
+               {% for item in collaterals['list_to_render'] %}
+
+                  <g id="collateral-row_{loop.index}">
+                     <text id="ticker-{loop.index}" fill="#141616" font-family="system-ui, sans-serif" font-size="14" font-weight="700">
+                        <tspan x="40" y="{{ 100 + (loop.index - 1) * 26 }}">{{ item['collateral_symbol'] }}</tspan>
+                     </text>
+                     <text id="ticker-{loop.index}-amount" fill="#141616" font-family="system-ui, sans-serif" font-size="14" font-weight="700">
+                        <tspan x="150" y="{{ 100 + (loop.index - 1) * 26 }}">{{ item['collateral_balance'] }}</tspan>
+                     </text>
+                  </g>
+
+               {% endfor %}
+
+               {% if collaterals['collaterals_more'] %}
+
+                  <g id="collateral-row_{collaterals|length}">
+                     <text id="ticker-{collaterals|length}" fill="#141616" font-family="system-ui, sans-serif" font-size="14" font-weight="700">
+                        <tspan x="40" y="{{ 100 + 26 + (collaterals|length * 26) }}">+ {{ collaterals['collaterals_more'] }} more</tspan>
+                     </text>
+                  </g>
+
+               {% endif %}
+
+            {% else %}
+
+               <g id="collateral-row_{loop.index}">
+                  <text id="ticker-{loop.index}" fill="#141616" font-family="system-ui, sans-serif" font-size="14" font-weight="700">
+                     <tspan x="40" y="100">Waiting for assets while</tspan>
+                     <tspan x="40" y="120">an oracle is syncing.</tspan>
+                     <tspan x="40" y="140">Refresh page after 2 minutes</tspan>
+                  </text>
+               </g>
+
+            {% endif %}
+         </g>
+
+         {% if start_price is not none or current_price is not none %}
+            <g id="cost">
+               <g id="cost-tag">
+                  <rect x="40" y="228" width="47" height="24" rx="4" fill="#141616"/>
+                  <text id="cost_2" fill="white" font-family="system-ui, sans-serif" font-size="10" font-weight="700">
+                     <tspan x="50" y="244">COST</tspan>
+                  </text>
+               </g>
+               <!-- <g id="cost-row-1">
+                  <text id="start" fill="#141616" font-family="system-ui, sans-serif" font-size="12" font-weight="300">
+                     <tspan x="106.121" y="248.804">Start </tspan>
+                  </text>
+                  <text id="start-cost" fill="#141616" font-family="system-ui, sans-serif" font-size="20" font-weight="700">
+                     <tspan x="143" y="250.34">$10</tspan>
+                  </text>
+               </g> -->
+               <g id="cost-row-2">
+                  <text id="today" fill="#141616" font-family="system-ui, sans-serif" font-size="12" font-weight="300">
+                     {% if start_price is not none %}
+                        <tspan x="106.121" y="243">Start </tspan>
+                     {% endif %}
+                     {% if current_price is not none %}
+                        <tspan x="99.207" y="271">Today</tspan>
+                     {% endif %}
+                  </text>
+                  <text id="today-cost" fill="#141616" font-family="system-ui, sans-serif" font-size="20" font-weight="700">
+                     {% if start_price is not none %}
+                        <tspan x="143" y="245">${{ start_price|round(precision=2, method='common') }}</tspan>
+                     {% endif %}
+                     {% if current_price is not none %}
+                        <tspan x="143" y="273">${{ current_price|round(precision=2, method='common') }}</tspan>
+                     {% endif %}
+                  </text>
+                  {% if price_diff is not none %}
+                     <text id="diff-cost" fill="#141616" font-family="system-ui, sans-serif" font-size="12" font-weight="700">
+                        <tspan x="143" y="290">({{ price_diff|round(precision=2, method='common') }}%)</tspan>
+                     </text>
+                  {% endif %}
+               </g>
+            </g>
+         {% endif %}
+
+         <g id="divider">
+            <line id="Line 1" x1="280" y1="301.5" x2="274.832" y2="301.5" stroke="white"/>
+            <line id="Line 2" x1="269.665" y1="301.5" x2="264.497" y2="301.5" stroke="white"/>
+            <line id="Line 3" x1="259.329" y1="301.5" x2="254.162" y2="301.5" stroke="white"/>
+            <line id="Line 4" x1="248.994" y1="301.5" x2="243.826" y2="301.5" stroke="white"/>
+            <line id="Line 5" x1="238.658" y1="301.5" x2="233.491" y2="301.5" stroke="white"/>
+            <line id="Line 6" x1="228.323" y1="301.5" x2="223.155" y2="301.5" stroke="white"/>
+            <line id="Line 7" x1="217.988" y1="301.5" x2="212.82" y2="301.5" stroke="white"/>
+            <line id="Line 8" x1="207.652" y1="301.5" x2="202.484" y2="301.5" stroke="white"/>
+            <line id="Line 9" x1="197.317" y1="301.5" x2="19.9999" y2="301.5" stroke="white"/>
+         </g>
+         <g id="tocken-info">
+            <g id="chain">
+               <rect x="40" y="321" width="168" height="25" rx="4" fill="url(#paint2_linear_5869_12693)" fill-opacity="0.75"/>
+               <g id="chain-value">
+                  <text fill="#141616" font-family="system-ui, sans-serif" font-size="12" font-weight="300">
+                     <tspan x="50" y="337.804">Chain: </tspan><tspan font-weight="700" >{{ chain_name }}</tspan>
+                  </text>
+               </g>
+            </g>
+            <g id="chain-id">
+               <rect x="40" y="350" width="168" height="25" rx="4" fill="url(#paint3_linear_5869_12693)" fill-opacity="0.75"/>
+               <g id="chain-id-value">
+                  <text fill="#141616" font-family="system-ui, sans-serif" font-size="12" font-weight="300">
+                     <tspan x="50" y="366.804">Chain ID: </tspan><tspan font-weight="700" >{{ chain_id }}</tspan>
+                  </text>
+               </g>
+            </g>
+            <g id="token-id">
+               <rect x="40" y="379" width="168" height="25" rx="4" fill="url(#paint4_linear_5869_12693)" fill-opacity="0.75"/>
+               <g id="token-id-value">
+                  <text fill="#141616" font-family="system-ui, sans-serif" font-size="12" font-weight="300">
+                     <tspan x="50" y="395.804">ID: </tspan><tspan font-weight="700" >{{ token_id }}</tspan>
+                  </text>
+               </g>
+            </g>
+
+            {% if blockdate is not none %}
+               <g id="date">
+                  <rect x="40" y="408" width="168" height="25" rx="4" fill="url(#paint5_linear_5869_12693)" fill-opacity="0.75"/>
+                  <g id="date-value">
+                     <text fill="#141616" font-family="system-ui, sans-serif" font-size="12" font-weight="300">
+                        <tspan x="50" y="424.804">Date: </tspan><tspan font-weight="700" >{{ blockdate }}</tspan>
+                     </text>
+                  </g>
+               </g>
+            {% endif %}
+            {% if blocknumber is not none %}
+               <g id="block">
+                  <rect x="40" y="437" width="168" height="25" rx="4" fill="url(#paint6_linear_5869_12693)" fill-opacity="0.75"/>
+                  <g id="block-value">
+                     <text fill="#141616" font-family="system-ui, sans-serif" font-size="12" font-weight="300">
+                        <tspan x="50" y="453.804">Block: </tspan><tspan font-weight="700" >{{ blocknumber }}</tspan>
+                     </text>
+                  </g>
+               </g>
+            {% endif %}
+
+         </g>
+      </g>
+   </g>
+   <defs>
+      <linearGradient id="paint_linear_1" x1="0" y1="0" x2="150" y2="500" gradientUnits="userSpaceOnUse">
+        <stop offset='0' stop-color='#4AFE9D;'>
+            <animate attributeName="stop-color"
+               values="#4AFE9D;#4AFEBF; #51EEDA;#4AFE9D" dur="20s" repeatCount="indefinite">
+            </animate>
+         </stop>
+         <stop offset='.5' stop-color='#4AFEBF;'>
+            <animate attributeName="stop-color"
+               values="#4AFEBF;#51EEDA;#4AFE9D;#4AFEBF;" dur="20s" repeatCount="indefinite">
+            </animate>
+         </stop>
+         <stop offset='1' stop-color='#51EEDA;'>
+            <animate attributeName="stop-color"
+               values="#51EEDA;#4AFE9D;#4AFEBF;#51EEDA;" dur="20s" repeatCount="indefinite">
+            </animate>
+         </stop>
+    </linearGradient>
+    <linearGradient id="paint_linear_2" x1="0" y1="150" x2="300" y2="500" gradientUnits="userSpaceOnUse">
+         <stop offset='0' stop-color='#49DF6A;' stop-opacity='0.65'>
+            <animate attributeName="stop-color"
+               values="#49DF6A;#49DFB2;#49DF6A;" dur="20s" repeatCount="indefinite">
+            </animate>
+         </stop>
+         <stop offset='.5' stop-color='#49DFB2;' stop-opacity='0'>
+            <animate attributeName="stop-color"
+               values="#49DFB2;#49DF6A;#49DFB2;" dur="20s" repeatCount="indefinite">
+            </animate>
+         </stop>
+         <animateTransform attributeName="gradientTransform" type="rotate" values="360 .5 .5;0 .5 .5" class="ignore" dur="20s" repeatCount="indefinite" />
+      </linearGradient>
+
+
+
+      <linearGradient id="paint_linear_1_red" x1="0" y1="0" x2="150" y2="500" gradientUnits="userSpaceOnUse">
+        <stop offset='0' stop-color='#fa2f2f;'>
+            <animate attributeName="stop-color"
+               values="#fa2f2f;#d40202; #ab1b05;#fa2f2f" dur="20s" repeatCount="indefinite">
+            </animate>
+         </stop>
+         <stop offset='.5' stop-color='#d40202;'>
+            <animate attributeName="stop-color"
+               values="#d40202;#ab1b05;#fa2f2f;#d40202;" dur="20s" repeatCount="indefinite">
+            </animate>
+         </stop>
+         <stop offset='1' stop-color='#ab1b05;'>
+            <animate attributeName="stop-color"
+               values="#ab1b05;#fa2f2f;#d40202;#ab1b05;" dur="20s" repeatCount="indefinite">
+            </animate>
+         </stop>
+    </linearGradient>
+    <linearGradient id="paint_linear_2_red" x1="0" y1="150" x2="300" y2="500" gradientUnits="userSpaceOnUse">
+         <stop offset='0' stop-color='#b30e0e;' stop-opacity='0.65'>
+            <animate attributeName="stop-color"
+               values="#b30e0e;#bd4315;#b30e0e;" dur="20s" repeatCount="indefinite">
+            </animate>
+         </stop>
+         <stop offset='.5' stop-color='#bd4315;' stop-opacity='0'>
+            <animate attributeName="stop-color"
+               values="#bd4315;#b30e0e;#bd4315;" dur="20s" repeatCount="indefinite">
+            </animate>
+         </stop>
+         <animateTransform attributeName="gradientTransform" type="rotate" values="360 .5 .5;0 .5 .5" class="ignore" dur="20s" repeatCount="indefinite" />
+      </linearGradient>
+
+
+      <linearGradient id="paint_linear_1_yellow" x1="0" y1="0" x2="150" y2="500" gradientUnits="userSpaceOnUse">
+        <stop offset='0' stop-color='#fcba03;'>
+            <animate attributeName="stop-color"
+               values="#fcba03;#fcf403; #dbcb18;#fcba03" dur="20s" repeatCount="indefinite">
+            </animate>
+         </stop>
+         <stop offset='.5' stop-color='#fcf403;'>
+            <animate attributeName="stop-color"
+               values="#fcf403;#dbcb18;#fcba03;#fcf403;" dur="20s" repeatCount="indefinite">
+            </animate>
+         </stop>
+         <stop offset='1' stop-color='#dbcb18;'>
+            <animate attributeName="stop-color"
+               values="#dbcb18;#fcba03;#fcf403;#dbcb18;" dur="20s" repeatCount="indefinite">
+            </animate>
+         </stop>
+    </linearGradient>
+    <linearGradient id="paint_linear_2_yellow" x1="0" y1="150" x2="300" y2="500" gradientUnits="userSpaceOnUse">
+         <stop offset='0' stop-color='#dfbf49;' stop-opacity='0.65'>
+            <animate attributeName="stop-color"
+               values="#dfbf49;#dfd349;#dfbf49;" dur="20s" repeatCount="indefinite">
+            </animate>
+         </stop>
+         <stop offset='.5' stop-color='#dfd349;' stop-opacity='0'>
+            <animate attributeName="stop-color"
+               values="#dfd349;#dfbf49;#dfd349;" dur="20s" repeatCount="indefinite">
+            </animate>
+         </stop>
+         <animateTransform attributeName="gradientTransform" type="rotate" values="360 .5 .5;0 .5 .5" class="ignore" dur="20s" repeatCount="indefinite" />
+      </linearGradient>
+
+
+
+
+      <linearGradient id="paint0_linear_5869_12693" x1="150" y1="0" x2="150" y2="500" gradientUnits="userSpaceOnUse">
+         <stop stop-color="#49DF6A"/>
+         <stop offset="1" stop-color="#49DFB2"/>
+      </linearGradient>
+      <linearGradient id="paint1_linear_5869_12693" x1="150" y1="0" x2="150" y2="500" gradientUnits="userSpaceOnUse">
+         <stop stop-color="#49DF6A"/>
+         <stop offset="1" stop-color="#49DFB2"/>
+      </linearGradient>
+      <linearGradient id="paint2_linear_5869_12693" x1="40" y1="333.5" x2="208" y2="333.5" gradientUnits="userSpaceOnUse">
+         <stop stop-color="white"/>
+         <stop offset="1" stop-color="white" stop-opacity="0"/>
+      </linearGradient>
+      <linearGradient id="paint3_linear_5869_12693" x1="40" y1="362.5" x2="208" y2="362.5" gradientUnits="userSpaceOnUse">
+         <stop stop-color="white"/>
+         <stop offset="1" stop-color="white" stop-opacity="0"/>
+      </linearGradient>
+      <linearGradient id="paint4_linear_5869_12693" x1="40" y1="391.5" x2="208" y2="391.5" gradientUnits="userSpaceOnUse">
+         <stop stop-color="white"/>
+         <stop offset="1" stop-color="white" stop-opacity="0"/>
+      </linearGradient>
+      <linearGradient id="paint5_linear_5869_12693" x1="40" y1="420.5" x2="208" y2="420.5" gradientUnits="userSpaceOnUse">
+         <stop stop-color="white"/>
+         <stop offset="1" stop-color="white" stop-opacity="0"/>
+      </linearGradient>
+      <linearGradient id="paint6_linear_5869_12693" x1="40" y1="449.5" x2="208" y2="449.5" gradientUnits="userSpaceOnUse">
+         <stop stop-color="white"/>
+         <stop offset="1" stop-color="white" stop-opacity="0"/>
+      </linearGradient>
+
+   </defs>
+</svg>
