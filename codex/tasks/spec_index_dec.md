@@ -59,6 +59,10 @@ interface IAMMPriceAdapter {
      *                  Adapter resolves baseAsset → USD internally.
      * @return price    USD value
      * @return decimals Price decimals (may differ from Chainlink's 8)
+     *
+     * @notice MUST return a TWAP (time-weighted average price) with a minimum
+     * window of 30 minutes — NOT a spot price. Spot-price adapters are vulnerable
+     * to flash-loan manipulation at `fixIndex` time and are prohibited (see Constraint #14).
      */
     function getTokenPriceUSD(address token, uint96 amount, address baseAsset)
         external view returns (uint256 price, uint8 decimals);
@@ -103,9 +107,6 @@ function _getMetadataStartPrice() internal view virtual returns (uint96);
 /// @dev Current price (1e8 scale)
 function _getMetadataCurrentPrice() internal view virtual returns (uint256);
 
-/// @dev Whether the index is fixed
-function _getMetadataIsFixed() internal view virtual returns (bool);
-
 /// @dev Locks array from wNFT data
 function _getMetadataLocks() internal view virtual returns (ET.Lock[] memory);
 
@@ -129,6 +130,8 @@ function _chainName(uint256 chainId) internal pure returns (string memory)
 
 All rendering logic calls the virtual hooks for data — never accesses storage directly.
 
+> **External calls inside `_generateSVG` and `_generateJSON`** (`symbol()`, `balanceOf()`, `decimals()`, oracle price query) **MUST be wrapped in `try/catch`**. On failure fall back to `"?"` for symbol, `0` for balance/price. This prevents a single non-standard or paused token from making `tokenURI` permanently revert (see Constraint #15).
+
 ### 2.3 Imports
 
 ```solidity
@@ -148,8 +151,8 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
 | Condition | Gradient IDs |
 |---|---|
-| `!_getMetadataIsFixed()` OR `_getMetadataCurrentPrice() >= _getMetadataStartPrice()` | `paint_linear_1`, `paint_linear_2` (green) |
-| `_getMetadataIsFixed() && _getMetadataCurrentPrice() < _getMetadataStartPrice()` | `paint_linear_1_red`, `paint_linear_2_red` (red) |
+| `_getMetadataAssets().length == 0` OR `_getMetadataCurrentPrice() >= _getMetadataStartPrice()` | `paint_linear_1`, `paint_linear_2` (green) |
+| `_getMetadataAssets().length > 0 && _getMetadataCurrentPrice() < _getMetadataStartPrice()` | `paint_linear_1_red`, `paint_linear_2_red` (red) |
 
 Both gradient definitions inlined in `<defs>`. Yellow variant reserved for future.
 
@@ -162,7 +165,7 @@ Both gradient definitions inlined in `<defs>`. Yellow variant reserved for futur
 | Collateral rows | loop `i` in `0..min(_getMetadataSvgMaxRows(), assets.length)`: symbol via `IERC20Metadata(asset.token).symbol()`, balance via `IERC20(asset.token).balanceOf(address(this))` |
 | Y-coordinate per row | `100 + i * 26` |
 | "+ N more" row | if `assets.length > _getMetadataSvgMaxRows()`: N = `assets.length - _getMetadataSvgMaxRows()` |
-| Empty state | shown if `!_getMetadataIsFixed()`: "Waiting for assets..." |
+| Empty state | shown if `_getMetadataAssets().length == 0`: "Waiting for assets..." |
 | Start price | `"$" + _formatPrice(_getMetadataStartPrice(), 8)` |
 | Current price | `"$" + _formatPrice(_getMetadataCurrentPrice(), 8)` |
 | Price diff | `_formatPriceDiff(_getMetadataStartPrice(), _getMetadataCurrentPrice())` |
@@ -205,7 +208,7 @@ Returns `"(+X.XX%)"` / `"(-X.XX%)"`. Returns `""` if `start == 0`.
   "attributes": [
     {"trait_type": "Start Price",   "value": <startPrice/1e8>,   "display_type": "number"},
     {"trait_type": "Current Price", "value": <currentPrice/1e8>, "display_type": "number"},
-    {"trait_type": "Is Fixed",      "value": "<true|false>"},
+    {"trait_type": "Is Fixed",      "value": "<assets.length > 0>"},
     {"trait_type": "<symbol> Amount",    "value": <amount/10^decimals>, "display_type": "number"},
     {"trait_type": "<symbol> Price USD", "value": <price/1e8>,          "display_type": "number"}
   ],
@@ -233,7 +236,7 @@ Returns `"(+X.XX%)"` / `"(-X.XX%)"`. Returns `""` if `start == 0`.
 Notes:
 - All data sourced exclusively via virtual hooks (§2.1) — no direct storage access
 - `CompactAsset` is ERC20-only → `tokenId` always `0`, `assetType` always `2`
-- If `!_getMetadataIsFixed()`: `collateral = []`, price attribute values = `0`
+- If `_getMetadataAssets().length == 0`: `collateral = []`, price attribute values = `0`
 - Locks accessed via `_getMetadataLocks()` virtual hook
 - `price_decimals`: `8` for Chainlink path; value from `IAMMPriceAdapter` return for AMM path
 - `base_asset`: from `_getMetadataBaseAsset()`
@@ -287,10 +290,10 @@ bytes32 private constant SMART_INDEX_STORAGE_LOCATION =
 struct SmartIndexStorage {
     // slot 0: dynamic array (always full slot)
     IEnvelopOracle.CompactAsset[] assets;
-    // slot 1: oracle(20) + createdAt(5) + isFixed(1) = 26 bytes (6 free)
+    // slot 1: oracle(20) + createdAt(5) = 25 bytes (7 free)
+    // "is fixed" ≡ assets.length > 0 — no separate bool needed
     address oracle;
     uint40  createdAt;
-    bool    isFixed;
     // slot 2: baseAsset(20) + startPrice(12) = 32 bytes exact
     address baseAsset;   // base token for AMM pricing (e.g. USDC, WETH)
                          // address(0) = USD denomination (Chainlink path)
@@ -298,6 +301,7 @@ struct SmartIndexStorage {
 }
 // 3 slots total. AMM adapter is immutable AMM_ADAPTER, not in storage.
 // CompactAsset=(address,uint96) = 32 bytes per element.
+// Index is "fixed" when assets.length > 0 (set once in fixIndex, never cleared).
 
 function _getSmartIndexStorage() private pure returns (SmartIndexStorage storage $) {
     assembly { $.slot := SMART_INDEX_STORAGE_LOCATION }
@@ -321,25 +325,27 @@ function fixIndex(
     IEnvelopOracle.CompactAsset[] calldata _assets,
     address _oracle,
     address _baseAsset
-) external onlyWnftOwner
+) external onlyWnftOwner  // inherited from WNFTV2Envelop721: checks ownerOf(TOKEN_ID) == msg.sender
 ```
 
 Execution order:
-1. `require(!$.isFixed, "Already fixed")`
+1. `require($.assets.length == 0, "Already fixed")` — `assets.length > 0` is the canonical "fixed" sentinel
 2. `require(_assets.length > 0 && _assets.length <= MAX_ASSETS)`
 3. Copy `_assets` into `$.assets`
 4. `$.oracle = _oracle`, `$.baseAsset = _baseAsset`
-5. `$.createdAt = uint40(block.timestamp)`, `$.isFixed = true`
+5. `$.createdAt = uint40(block.timestamp)`
 6. `IEnvelopOracle(_oracle).registerIndex()` — oracle registers `msg.sender`
 7. `$.startPrice = SafeCast.toUint96(IEnvelopOracle(_oracle).getIndexPrice(address(this)))` — **AFTER** registration so oracle uses correct price source (AMM or Chainlink via callback)
 8. Emit `EnvelopIndexFixed(msg.sender, $.startPrice, _assets)`
+
+> **Lifecycle note:** `fixIndex` is a one-way transition. There is no `unfixIndex`. The only exit is `unwrap()` via the base `WNFTV2Envelop721` mechanism. To lock collateral permanently after fixation, set rule `No_Collateral` in the `InitParams` before or at creation time (see Constraint #17).
 
 ### 3.6 View functions
 
 ```solidity
 function getCurrentPrice() public view returns (uint256)
 ```
-- If `isFixed && oracle != address(0)`: return `IEnvelopOracle(oracle).getIndexPrice(address(this))`
+- If `$.assets.length > 0 && $.oracle != address(0)`: return `IEnvelopOracle($.oracle).getIndexPrice(address(this))`
 - Else: return `0`
 
 ```solidity
@@ -381,7 +387,6 @@ function _getMetadataAmm()          internal view  override returns (address) { 
 function _getMetadataBaseAsset()    internal view  override returns (address) { return _getSmartIndexStorage().baseAsset; }
 function _getMetadataStartPrice()   internal view  override returns (uint96)  { return _getSmartIndexStorage().startPrice; }
 function _getMetadataCurrentPrice() internal view  override returns (uint256) { return getCurrentPrice(); }
-function _getMetadataIsFixed()      internal view  override returns (bool)    { return _getSmartIndexStorage().isFixed; }
 function _getMetadataLocks()        internal view  override returns (ET.Lock[] memory) { return _getWNFTV2Envelop721Storage().wnftData.locks; }
 function _getMetadataSymbol()       internal pure  override returns (string memory) { return nftSymbol; }
 function _getMetadataSvgMaxRows()   internal pure  override returns (uint256) { return MAX_SVG_COLLATERAL_ROWS; }
@@ -397,14 +402,47 @@ import "../interfaces/IIndexAssets.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 ```
 
-### 3.11 `name` / `symbol` / factory overrides
+### 3.11 `name` / `symbol` / `supportsInterface` / factory overrides
 
 ```solidity
 function name()   public pure override returns (string memory) { return nftName; }
 function symbol() public pure override returns (string memory) { return nftSymbol; }
+
+function supportsInterface(bytes4 interfaceId) public view override returns (bool) {
+    return interfaceId == type(IIndexAssets).interfaceId
+        || super.supportsInterface(interfaceId);
+}
 ```
 
+`supportsInterface` declares `IIndexAssets` support so that `EnvelopOracle.registerIndex()` can validate the caller via ERC-165 (see Constraint #16).
+
 Factory overrides clear `nftName`/`nftSymbol`/`tokenUri` before calling `super` (same pattern as `WNFTV2Index`).
+
+### 3.12 Function: `setIndexUpdater`
+
+```solidity
+function setIndexUpdater(address _oracle, address _updater) external onlyWnftOwner {
+    IEnvelopOracle(_oracle).setIndexUpdater(address(this), _updater);
+}
+```
+
+Allows the wNFT owner to authorize an updater (e.g. `Predicter`) to call `oracle.setIndexPrice` on behalf of this index. Without this function the `authorizedUpdater` ACL in `EnvelopOracle` is unreachable from the wNFT owner.
+
+### 3.13 Hook: `_beforeUnwrap` (oracle deregistration)
+
+```solidity
+function _beforeUnwrap(/* same signature as base */) internal override {
+    SmartIndexStorage storage $ = _getSmartIndexStorage();
+    if ($.assets.length > 0 && $.oracle != address(0)) {
+        try IEnvelopOracle($.oracle).deregisterIndex() {} catch {}
+    }
+    super._beforeUnwrap(/* ... */);
+}
+```
+
+Called by the base `WNFTV2Envelop721` unwrap flow before releasing collateral and burning the token. Clears the oracle registration so the zombie proxy is not queried after unwrap. The `try/catch` ensures that a failing oracle call never blocks unwrapping.
+
+> **Sequence:** `unwrap()` → `_beforeUnwrap` → `oracle.deregisterIndex()` → collateral released → token burned.
 
 ---
 
@@ -414,7 +452,7 @@ Factory overrides clear `nftName`/`nftSymbol`/`tokenUri` before calling `super` 
 fixIndex(_assets, _oracle, _baseAsset)
     │
     ├─► store assets, oracle, baseAsset in SmartIndexStorage (amm is immutable)
-    ├─► isFixed = true
+    ├─► assets.length > 0 now — index is "fixed"
     ├─► oracle.registerIndex()              // oracle marks msg.sender as registered
     └─► startPrice = oracle.getIndexPrice(address(this))
             │
@@ -451,6 +489,7 @@ No `CompactAsset[]` storage — assets fetched via `IIndexAssets` callback.
 
 ```solidity
 event EnvelopIndexRegistered(address indexed wNFT);
+event EnvelopIndexDeregistered(address indexed wNFT);
 event EnvelopIndexPriceSet(address indexed wNFT, uint256 price, address indexed setter);
 ```
 
@@ -461,10 +500,22 @@ event EnvelopIndexPriceSet(address indexed wNFT, uint256 price, address indexed 
 ```solidity
 function registerIndex() external
 ```
+- `require(IERC165(msg.sender).supportsInterface(type(IIndexAssets).interfaceId), "Not IIndexAssets")` — rejects registrations from EOAs and contracts that do not implement the interface
 - Sets `isRegistered[msg.sender] = true`
 - Emits `EnvelopIndexRegistered(msg.sender)`
 
-No parameters — the wNFT calls this, oracle registers `msg.sender`.
+No parameters — the wNFT calls this, oracle registers `msg.sender`. Callers must implement `IIndexAssets` per ERC-165 (see Constraint #16). New import required: `import "@openzeppelin/contracts/utils/introspection/IERC165.sol"`.
+
+#### `deregisterIndex`
+
+```solidity
+function deregisterIndex() external
+```
+- `require(isRegistered[msg.sender], "Not registered")`
+- Sets `isRegistered[msg.sender] = false`
+- Emits `EnvelopIndexDeregistered(msg.sender)`
+
+Called by the wNFT via `_beforeUnwrap` (wrapped in `try/catch` on the wNFT side so a failing oracle never blocks unwrapping). After deregistration `getIndexPrice(wNFT)` returns `0`.
 
 #### `setIndexUpdater`
 
@@ -480,15 +531,15 @@ function setIndexUpdater(address _wNFT, address _updater) external
 function setIndexPrice(address _wNFT, uint256 _price) external
 ```
 - Requires `msg.sender == authorizedUpdater[_wNFT]` OR `msg.sender == owner()`
-- Sets `overrided[_wNFT] = _price`
+- Sets `overridedPrices[_wNFT] = _price`
 - Emits `EnvelopIndexPriceSet(_wNFT, _price, msg.sender)`
 
 ### 5.4 Modified `getIndexPrice(address _v2Index)`
 
 ```
 Priority order:
-1. overrided[_v2Index] != 0
-       → return overrided[_v2Index]                   // manual/Predicter override
+1. overridedPrices[_v2Index] != 0
+       → return overridedPrices[_v2Index]              // manual/Predicter override
 
 2. isRegistered[_v2Index]
        → assets    = IIndexAssets(_v2Index).getIndexAssets()
@@ -505,6 +556,7 @@ Priority order:
            else:
              uint8 tokenDec = IERC20Metadata(asset.token).decimals()
              uint256 unitPrice = _getLatestPriceInUSD(asset.token) // 1e8
+             // staleness check MUST be active (Constraint #13)
              total += unitPrice * uint256(asset.amount) / (10 ** uint256(tokenDec))
          return total  // always 1e8 scale
 
@@ -516,7 +568,14 @@ New imports for `EnvelopOracle.sol`:
 import "../interfaces/IIndexAssets.sol";
 import "../interfaces/IAMMPriceAdapter.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 ```
+
+> **Staleness (Constraint #13):** The commented-out line in `_getLatestPriceInUSD` MUST be restored:
+> ```solidity
+> require(_updatedAt + MAX_STALE >= block.timestamp, "Price is stale");
+> ```
+> It was disabled in the existing code (`EnvelopOracle.sol:144`). It must be active for all uses of this oracle including `startPrice` computation in `fixIndex`.
 
 ### 5.5 Updated `IEnvelopOracle.sol`
 
@@ -524,10 +583,13 @@ Add to interface:
 
 ```solidity
 function registerIndex() external;
+function deregisterIndex() external;
 function setIndexUpdater(address _wNFT, address _updater) external;
 function setIndexPrice(address _wNFT, uint256 _price) external;
 function isRegistered(address _wNFT) external view returns (bool);
 ```
+
+> **Backward compatibility:** Adding functions to `IEnvelopOracle` is a breaking change for any consumer that declares a typed `IEnvelopOracle` variable. All call-sites must be recompiled against the updated interface. `EnvelopOracle.sol` must be redeployed on all chains; existing `overrideIndexPrice(address, uint256)` is preserved for owner-only manual overrides.
 
 ---
 
@@ -538,7 +600,7 @@ function isRegistered(address _wNFT) external view returns (bool);
 | 1 | No HTTP/IPFS in `tokenURI` output except `external_url` |
 | 2 | `tokenURI` must be `view` — no state changes |
 | 3 | SVG fully inline — no external resources |
-| 4 | `fixIndex` callable once per wNFT (`isFixed` guard) |
+| 4 | `fixIndex` callable once per wNFT (`require($.assets.length == 0)` guard; `assets.length > 0` is the canonical "fixed" sentinel — no separate `bool isFixed` field) |
 | 5 | `assets.length <= MAX_ASSETS` enforced in `fixIndex` |
 | 6 | SVG displays at most `MAX_SVG_COLLATERAL_ROWS` collateral rows |
 | 7 | `registerIndex()` uses `msg.sender` — no parameter |
@@ -547,3 +609,8 @@ function isRegistered(address _wNFT) external view returns (bool);
 | 10 | `CompactAsset` is ERC20-only → collateral `tokenId=0`, `assetType=2` |
 | 11 | Existing `EnvelopOracle` tests must continue to pass |
 | 12 | `pragma solidity ^0.8.28`, OpenZeppelin v5 |
+| 13 | Staleness check in `_getLatestPriceInUSD` MUST be active: `require(_updatedAt + MAX_STALE >= block.timestamp, "Price is stale")` (currently commented-out at `EnvelopOracle.sol:144`) |
+| 14 | `IAMMPriceAdapter` implementations MUST return TWAP with ≥30 min window; spot-price adapters are prohibited |
+| 15 | All external calls inside `tokenURI` (`symbol()`, `balanceOf()`, `decimals()`, oracle price) MUST be wrapped in `try/catch`; fall back to `"?"` / `0` on failure |
+| 16 | `WNFTV2SmartIndex` MUST override `supportsInterface` to register `type(IIndexAssets).interfaceId` (required by `registerIndex` ERC-165 check) |
+| 17 | No `unfixIndex` exists; fixation is permanent. The only lifecycle exit is `unwrap()` from the base `WNFTV2Envelop721` mechanism; `_beforeUnwrap` MUST call `oracle.deregisterIndex()` before collateral release. To freeze collateral after fixation, set rule `No_Collateral` in `InitParams`. |
