@@ -123,6 +123,11 @@ Chain-specific addresses live in `script/chain_params.json` (keyed by `chainId`)
 - **`.env.example`** — required env vars: `WEB3_INFURA_PROJECT_ID`, `ETHERSCAN_TOKEN`, `WEB3_QUICKNODE_ID`
 - **`remapp.json`** — custom import remappings for upgradeable OZ contracts
 
+## Design Documents
+
+- [`codex/tasks/spec_index_dec.md`](codex/tasks/spec_index_dec.md) — requirements spec for `WNFTV2SmartIndex`, `AbstractOnChainMetadata`, and `EnvelopOracle` index extensions (Task #1)
+- [`codex/tasks/plan_index_dec.md`](codex/tasks/plan_index_dec.md) — ordered implementation plan for the above (Task #1)
+
 ## Dependencies (git submodules in `lib/`)
 
 - `forge-std` v1.9.6

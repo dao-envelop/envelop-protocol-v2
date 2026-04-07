@@ -115,3 +115,6 @@ Stack: Solidity 0.8.x, OpenZeppelin v5, Foundry
 Файл спецификации требований `./codex/tasks/spec_index_dec.md` для разработки
 абстрактного смарт контракта с `tokenURI`, план реализации этих фич `./codex/tasks/plan_index_dec.md`
 
+## Статус
+**Решено.** Спецификация: `./codex/tasks/spec_index_dec.md`. План: `./codex/tasks/plan_index_dec.md`.
+
