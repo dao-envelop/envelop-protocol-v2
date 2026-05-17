@@ -102,7 +102,9 @@ abstract contract Singleton721 is ERC721Upgradeable, IERC4906 {
     function _wnftOwnerOrApproved(address _sender) internal view virtual {
         address currOwner = ownerOf(TOKEN_ID);
         require(
-            currOwner == _sender || isApprovedForAll(currOwner, _sender) || getApproved(TOKEN_ID) == _sender,
+            currOwner == _sender 
+            || isApprovedForAll(currOwner, _sender) 
+            || getApproved(TOKEN_ID) == _sender,
             "Only for wNFT owner"
         );
     }
