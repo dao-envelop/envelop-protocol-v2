@@ -76,7 +76,9 @@ contract WNFTMyshchWallet_Test_a_01 is Test {
 
         //WNFTMyshchWallet wnftUser = WNFTMyshchWallet(_wnftWalletUser);
 
-        wnftBot.setApprovalForAll(address(2), true);
+        // Per-token approve grants wallet-execution rights; setApprovalForAll
+        // no longer does (see Singleton721._wnftOwnerOrApproved).
+        wnftBot.approve(address(2), wnftBot.TOKEN_ID());
         _wnftWalletUser.transfer(sendEtherAmount); // send eth to user wnft wallet
 
         uint256 userWalletBalanceBefore = _wnftWalletUser.balance;

@@ -74,7 +74,9 @@ contract Factory_Test_a_01 is Test {
         assertEq(wnft.wnftInfo(impl_legacy.TOKEN_ID()).unWrapDestination, address(this));
         assertEq(wnft.wnftInfo(impl_legacy.TOKEN_ID()).rules, rule);
 
-        wnft.setApprovalForAll(address(2), true);
+        // Per-token approve grants wallet-execution rights; operator-style
+        // setApprovalForAll no longer does (see Singleton721._wnftOwnerOrApproved).
+        wnft.approve(address(2), wnft.TOKEN_ID());
 
         vm.prank(address(2));
         // try to withdraw eth from collateral

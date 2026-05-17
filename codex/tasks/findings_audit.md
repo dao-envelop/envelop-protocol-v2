@@ -13,7 +13,12 @@ test `test_approval_drains_wallet`. All assertions are tight.
 
 ---
 
-## Finding #1 — CRITICAL — ERC-721 operator (`setApprovalForAll`) inherits **full asset-execution rights** on the wallet
+## Finding #1 — HIGH — ERC-721 operator (`setApprovalForAll`) inherits **full asset-execution rights** on the wallet
+
+> **Status: FIXED in this branch.** `Singleton721._wnftOwnerOrApproved`
+> no longer treats `isApprovedForAll` as a wallet-execution credential.
+> Per-token `approve(operator, TOKEN_ID)` is intentionally still
+> accepted — see "Rationale for the chosen fix" below.
 
 ### Where
 - `src/impl/Singleton721.sol:102-108` — `_wnftOwnerOrApproved`
@@ -81,49 +86,63 @@ against `WNFTV2Envelop721` and `WNFTMyshchWallet`.
 ### Severity reasoning
 
 - Likelihood: HIGH. Every secondary-market listing of a wNFT requires
-  an `approve` or `setApprovalForAll` call. Wallet UIs surface this as
-  "you are letting this contract move your NFT" — they do **not** warn
-  about asset drains, because no other NFT design works this way.
-- Impact: CRITICAL — full asset loss with no further action by victim.
-- Pre-conditions: a single ERC-721 approval from victim to attacker.
-  Approvals are the most common NFT-related onchain action.
+  a `setApprovalForAll` call to the marketplace conduit. Wallet UIs
+  surface this as "you are letting this contract move your NFT" —
+  they do **not** warn about asset drains, because no other NFT
+  design works this way.
+- Impact: HIGH — silent loss of all ETH/ERC20/ERC721/ERC1155 the
+  wallet holds, with no Transfer event on the wNFT itself so the
+  victim has no early signal.
+- Pre-conditions: a single ERC-721 `setApprovalForAll` from victim to
+  attacker (or to a contract whose compromise grants the attacker
+  operator power).
 
-### Fix direction
+### Rationale for the chosen fix
 
-Decouple the "can move the NFT" capability from the "can execute on
-the wallet" capability. The simplest, lowest-risk patch:
+The wNFT's design intentionally couples NFT ownership with wallet
+custody: whoever holds `TOKEN_ID = 1` controls the wallet. Removing
+this coupling is out of scope. What matters is the *granularity* of
+the approval surface:
 
-```solidity
-function _wnftOwnerOrApproved(address _sender) internal view virtual {
-    require(ownerOf(TOKEN_ID) == _sender, "Only for wNFT owner");
-}
-```
+- `setApprovalForAll(conduit, true)` is the conduit pattern that every
+  modern marketplace (Seaport, Blur, etc.) uses. A user calling this
+  is signalling "I might list this NFT for sale" — they have no
+  reason to expect that signal grants the conduit asset-drain rights.
+  This branch is now removed.
+- `approve(operator, TOKEN_ID)` is a deliberate, per-token act. The
+  owner is explicitly handing this specific token to one address. In
+  the "ownership = wallet" model this *is* effectively handing custody
+  — an attacker with `approve(TOKEN_ID)` can already `transferFrom`
+  to themselves and become owner. Keeping this branch preserves the
+  intended UX of "the per-token approve is the wallet's transfer
+  authorization".
+- The `No_Transfer` rule still holds its promise: with `No_Transfer`
+  set, `transferFrom` reverts, and now `executeEncodedTx` via
+  operator approval also reverts, so a marketplace approval can no
+  longer slip past the "this wNFT is locked" invariant.
 
-If second-party execution is genuinely required, introduce an explicit
-`executionOperator` mapping that is **not** ERC-721 approval — owners
-must opt in to wallet execution rights separately, exactly the same
-way `trustedSigners` already work for the signature path. The
-ERC-721 approval surface must not grant any rights beyond
-`transferFrom`.
+### Implementation
 
-Also: ensure `safeTransferFrom` and `_update` clear stale execution
-rights when ownership changes, so a buyer never inherits the seller's
-operator set.
+`src/impl/Singleton721.sol:102` — `_wnftOwnerOrApproved` now accepts
+only `currOwner == _sender || getApproved(TOKEN_ID) == _sender`. The
+`isApprovedForAll` branch is gone.
 
 ### PoC
 
-`test/audit/WNFTV2Envelop721_Audit_a_01.t.sol`,
-`test_approval_drains_wallet` — innocuous `setApprovalForAll` by the
-owner, then attacker drains 100% of ERC20 + ETH out of the wallet.
-Assertions:
+`test/audit/WNFTV2Envelop721_Audit_a_01.t.sol` — three tests lock in
+the new contract:
 
-```
-assertEq(erc20.balanceOf(attacker),     initialDeposit);   // all USDC drained
-assertEq(erc20.balanceOf(walletAddr),   0);
-assertEq(attacker.balance,              initialEth);       // all ETH drained
-assertEq(walletAddr.balance,            0);
-assertEq(wnft.ownerOf(1),               aliceOwner);       // NFT never moved
-```
+- `test_setApprovalForAll_does_not_grant_execute` — operator approval
+  no longer unlocks `executeEncodedTx`; balances untouched.
+- `test_singleApprove_still_grants_execute_by_design` — per-token
+  approve still permits drain (intentional, documents the design).
+- `test_setApprovalForAll_cannot_install_signer_backdoor` — operator
+  approval also can't reach the administrative surface
+  (`setSignerStatus`).
+
+Plus the reentrancy demo at `test/Factory_Test_a_27.sol::test_reentrancy`
+is now updated to **assert** the attack is blocked (was previously a
+silent demo with no assertions).
 
 ---
 
@@ -306,11 +325,11 @@ Track this as a maintenance hazard, not an active bug.
 
 ## Summary table
 
-| # | Severity | Title | PoC |
-|---|----------|-------|-----|
-| 1 | CRITICAL | ERC-721 approval grants asset-execution rights | `test/audit/WNFTV2Envelop721_Audit_a_01.t.sol::test_approval_drains_wallet` (+ `test_setApprovalForAll_drains_wallet`) |
-| 2 | HIGH     | Approved relayer can drain via `getRefund` loop | sketch in finding |
-| 3 | MEDIUM   | Trusted signers survive wNFT transfer / sale | sketch in finding |
-| 4 | INFO     | `transferFrom` rule placement (OZ-5 path safe) | — |
+| # | Severity | Status | Title | PoC |
+|---|----------|--------|-------|-----|
+| 1 | HIGH     | **Fixed** | `setApprovalForAll` granted asset-execution rights | `test/audit/WNFTV2Envelop721_Audit_a_01.t.sol`, plus `Factory_Test_a_27::test_reentrancy` now asserts the attack is blocked |
+| 2 | HIGH     | Open | Approved relayer can drain via `getRefund` loop | sketch in finding |
+| 3 | MEDIUM   | Open | Trusted signers survive wNFT transfer / sale | sketch in finding |
+| 4 | INFO     | Open | `transferFrom` rule placement (OZ-5 path safe) | — |
 
-Recommend blocking the 2.2.1 minor release on Finding #1.
+Finding #1 is the only blocker for 2.2.1 and is closed in this branch.
