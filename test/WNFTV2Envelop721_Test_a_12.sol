@@ -51,8 +51,6 @@ contract WNFTV2Envelop721_Test_a_12 is Test {
     address payable _wnftWalletAddress;
     WNFTV2Envelop721 public wnft;
     ReentrancyAttacker2 public hacker;
-    bytes signature1;
-    bytes signature2;
 
     receive() external payable virtual {}
 
