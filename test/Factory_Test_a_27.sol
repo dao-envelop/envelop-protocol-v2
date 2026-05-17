@@ -73,14 +73,21 @@ contract Factory_Test_a_27 is Test {
 
         bytes memory _data = "";
 
-        // do attack - send eth to address and address will take wnft from owner
+        // do attack - send eth to address and address will take wnft from owner.
+        // The attack relied on setApprovalForAll granting wallet-execution
+        // rights to the hacker (so the reentrancy call back into the wallet
+        // could pass `onlyWnftOwner` as msg.sender == hacker). After the
+        // Singleton721 fix, only per-token `approve` grants execute rights,
+        // so the reentrant call inside ReentrancyAttacker.receive() now
+        // reverts with "Only for wNFT owner", which propagates and reverts
+        // the outer `executeEncodedTx` too. Ownership and ETH stay put.
         vm.startPrank(address(1));
-        wnft.setApprovalForAll(_wnftWallet, true);
         wnft.setApprovalForAll(address(hacker), true);
+        vm.expectRevert("Only for wNFT owner");
         wnft.executeEncodedTx(address(hacker), sendEtherAmount, _data);
         vm.stopPrank();
 
-        console2.log(address(hacker).balance);
-        console2.log(wnft.ownerOf(1));
+        assertEq(address(hacker).balance, 0, "hacker received no eth");
+        assertEq(wnft.ownerOf(1), address(1), "ownership preserved");
     }
 }

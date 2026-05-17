@@ -15,6 +15,15 @@ contract WNFTMyshchWallet is WNFTV2Envelop721 {
     uint256 public constant PERMANENT_TX_COST = 43_000;
     uint256 public constant PERCENT_DENOMINATOR = 10_000;
     uint256 public constant DEFAULT_RELAYER_FEE = 100_000; // 10% from network fee
+    /// @notice Minimum gas the relayer must have actually spent between
+    /// `setGasCheckPoint` and `getRefund` in this tx for the refund to be
+    /// valid. Prevents a `setGasCheckPoint → getRefund` no-op drain where
+    /// an approved relayer would otherwise pocket the static
+    /// `PERMANENT_TX_COST` portion of the refund without doing any work.
+    /// Sized just above the inter-function overhead (≈ a few thousand
+    /// gas) — a no-op flow can't cross this; any real per-token action
+    /// (ERC20 transfer, ERC721 transfer, ETH send) easily does.
+    uint256 public constant MIN_REFUND_WORK_GAS = 10_000;
 
     struct WNFTMyshchWalletStorage {
         mapping(address => bool) approvedRelayer;
@@ -102,9 +111,23 @@ contract WNFTMyshchWallet is WNFTV2Envelop721 {
     }
 
     function getRefund(address _gasSpender) external onlyAprrovedRelayer fixEtherBalance returns (uint256 send) {
-        send = (PERMANENT_TX_COST + _getGasDiff(gasLeftOnStart)) * tx.gasprice;
-        require(send < PERMANENT_TX_COST * tx.gasprice * 2, "Too much refund request");
+        uint256 diff = _getGasDiff(gasLeftOnStart);
+        // The relayer must have actually spent meaningful gas on the
+        // wallet's behalf between setGasCheckPoint and this call.
+        // Without this guard, calling `setGasCheckPoint + getRefund`
+        // back-to-back would pay out the static `PERMANENT_TX_COST`
+        // portion of the refund for free.
+        require(diff >= MIN_REFUND_WORK_GAS, "Refund: no work done");
+        // Use `block.basefee`, not `tx.gasprice`. The relayer fully
+        // controls `tx.gasprice` (= basefee + chosen priority fee) and
+        // can inflate it — especially if they're / collude with the
+        // block builder and recover the priority fee. Anchoring to
+        // basefee removes that lever.
+        send = (PERMANENT_TX_COST + diff) * block.basefee;
         send += _getFeeAmount(send);
+        // Cap the *total* sent ether — fee included — so the fee
+        // multiplier can't push the payout past the documented limit.
+        require(send < PERMANENT_TX_COST * block.basefee * 3, "Too much refund request");
         Address.sendValue(payable(_gasSpender), send);
     }
 

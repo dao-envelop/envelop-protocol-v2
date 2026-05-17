@@ -80,7 +80,8 @@ contract Factory_Test_a_23 is Test {
         wnft.executeEncodedTx(_wnftWallet, 0, _data);
 
         vm.startPrank(address(1));
-        wnft.setApprovalForAll(_wnftWallet, true);
+        // Operator approval no longer grants execution; use per-token approve.
+        wnft.approve(_wnftWallet, impl_legacy.TOKEN_ID());
         wnft.executeEncodedTx(_wnftWallet, 0, _data);
         vm.stopPrank();
         assertEq(wnft.ownerOf(impl_legacy.TOKEN_ID()), address(2));
@@ -102,7 +103,8 @@ contract Factory_Test_a_23 is Test {
         vm.expectRevert();
         wnft.executeEncodedTx(_wnftWallet, 0, _data);
         vm.startPrank(address(2));
-        wnft.setApprovalForAll(_wnftWallet, true);
+        // Operator approval no longer grants execution; use per-token approve.
+        wnft.approve(_wnftWallet, impl_legacy.TOKEN_ID());
         wnft.executeEncodedTx(_wnftWallet, 0, _data);
         vm.stopPrank();
 
