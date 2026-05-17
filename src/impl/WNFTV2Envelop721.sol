@@ -355,6 +355,7 @@ contract WNFTV2Envelop721 is Singleton721, SmartWallet, IEnvelopV2wNFT {
     function _checkLocks(ET.Lock[] memory _locksArray) internal virtual {
         for (uint256 i = 0; i < _locksArray.length; ++i) {
             if (_locksArray[i].lockType == 0x00) {
+                // forge-lint: disable-next-line(block-timestamp) - TimeLock unlock vs stored timestamp; ordering is the contract semantics.
                 require(_locksArray[i].param <= block.timestamp, "TimeLock error");
             }
         }
