@@ -88,6 +88,8 @@ contract WNFTMyshchWallet_Test_a_01 is Test {
         vm.prank(address(2)); // like bot owner
 
         vm.txGasPrice(gasPrice);
+        // Refund formula is anchored to `block.basefee` now, so set it too.
+        vm.fee(gasPrice);
         wnftBot.erc20TransferWithRefund(address(erc20), _wnftWalletUser, sendERC20Amount);
         //VmSafe.Gas memory gasInfo = vm.lastCallGas();
 
@@ -128,15 +130,15 @@ contract WNFTMyshchWallet_Test_a_01 is Test {
         wnftBot.setGasCheckPoint();
         assertGt(wnftBot.gasLeftOnStart(), 0);
 
+        // The wallet has no ETH, but the new MIN_REFUND_WORK_GAS guard
+        // fires first: no real work was done in this call frame between
+        // setGasCheckPoint and getRefund. Direct call from approved relayer
+        // EOA to getRefund is exactly the pattern attempted by an
+        // attacker and is now blocked.
         vm.prank(address(1));
         vm.txGasPrice(2);
-        vm.expectRevert();
-        wnftBot.getRefund(msg.sender);
-
-        _wnftWalletBot.transfer(sendEtherAmount);
-
-        vm.txGasPrice(2);
-        vm.prank(address(1));
+        vm.fee(2);
+        vm.expectRevert("Refund: no work done");
         wnftBot.getRefund(msg.sender);
     }
 

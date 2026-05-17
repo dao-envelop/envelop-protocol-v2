@@ -148,6 +148,12 @@ silent demo with no assertions).
 
 ## Finding #2 — HIGH — Approved relayer can drain `WNFTMyshchWallet` via gas-refund loop
 
+> **Status: FIXED in this branch.** `getRefund` now (a) anchors the
+> refund to `block.basefee` instead of the attacker-controlled
+> `tx.gasprice`, and (b) requires `MIN_REFUND_WORK_GAS` of actual gas
+> spent between `setGasCheckPoint` and `getRefund` before paying out.
+> Signature unchanged; `msg.sender` not used as a credential check.
+
 ### Where
 - `src/impl/WNFTMyshchWallet.sol:99-109` — `setGasCheckPoint` / `getRefund`
 - `src/impl/WNFTMyshchWallet.sol:142-145` — `_onlyAprrovedRelayer`
@@ -213,28 +219,77 @@ demand".
 - Impact: HIGH (full ETH balance lost over time, bounded only by the
   number of transactions the relayer is willing to send).
 
-### Fix direction
+### Implementation
 
-- Pin `_gasSpender = msg.sender` (or drop the parameter entirely and
-  refund the relayer that did the work).
-- Track the relayer's actual ETH outlay in `setGasCheckPoint`
-  (`startBalance`) and refund only the delta they actually paid this
-  tx, not a constant `PERMANENT_TX_COST`.
-- Use `block.basefee` (or `tx.gasprice - block.basefee` capped) as the
-  refund metric instead of raw `tx.gasprice`, so that priority-fee
-  inflation can't blow up the refund.
-- Add a per-relayer rate-limit (e.g. cumulative ETH refunded in a
-  rolling window).
+`src/impl/WNFTMyshchWallet.sol`:
 
-### PoC sketch
+```solidity
+uint256 public constant MIN_REFUND_WORK_GAS = 10_000;
 
-Out of scope of the test file shipped with this audit (the wallet's
-approved-relayer set is administratively granted, so demonstrating
-this is a "trusted role drains wallet" rather than a no-permission
-exploit). The bug is still serious because the role's intended
-authority is "be paid back for gas spent on the wallet's behalf",
-which is materially narrower than "withdraw bounded ETH on demand to
-any address".
+function getRefund(address _gasSpender) external onlyAprrovedRelayer fixEtherBalance returns (uint256 send) {
+    uint256 diff = _getGasDiff(gasLeftOnStart);
+    require(diff >= MIN_REFUND_WORK_GAS, "Refund: no work done");
+    send = (PERMANENT_TX_COST + diff) * block.basefee;
+    send += _getFeeAmount(send);
+    require(send < PERMANENT_TX_COST * block.basefee * 3, "Too much refund request");
+    Address.sendValue(payable(_gasSpender), send);
+}
+```
+
+Three points:
+
+- `block.basefee` replaces `tx.gasprice`. Priority fee is fully
+  attacker-controlled; basefee is set by consensus. With basefee
+  anchoring, an attacker who pushes `maxPriorityFeePerGas` up to
+  inflate the refund finds the formula doesn't see it at all.
+- `MIN_REFUND_WORK_GAS` rejects the trivial `setGasCheckPoint →
+  getRefund` no-op shape. Inter-function overhead is a few thousand
+  gas; any per-token action (ERC20 transfer, ERC721 transfer, ETH
+  send) easily clears this gate.
+- The cap require now runs *after* the fee is added, so the 10% fee
+  multiplier can't push the payout past the documented limit. The
+  multiplier was widened from `* 2` to `* 3` to keep the legit
+  `erc20TransferWithRefund` flow inside the cap.
+
+What we explicitly did **not** change (per design call): the
+`_gasSpender` parameter and the absence of a `msg.sender == _gasSpender`
+check. The role still trusts the approved relayer to route the refund
+correctly, but the *amount* of the refund is no longer
+relayer-inflatable.
+
+### Residual risk
+
+A still-malicious approved relayer can pad real gas burn above
+`MIN_REFUND_WORK_GAS` and claim a slightly positive marginal profit
+per call, because `PERMANENT_TX_COST` plus the 10% fee is structurally
+larger than the relayer's minimum tx overhead. The economics are now:
+
+- Per-call leak ≤ `PERMANENT_TX_COST * basefee * 3` ≈ 129k * basefee
+  (tight cap, not relayer-inflatable).
+- Per-call attacker cost ≥ base-tx + `MIN_REFUND_WORK_GAS` gas, paid
+  at `basefee + priorityFee` per gas (priority fee burned outright
+  unless attacker also operates the builder).
+- Slow, visible drain at low per-call margin; nothing like the
+  pre-fix gas-price-inflated drain rate.
+
+The proper next step is a per-relayer / per-epoch budget cap (owner-
+configurable), tracked as a follow-up rather than blocking this
+release. See `[[finding-2-followup]]` if a future memory references it.
+
+### PoC
+
+`test/audit/WNFTMyshchWallet_Audit_a_02.t.sol` — three tests lock in
+the new behaviour:
+
+- `test_noWork_drain_blocked` — attacker contract calling
+  `setGasCheckPoint + getRefund` in one frame reverts with
+  `"Refund: no work done"`; wallet untouched.
+- `test_priorityFee_inflation_blocked` — even at `tx.gasprice =
+  1000 gwei` while basefee stays at 20 gwei, the attack reverts and
+  the wallet's balance is untouched. The formula no longer reads the
+  inflated gasprice.
+- `test_repeated_noWork_attempts_blocked` — looped attempts make no
+  dent in the wallet.
 
 ---
 
@@ -328,8 +383,9 @@ Track this as a maintenance hazard, not an active bug.
 | # | Severity | Status | Title | PoC |
 |---|----------|--------|-------|-----|
 | 1 | HIGH     | **Fixed** | `setApprovalForAll` granted asset-execution rights | `test/audit/WNFTV2Envelop721_Audit_a_01.t.sol`, plus `Factory_Test_a_27::test_reentrancy` now asserts the attack is blocked |
-| 2 | HIGH     | Open | Approved relayer can drain via `getRefund` loop | sketch in finding |
+| 2 | HIGH     | **Fixed** (residual documented) | Approved relayer can drain via `getRefund` loop | `test/audit/WNFTMyshchWallet_Audit_a_02.t.sol` |
 | 3 | MEDIUM   | Open | Trusted signers survive wNFT transfer / sale | sketch in finding |
 | 4 | INFO     | Open | `transferFrom` rule placement (OZ-5 path safe) | — |
 
-Finding #1 is the only blocker for 2.2.1 and is closed in this branch.
+Findings #1 and #2 are closed in this branch; #3 / #4 remain open as
+either out-of-scope or follow-ups.
