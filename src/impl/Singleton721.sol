@@ -100,13 +100,16 @@ abstract contract Singleton721 is ERC721Upgradeable, IERC4906 {
     }
 
     function _wnftOwnerOrApproved(address _sender) internal view virtual {
+        // Note: `isApprovedForAll(currOwner, _sender)` is intentionally NOT
+        // accepted here. Operator-style approvals (conduit pattern, the way
+        // Seaport / Blur / most marketplaces use `setApprovalForAll`) must
+        // not grant wallet-execution rights — otherwise a single
+        // marketplace approval silently exposes every asset held by the
+        // wNFT-wallet. Per-token `approve(operator, TOKEN_ID)` is still
+        // accepted: it is a deliberate, per-token act by the owner and
+        // mirrors the "ownership transfers full custody" model.
         address currOwner = ownerOf(TOKEN_ID);
-        require(
-            currOwner == _sender 
-            || isApprovedForAll(currOwner, _sender) 
-            || getApproved(TOKEN_ID) == _sender,
-            "Only for wNFT owner"
-        );
+        require(currOwner == _sender || getApproved(TOKEN_ID) == _sender, "Only for wNFT owner");
     }
 
     /**

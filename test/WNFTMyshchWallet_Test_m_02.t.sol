@@ -138,6 +138,7 @@ contract WNFTMyshchWallet_Test_m_02 is Test {
         console2.log("UserWallet: %s, value:%s", lp.customWallet, balances[2].before);
         uint256 gas_price = 1e9;
         vm.txGasPrice(gas_price);
+        vm.fee(gas_price);
         vm.prank(botEOA);
         wnftBot.erc20TransferWithRefund(address(erc20), address(wnftUser), lp.sendERC20Amount);
         VmSafe.Gas memory gasInfo = vm.lastCallGas();

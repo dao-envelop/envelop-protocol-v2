@@ -44,6 +44,7 @@ contract Factory_Test_m_03 is Test {
 
     function setUp() public {
         vm.txGasPrice(1);
+        vm.fee(1);
         console2.log("Tx sender: %s, balance: s%, gasleft %s", msg.sender, msg.sender.balance, gasleft());
         erc20 = new MockERC20("Name of Mock", "MMM");
         factory = new EnvelopWNFTFactory();
@@ -111,6 +112,7 @@ contract Factory_Test_m_03 is Test {
 
     function test_create_exec_with_refund() public {
         vm.txGasPrice(1);
+        vm.fee(1);
         console2.log("Tx sender: %s, gasleft %s", msg.sender, gasleft());
         AmountsBefore memory before;
         before.amount0 = SERV_OWNER.balance;

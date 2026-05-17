@@ -332,6 +332,7 @@ contract WNFTLegacy721 is Singleton721, TokenService, SmartWallet, IEnvelopV2wNF
         ET.Lock[] memory lck = $.wnftData.locks;
         for (uint256 i = 0; i < lck.length; ++i) {
             if (lck[i].lockType == 0x00) {
+                // forge-lint: disable-next-line(block-timestamp) - TimeLock unlock vs stored timestamp; ordering is the contract semantics.
                 require(lck[i].param <= block.timestamp, "TimeLock error");
             }
         }

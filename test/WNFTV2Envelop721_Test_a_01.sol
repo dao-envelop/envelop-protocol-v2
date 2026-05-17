@@ -61,8 +61,12 @@ contract WNFTV2Envelop721_Test_a_01 is Test {
         WNFTV2Envelop721 wnft = WNFTV2Envelop721(_wnftWallet);
         assertEq(wnft.wnftInfo(impl_legacy.TOKEN_ID()).rules, rule);
 
+        // Per-token approve grants wallet-execution rights; setApprovalForAll no
+        // longer does (see Singleton721._wnftOwnerOrApproved). Read TOKEN_ID
+        // first so the prank below isn't consumed by the view call.
+        uint256 tokenId = wnft.TOKEN_ID();
         vm.prank(address(1));
-        wnft.setApprovalForAll(address(2), true);
+        wnft.approve(address(2), tokenId);
 
         vm.prank(address(2));
         // try to withdraw eth from collateral
