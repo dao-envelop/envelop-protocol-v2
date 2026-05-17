@@ -10,6 +10,8 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 /// forge-lint: disable-next-line(unaliased-plain-import)
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+
 /// forge-lint: disable-next-line(unaliased-plain-import)
 import "../interfaces/IEnvelopOracle.sol";
 
@@ -500,7 +502,7 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
                 revert OraclePriceTooHigh(oraclePrice);
             }
 
-            p.resolvedPrice = uint96(oraclePrice);
+            p.resolvedPrice = SafeCast.toUint96(oraclePrice);
             emit PredictionResolved(_prediction, oraclePrice);
         }
         isResolved = p.resolvedPrice > 0;

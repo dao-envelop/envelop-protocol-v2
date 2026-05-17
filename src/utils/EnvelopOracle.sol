@@ -9,6 +9,7 @@ import "../interfaces/IAMMPriceAdapter.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 // ---- Chainlink Feed Registry minimal interface ----
 interface FeedRegistryInterface {
@@ -235,7 +236,7 @@ contract EnvelopOracle is IEnvelopOracle, Ownable {
         dec = FEED_REGISTRY.decimals(base, DENOMINATION_USD);
 
         // Already in feed's native decimals (typically 8); callers normalize as needed
-        priceUsd = uint256(answer);
+        priceUsd = SafeCast.toUint256(answer);
         roundId = _roundId;
         updatedAt = _updatedAt;
     }
