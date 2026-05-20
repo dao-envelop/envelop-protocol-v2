@@ -5,7 +5,13 @@ All notable changes to this project are documented in this file.
 This changelog format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
-- Deployment script for full set of contracts 
+### Added
+ - `EnvelopOraclePyth` — drop-in oracle reading prices via Pyth Network on Ethereum mainnet. Preserves the `IEnvelopOracle` ABI (and `getPriceInUSD` / `getPriceInUSDWithMeta` helpers) of `EnvelopOracle`, but sources prices from Pyth instead of Chainlink Feed Registry. Owner-administered `priceFeedId` mapping; payable `updatePriceFeeds` / `updateAndGetIndexPrice` wrappers around the Pyth pull model.
+ - `script/DeployEnvelopOraclePyth.s.sol` — deploys `EnvelopOraclePyth` and preseeds 35 token → Pyth feedId pairs covering the `chainId: 1` ERC20s in `indexpage-sdk/src/index_templates.json` (ETHx and SPECTRA are deferred to a v2 fork).
+ - Test suites: `test/EnvelopOraclePyth_Test_ai_01.t.sol` (unit, via `MockPyth`), `test/fork/EnvelopOraclePyth_a_01.t.sol` (mainnet fork against the live Pyth contract).
+
+### Misc
+- Deployment script for full set of contracts
 - Documentation (doc strings)
 
 ## [2.2.1](https://github.com/dao-envelop/envelop-protocol-v2/tree/2.2.1) - 2026-05-17
