@@ -153,5 +153,25 @@ contract DeployEnvelopOraclePyth_Eth is Script {
 
         tokens[34] = 0x4A64515E5E1d1073e83f30cB97BEd20400b66E10; // WZEC (via ZEC/USD)
         feeds[34]  = 0xbe9b59d178f0d6a97ab4c343bff2aa69caa1eaae3e9048a65788c529b125bb24;
+        
+        // --edit manually after researc
+        tokens[35] = 0xFe0c30065B384F05761f15d0CC899D4F9F9Cc0eB; // ETHFI
+        feeds[35]  = 0xb27578a9654246cb0a2950842b92330e9ace141c52b63829cc72d5c45a5a595a;
+
+        tokens[36] = 0x6fB3e0A217407EFFf7Ca062D46c26E5d60a14d69; // IOTX 
+        feeds[36]  = 0xa83103141916013b5679001e273281303a6c05f4cebd94da00a785bd74d1e6d8;
+
+        tokens[37] = 0x6e1A19F235bE7ED8E3369eF73b196C07257494DE; // WFIL 
+        feeds[37]  = 0x150ac9b959aee0051e4091f0ef5216d941f590e1c5e7f91cf7635b5c11628c0e;
+
+        tokens[38] = 0xF042cfa86cf1D598a75Bdb55c3507a1F39f9493b; // COINon 
+        feeds[38]  = 0x42ded7a3ed036606ab22ece1c942f6f9245a67f6f4ec27cfad5974d45fe9d6b6;
+
+        tokens[39] = 0x0e397938C1Aa0680954093495B70A9F5e2249aBa; // QQQon 
+        feeds[39]  = 0x9695e2b96ea7b3859da9ed25b7a46a920a776e2fdae19a7bcfdf2b219230452d;
+
+        tokens[40] = 0xbA47214eDd2bb43099611b208f75E4b42FDcfEDc; // GOOGLon 
+        feeds[40]  = 0x07d24bb76843496a45bce0add8b51555f2ea02098cb04f4c6d61f7b5720836b4;
+
     }
 }

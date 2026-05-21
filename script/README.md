@@ -97,6 +97,9 @@ $ forge script script/DeployEnvelopOracle.s.sol:RandomSelectionScript --sig "req
 $ #Deploy Oracle
 $ forge script script/DeployEnvelopOracle.s.sol:DeployEnvelopOracle_Arb --rpc-url mainnet  --account env_deploy_2025 --sender 0x13B9cBcB46aD79878af8c9faa835Bee19B977D3D --broadcast --verify  --etherscan-api-key $ETHERSCAN_TOKEN 
 
+$ #Deploy Oracle Pyth
+$ forge script script/DeployEnvelopOraclePyth.s.sol:DeployEnvelopOraclePyth_Eth --rpc-url mainnet  --account env_deploy_2025 --sender 0x13B9cBcB46aD79878af8c9faa835Bee19B977D3D --broadcast --verify  --etherscan-api-key $ETHERSCAN_TOKEN 
+
 $ #Deploy Predicter
 $ forge script script/DeployPredicter.s.sol:DeployPredicter --rpc-url mainnet  --account env_deploy_2025 --sender 0x13B9cBcB46aD79878af8c9faa835Bee19B977D3D --broadcast --verify  --etherscan-api-key $ETHERSCAN_TOKEN 
 
