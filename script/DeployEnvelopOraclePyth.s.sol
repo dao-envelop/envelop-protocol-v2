@@ -46,8 +46,8 @@ contract DeployEnvelopOraclePyth_Eth is Script {
         pure
         returns (address[] memory tokens, bytes32[] memory feeds)
     {
-        tokens = new address[](35);
-        feeds  = new bytes32[](35);
+        tokens = new address[](41);
+        feeds  = new bytes32[](41);
 
         tokens[0]  = 0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32; // LDO
         feeds[0]   = 0xc63e2a7f37a04e5e614c07238bedb25dcc38927fba8fe890597a593c0b2fa4ad;
