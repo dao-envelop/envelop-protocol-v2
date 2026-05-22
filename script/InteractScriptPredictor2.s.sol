@@ -17,9 +17,8 @@ contract InteractScriptPredictor2 is Script {
         Predicter predicter = Predicter(0x71B7a17299592e06b80c28C6aB1C1DB5dC67D06D);
 
         uint256 strikeAmount = 1 ether; 
-        address predictionCreator = 0x110FA9c41cb43c08ad98391dFb52a9A0713d9613; 
+        address predictionCreator = 0x7ce18c42CD4577413B9DCE1aB1CA982e8E7B6D91; 
 
-        Predicter.Prediction memory t = predicter.predictions(predictionCreator);
         
         // create prediction
         /*vm.startBroadcast();
@@ -38,7 +37,9 @@ contract InteractScriptPredictor2 is Script {
         predicter.createPrediction(newPrediction);
         vm.stopBroadcast();*/
 
-
+        vm.startBroadcast();
+        predicter.claim(predictionCreator);
+        vm.stopBroadcast();
          
 
     }

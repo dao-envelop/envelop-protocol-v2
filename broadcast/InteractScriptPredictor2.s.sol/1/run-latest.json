@@ -1,0 +1,32 @@
+{
+  "transactions": [
+    {
+      "hash": null,
+      "transactionType": "CALL",
+      "contractName": "Predicter",
+      "contractAddress": "0x71b7a17299592e06b80c28c6ab1c1db5dc67d06d",
+      "function": "claim(address)",
+      "arguments": [
+        "0x7ce18c42CD4577413B9DCE1aB1CA982e8E7B6D91"
+      ],
+      "transaction": {
+        "from": "0x5992fe461f81c8e0affa95b831e50e9b3854ba0e",
+        "to": "0x71b7a17299592e06b80c28c6ab1c1db5dc67d06d",
+        "gas": "0xee44",
+        "value": "0x0",
+        "input": "0x1e83409a0000000000000000000000007ce18c42cd4577413b9dce1ab1ca982e8e7b6d91",
+        "nonce": "0x18b",
+        "chainId": "0x1"
+      },
+      "additionalContracts": [],
+      "isFixedGasLimit": false
+    }
+  ],
+  "receipts": [],
+  "libraries": [],
+  "pending": [],
+  "returns": {},
+  "timestamp": 1779418446040,
+  "chain": 1,
+  "commit": "8ed9d50"
+}

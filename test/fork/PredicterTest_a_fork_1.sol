@@ -74,7 +74,10 @@ contract PredicterTest_a_fork_1 is BaseForkTest  {
         vm.prank(userNo);
         predicter.claim(creator);
 
+        (,,,,,, uint256 currentPrice) = predicter.getUserEstimates(userNo, creator);
+
         // check balances
+        assertGt(currentPrice,0);
         assertEq(usdtContract.balanceOf(userNo), 0);
         assertEq(usdtContract.balanceOf(address(predicter)), 0);
         uint256 calculatedCreatorFee = predicter.FEE_CREATOR_PERCENT() * strikeAmount / predicter.PERCENT_DENOMINATOR();
