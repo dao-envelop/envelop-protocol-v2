@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+// ENVELOP(NIFTSY) protocol V2 for NFT. Onchain Oracle (Pyth Network variant)
 pragma solidity ^0.8.28;
 
 /// forge-lint: disable-next-line(unaliased-plain-import)
@@ -9,32 +10,34 @@ import "../interfaces/IAMMPriceAdapter.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
-import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
-// ---- Chainlink Feed Registry minimal interface ----
-interface FeedRegistryInterface {
-    function latestRoundData(address base, address quote)
-        external
-        view
-        returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound);
+import {IPyth} from "@pythnetwork/pyth-sdk-solidity/IPyth.sol";
+import {PythStructs} from "@pythnetwork/pyth-sdk-solidity/PythStructs.sol";
 
-    function decimals(address base, address quote) external view returns (uint8);
-}
-
-contract EnvelopOracle is IEnvelopOracle, Ownable {
+/// @title EnvelopOraclePyth
+/// @notice Drop-in replacement for EnvelopOracle that sources prices from Pyth Network
+///         instead of Chainlink Feed Registry. Public ABI matches IEnvelopOracle 1:1 so the
+///         deployment target (mainnet, L2, BSC, etc.) is selected by which oracle address is
+///         wired into Predicter / WNFTV2SmartIndex.
+/// @dev Pyth uses a pull-update model: an off-chain client must fetch a VAA from Hermes and
+///      submit it via {updatePriceFeeds} (or via {updateAndGetIndexPrice}) before view reads
+///      reflect fresh data. {getPriceNoOlderThan} enforces freshness via MAX_STALE.
+contract EnvelopOraclePyth is IEnvelopOracle, Ownable {
     // =========================================================
     //                     Price Oracle part
     // =========================================================
 
-    /// @notice Chainlink Feed Registry
-    FeedRegistryInterface public immutable FEED_REGISTRY;
+    /// @notice Pyth contract (e.g. 0x4305FB66699C3B2702D4d05CF36551390A4c69C6 on Ethereum mainnet)
+    IPyth public immutable PYTH;
 
-    /// @notice USD denomination address for Feed Registry (not an ERC20)
-    /// @dev Chainlink uses a special pseudo-address for USD denomination.
-    address public constant DENOMINATION_USD = 0x0000000000000000000000000000000000000348;
+    /// @notice Sentinel address used by callers to denote native ETH (instead of an ERC20)
     address public constant ETH_BASE = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+
     /// @notice Maximum allowed staleness for a price feed, in seconds
     uint256 public immutable MAX_STALE;
+
+    /// @notice ERC20 token address (or ETH_BASE) → Pyth price feed id
+    mapping(address token => bytes32 feedId) public priceFeedId;
 
     // =========================================================
     //                    Index registry
@@ -48,24 +51,45 @@ contract EnvelopOracle is IEnvelopOracle, Ownable {
     //                         Events
     // =========================================================
 
-    /// @notice Emitted when price is successfully read from Feed Registry.
+    /// @notice Emitted when price is successfully read from Pyth.
+    /// @dev `roundId` is always 0 — Pyth has no round concept; field kept for ABI parity.
     event PriceRead(address indexed base, uint256 priceUsd, uint80 roundId, uint256 updatedAt);
 
     event EnvelopIndexRegistered(address indexed wNFT);
     event EnvelopIndexDeregistered(address indexed wNFT);
     event EnvelopIndexPriceSet(address indexed wNFT, uint256 price, address indexed setter);
+    event FeedIdSet(address indexed token, bytes32 feedId);
 
     // =========================================================
     //                        Constructor
     // =========================================================
 
     /**
-     * @param _feedRegistry Address of Chainlink Feed Registry (or adapter).
+     * @param _pyth     Address of the Pyth contract on the target chain.
      * @param _maxStale Maximum allowed staleness for a price (seconds).
      */
-    constructor(address _feedRegistry, uint256 _maxStale) Ownable(msg.sender) {
-        FEED_REGISTRY = FeedRegistryInterface(_feedRegistry);
+    constructor(address _pyth, uint256 _maxStale) Ownable(msg.sender) {
+        PYTH = IPyth(_pyth);
         MAX_STALE = _maxStale;
+    }
+
+    // =========================================================
+    //                  Feed id administration
+    // =========================================================
+
+    /// @notice Set the Pyth feed id for a token (or ETH_BASE).
+    function setFeedId(address token, bytes32 feedId) external onlyOwner {
+        priceFeedId[token] = feedId;
+        emit FeedIdSet(token, feedId);
+    }
+
+    /// @notice Batch variant of {setFeedId}.
+    function setFeedIdBatch(address[] calldata tokens, bytes32[] calldata feedIds) external onlyOwner {
+        require(tokens.length == feedIds.length, "len mismatch");
+        for (uint256 i; i < tokens.length; ++i) {
+            priceFeedId[tokens[i]] = feedIds[i];
+            emit FeedIdSet(tokens[i], feedIds[i]);
+        }
     }
 
     // =========================================================
@@ -83,11 +107,12 @@ contract EnvelopOracle is IEnvelopOracle, Ownable {
 
     /**
      * @notice Get latest price + metadata for a base asset in USD.
+     * @dev `roundId` is always 0 (Pyth has no rounds); `decimals` is always 8 (price is normalized).
      * @param base Asset address to query.
      * @return priceUsd Latest price in 1e8 decimals.
-     * @return roundId Feed round ID used.
-     * @return updatedAt Timestamp when the feed was updated.
-     * @return decimals Feed decimals.
+     * @return roundId Always 0 — kept for ABI parity with Chainlink-based EnvelopOracle.
+     * @return updatedAt Pyth publishTime of the latest stored update for this feed.
+     * @return decimals Always 8 (price is normalized internally).
      */
     function getPriceInUSDWithMeta(address base)
         external
@@ -155,10 +180,6 @@ contract EnvelopOracle is IEnvelopOracle, Ownable {
     //               IEnvelopOracle — index registry
     // =========================================================
 
-    /**
-     * @notice Register the calling wNFT as a tracked index.
-     * Caller must implement IIndexAssets (validated via ERC-165).
-     */
     function registerIndex() external {
         require(
             IERC165(msg.sender).supportsInterface(type(IIndexAssets).interfaceId),
@@ -168,28 +189,17 @@ contract EnvelopOracle is IEnvelopOracle, Ownable {
         emit EnvelopIndexRegistered(msg.sender);
     }
 
-    /**
-     * @notice Deregister the calling wNFT. Called via _beforeUnwrap.
-     */
     function deregisterIndex() external {
         require(isRegistered[msg.sender], "Not registered");
         isRegistered[msg.sender] = false;
         emit EnvelopIndexDeregistered(msg.sender);
     }
 
-    /**
-     * @notice Authorize an updater (e.g. Predicter) to set prices for this wNFT.
-     * Must be called by the wNFT itself (via WNFTV2SmartIndex.setIndexUpdater).
-     */
     function setIndexUpdater(address _wNFT, address _updater) external {
         require(msg.sender == _wNFT, "Only wNFT itself");
         authorizedUpdater[_wNFT] = _updater;
     }
 
-    /**
-     * @notice Set a manual price override for a registered index.
-     * Callable by the authorized updater or owner.
-     */
     function setIndexPrice(address _wNFT, uint256 _price) external {
         require(
             msg.sender == authorizedUpdater[_wNFT] || msg.sender == owner(),
@@ -209,35 +219,78 @@ contract EnvelopOracle is IEnvelopOracle, Ownable {
     }
 
     // =========================================================
+    //                    Pyth pull-update helpers
+    // =========================================================
+
+    /// @notice Forward to PYTH.getUpdateFee for off-chain fee discovery.
+    function getUpdateFee(bytes[] calldata updateData) external view returns (uint256) {
+        return PYTH.getUpdateFee(updateData);
+    }
+
+    /// @notice Pay-and-update Pyth feeds. Refunds any overpayment to msg.sender.
+    function updatePriceFeeds(bytes[] calldata updateData) external payable {
+        uint256 fee = PYTH.getUpdateFee(updateData);
+        require(msg.value >= fee, "Insufficient fee");
+        PYTH.updatePriceFeeds{value: fee}(updateData);
+        if (msg.value > fee) {
+            (bool ok,) = msg.sender.call{value: msg.value - fee}("");
+            require(ok, "refund failed");
+        }
+    }
+
+    /// @notice Atomic helper: push price update VAAs, then read getIndexPrice in same tx.
+    function updateAndGetIndexPrice(address _v2Index, bytes[] calldata updateData)
+        external
+        payable
+        returns (uint256)
+    {
+        uint256 fee = PYTH.getUpdateFee(updateData);
+        require(msg.value >= fee, "Insufficient fee");
+        PYTH.updatePriceFeeds{value: fee}(updateData);
+        if (msg.value > fee) {
+            (bool ok,) = msg.sender.call{value: msg.value - fee}("");
+            require(ok, "refund failed");
+        }
+        return this.getIndexPrice(_v2Index);
+    }
+
+    // =========================================================
     //                     Internal price helper
     // =========================================================
 
     /**
-     * @dev Internal helper to fetch and normalize USD price from Feed Registry.
+     * @dev Internal helper to fetch and normalize USD price from Pyth.
      * @param base Asset address to query.
-     * @return priceUsd Price in 1e8 decimals.
-     * @return roundId Chainlink feed round ID used.
-     * @return updatedAt Timestamp when feed was updated.
-     * @return dec decimals
+     * @return priceUsd Price normalized to 1e8 decimals.
+     * @return roundId Always 0 (Pyth has no rounds).
+     * @return updatedAt Pyth publishTime.
+     * @return dec Always 8.
      */
     function _getLatestPriceInUSD(address base)
         internal
         view
         returns (uint256 priceUsd, uint80 roundId, uint256 updatedAt, uint8 dec)
     {
-        (uint80 _roundId, int256 answer,, uint256 _updatedAt, uint80 answeredInRound) =
-            FEED_REGISTRY.latestRoundData(base, DENOMINATION_USD);
+        bytes32 feedId = priceFeedId[base];
+        require(feedId != bytes32(0), "No feed");
 
-        require(answer > 0, "Price <= 0");
-        require(answeredInRound >= _roundId, "Stale answer");
-        // forge-lint: disable-next-line(block-timestamp) - staleness window vs Chainlink updatedAt; intentional time comparison.
-        require(_updatedAt + MAX_STALE >= block.timestamp, "Price is stale");
+        PythStructs.Price memory p = PYTH.getPriceNoOlderThan(feedId, MAX_STALE);
+        require(p.price > 0, "Price <= 0");
 
-        dec = FEED_REGISTRY.decimals(base, DENOMINATION_USD);
+        // Pyth reports price = p.price * 10^p.expo. Normalize to 1e8: target expo = -8.
+        // Typical crypto feeds have expo = -8 → no shift.
+        int32 shift = p.expo - int32(-8);
+        uint256 raw = uint256(uint64(p.price));
+        if (shift >= 0) {
+            // forge-lint: disable-next-line(unsafe-typecast) — shift is non-negative in this branch
+            priceUsd = raw * (10 ** uint32(shift));
+        } else {
+            // forge-lint: disable-next-line(unsafe-typecast) — -shift is non-negative in this branch
+            priceUsd = raw / (10 ** uint32(-shift));
+        }
 
-        // Already in feed's native decimals (typically 8); callers normalize as needed
-        priceUsd = SafeCast.toUint256(answer);
-        roundId = _roundId;
-        updatedAt = _updatedAt;
+        roundId = 0;
+        updatedAt = p.publishTime;
+        dec = 8;
     }
 }

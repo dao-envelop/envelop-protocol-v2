@@ -2,11 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
-import {EnvelopOracle, FeedRegistryInterface, IERC20Metadata} from "../src/utils/EnvelopOracle.sol"; // поправь путь если нужно
-
-// If your IEnvelopOracle + CompactAsset are in ../interfaces/IEnvelopOracle.sol,
-// EnvelopOracle already imports them, but tests need the struct type.
-// Easiest: import the interface where CompactAsset is defined.
+import {EnvelopOracle, FeedRegistryInterface} from "../src/utils/EnvelopOracle.sol";
 import "../src/interfaces/IEnvelopOracle.sol";
 
 contract MockFeedRegistry is FeedRegistryInterface {
@@ -61,7 +57,8 @@ contract MockFeedRegistry is FeedRegistryInterface {
     }
 }
 
-contract MockERC20Decimals is IERC20Metadata {
+/// @dev Minimal token stub — only name/symbol/decimals needed for oracle tests.
+contract MockERC20Decimals {
     string internal _name;
     string internal _symbol;
     uint8 internal _dec;

@@ -210,7 +210,7 @@ contract EnvelopLegacyWrapperBaseV2 is Ownable, TokenService {
         bytes memory _answerFromProxy = Address.functionStaticCall(proxy, abi.encodeWithSignature("TOKEN_ID()"));
         return ET.AssetItem(
             ET.Asset(_inData.outType, wnftAddress),
-            uint256(bytes32(_answerFromProxy)),
+            abi.decode(_answerFromProxy, (uint256)),
             _inData.outBalance //Check for  721
         );
     }

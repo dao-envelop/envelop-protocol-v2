@@ -4,10 +4,19 @@ out = "out"
 libs = ["lib"]
 remappings = [
     "@openzeppelin/=lib/openzeppelin-contracts/",
-    "@Uopenzeppelin/=lib/openzeppelin-contracts-upgradeable/"
+    "@Uopenzeppelin/=lib/openzeppelin-contracts-upgradeable/",
+    "@pythnetwork/pyth-sdk-solidity/=lib/pyth-sdk-solidity/"
 ]
 optimizer = true
 optimizer_runs = 200
+
+# Silence solc warnings emitted from third-party code in lib/ (OZ v5.5.0
+# uses the now-deprecated `/// @solidity memory-safe-assembly` Natspec
+# annotation — solc 0.8.33 reports it ~250 times, which also triggers the
+# generic "more than 256 warnings" notice 4591). Suppressing 2424 at the
+# error-code level avoids the cap notice as well.
+ignored_warnings_from = ["lib"]
+ignored_error_codes = ["license", "code-size", "init-code-size", 2424, 4591]
 
 fs_permissions = [
     { access = "read", path = "./script/"}, 
@@ -17,6 +26,9 @@ fs_permissions = [
 
 [lint]
 #lint_on_build = false
+# Only lint production sources — tests and deployment scripts are allowed
+# to use convenience patterns (raw ERC20 transfer/return values, etc.).
+ignore = ["test/**/*", "script/**/*"]
 
 [fuzz]
 runs = 200  # увеличить прогоны

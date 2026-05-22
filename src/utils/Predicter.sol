@@ -10,6 +10,8 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 /// forge-lint: disable-next-line(unaliased-plain-import)
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+
 /// forge-lint: disable-next-line(unaliased-plain-import)
 import "../interfaces/IEnvelopOracle.sol";
 
@@ -163,6 +165,7 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
             revert TooManyPortfolioItems(_pred.portfolio.length);
         }
 
+        // forge-lint: disable-next-line(block-timestamp) - upper bound on user-supplied expiration; intentional time comparison.
         if (_pred.expirationTime > MAX_PREDICTION_PERIOD + uint40(block.timestamp)) {
             revert TooLongPrediction(_pred.expirationTime);
         }
@@ -458,6 +461,7 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
         if (p.expirationTime == 0) revert PredictionNotExist(_prediction);
 
         // Only allow voting before expiration
+        // forge-lint: disable-next-line(block-timestamp) - intentional check that we are not too close to expiration.
         if (p.expirationTime > block.timestamp + STOP_BEFORE_EXPIRED) {
             //CompactAsset storage s = p.strike;
 
@@ -489,6 +493,7 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
         Prediction storage p = predictions[_prediction];
 
         if (
+            // forge-lint: disable-next-line(block-timestamp) - resolution gate; expirationTime is the contract semantics.
             p.expirationTime <= block.timestamp // time to resolve came
                 && p.resolvedPrice == 0 // implicit resolved flag
         ) {
@@ -497,7 +502,7 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
                 revert OraclePriceTooHigh(oraclePrice);
             }
 
-            p.resolvedPrice = uint96(oraclePrice);
+            p.resolvedPrice = SafeCast.toUint96(oraclePrice);
             emit PredictionResolved(_prediction, oraclePrice);
         }
         isResolved = p.resolvedPrice > 0;

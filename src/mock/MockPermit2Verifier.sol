@@ -548,6 +548,7 @@ contract SignatureTransfer is  EIP712 {
     ) private {
         uint256 requestedAmount = transferDetails.requestedAmount;
 
+        // forge-lint: disable-next-line(block-timestamp)
         if (block.timestamp > permit.deadline) revert SignatureExpired(permit.deadline);
         if (requestedAmount > permit.permitted.amount) revert ISignatureTransfer.InvalidAmount(permit.permitted.amount);
 

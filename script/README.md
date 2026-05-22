@@ -97,6 +97,9 @@ $ forge script script/DeployEnvelopOracle.s.sol:RandomSelectionScript --sig "req
 $ #Deploy Oracle
 $ forge script script/DeployEnvelopOracle.s.sol:DeployEnvelopOracle_Arb --rpc-url mainnet  --account env_deploy_2025 --sender 0x13B9cBcB46aD79878af8c9faa835Bee19B977D3D --broadcast --verify  --etherscan-api-key $ETHERSCAN_TOKEN 
 
+$ #Deploy Oracle Pyth
+$ forge script script/DeployEnvelopOraclePyth.s.sol:DeployEnvelopOraclePyth_Eth --rpc-url mainnet  --account env_deploy_2025 --sender 0x13B9cBcB46aD79878af8c9faa835Bee19B977D3D --broadcast --verify  --etherscan-api-key $ETHERSCAN_TOKEN 
+
 $ #Deploy Predicter
 $ forge script script/DeployPredicter.s.sol:DeployPredicter --rpc-url mainnet  --account env_deploy_2025 --sender 0x13B9cBcB46aD79878af8c9faa835Bee19B977D3D --broadcast --verify  --etherscan-api-key $ETHERSCAN_TOKEN 
 
@@ -111,5 +114,9 @@ $ forge script script/Deploy.s.sol:DeployScript --rpc-url mainnet  --account env
 $ # Test Tx Script
 $ forge script script/Deploy.s.sol:TestTxScript --rpc-url mainnet  --account env_deploy_2025 --sender 0x13B9cBcB46aD79878af8c9faa835Bee19B977D3D --broadcast --verify  --etherscan-api-key $ETHERSCAN_TOKEN  
 
-$ cast send --value 1e14  --rpc-url mainnet --account env_deploy_2025 --sender 0x13B9cBcB46aD79878af8c9faa835Bee19B977D3D 0xa0cff013918ddaED7F2e6066D0403C6D50a58a7c
+$ cast send --value 1e14  --rpc-url mainnet --account env_deploy_2025  0xB72993EbB94dc20E4140AFc99A4BC5E42D3d93B2
+
+$ cast send --rpc-url mainnet --account env_deploy_2025 0x7728cd70b3dD86210e2bd321437F448231B81733 "Transfer(address,uint256)" "0x5285c0082855869725afae4fc5bd7c2d3db01254" 1000000000000000000
 ```
+
+cast send --value 1e17  --rpc-url mainnet --account env_iber_2025  0xB72993EbB94dc20E4140AFc99A4BC5E42D3d93B2
