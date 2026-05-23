@@ -3,14 +3,14 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 import "../../src/utils/Predicter.sol";
-import "../../src/utils/EnvelopOracle.sol";
+import "../../src/utils/EnvelopOraclePyth.sol";
 import "../../src/mock/MockERC20.sol";
 import "./BaseForkTest.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract PredicterTest_a_fork_1 is BaseForkTest  {
+contract PredicterTest_a_fork_3 is BaseForkTest  {
     MockERC20 internal mock;
-    EnvelopOracle internal oracle;
+    EnvelopOraclePyth internal oracle;
     Predicter internal predicter;
     MockERC20 internal mockUsdt;
 
@@ -20,12 +20,14 @@ contract PredicterTest_a_fork_1 is BaseForkTest  {
     address internal feeBeneficiary = address(0xFEEBEEF);
     address public realUsdt = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
     address feedRegistry = 0x47Fb2585D2C56Fe188D0E6ec628a38b74fCeeeDf;
-    uint256 maxStale = 36000000000;
+    uint256 maxStale = 3600;
+    address pyth = 0x4305FB66699C3B2702D4d05CF36551390A4c69C6;
+    address oraclePyth = 0x10A877328959d5b655Bc0bba03aba2b383114bfa;
 
     function setUp() public {
         
         mockUsdt = new MockERC20("Mock", "MOCK");  
-        oracle = new EnvelopOracle(feedRegistry, maxStale);
+        oracle = EnvelopOraclePyth(oraclePyth);
         predicter = new Predicter(feeBeneficiary);
     }
 
@@ -39,8 +41,11 @@ contract PredicterTest_a_fork_1 is BaseForkTest  {
 
         Predicter.Prediction memory pred;
     
-        CompactAsset[] memory portfolio = new CompactAsset[](1);
-        portfolio[0] = CompactAsset({token: realUsdt, amount: portfolioAmount});
+        CompactAsset[] memory portfolio = new CompactAsset[](4);
+        portfolio[0] = CompactAsset({token: 0x152649eA73beAb28c5b49B26eb48f7EAD6d4c898, amount: 366702137679190322});
+        portfolio[1] = CompactAsset({token: 0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984, amount: 148283992390774848});
+        portfolio[2] = CompactAsset({token: 0x232CE3bd40fCd6f80f3d55A522d03f25Df784Ee2, amount: 375630743327951715});
+        portfolio[3] = CompactAsset({token: 0x6f40d4A6237C257fff2dB00FA0510DeEECd303eb, amount: 320748538407361185});
 
         pred.strike = CompactAsset({token: address(mockUsdt), amount: strikeAmount});
         pred.predictedPrice = OracleData({oracle: address(oracle), amount: predictedPrice});
@@ -83,7 +88,7 @@ contract PredicterTest_a_fork_1 is BaseForkTest  {
         uint256 reward = strikeAmount - calculatedCreatorFee - calculatedProtocolFee;
         assertEq(mockUsdt.balanceOf(userYes), reward + strikeAmount);
 
-        console2.log(oracle.getTokenDecimals(0xdAC17F958D2ee523a2206206994597C13D831ec7));
+        //console2.log(oracle.getTokenDecimals(0xdAC17F958D2ee523a2206206994597C13D831ec7));
     }
 }
 

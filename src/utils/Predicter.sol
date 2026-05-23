@@ -432,6 +432,10 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
         );
     }
 
+    function getPredictionPortfolio(address creator) external view returns (CompactAsset[] memory) {
+       return predictions[creator].portfolio;
+    }
+
     // ==================================
     //           INTERNAL LOGIC
     // ==================================

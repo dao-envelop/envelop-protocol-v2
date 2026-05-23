@@ -142,13 +142,17 @@ contract EnvelopOracle is IEnvelopOracle, Ownable {
     function getIndexPrice(CompactAsset[] calldata _assets) external view returns (uint256 total) {
         for (uint256 i = 0; i < _assets.length; i++) {
             if (_assets[i].token != ETH_BASE) {
-                total += _assets[i].amount * getPriceInUSD(_assets[i].token)
-                  / (10**IERC20Metadata(_assets[i].token).decimals());
+                total += (_assets[i].amount * getPriceInUSD(_assets[i].token))
+                  / 10**6;//(10**IERC20Metadata(_assets[i].token).decimals());
             } else {
                 total += _assets[i].amount * getPriceInUSD(_assets[i].token)
                   / 10**18;
             }
         }
+    }
+
+    function getTokenDecimals(address token) external view returns (uint256) {
+       return IERC20Metadata(token).decimals();
     }
 
     // =========================================================
