@@ -151,10 +151,6 @@ contract EnvelopOracle is IEnvelopOracle, Ownable {
         }
     }
 
-    function getTokenDecimals(address token) external view returns (uint256) {
-       return IERC20Metadata(token).decimals();
-    }
-
     // =========================================================
     //               IEnvelopOracle — index registry
     // =========================================================
