@@ -143,7 +143,7 @@ contract EnvelopOracle is IEnvelopOracle, Ownable {
         for (uint256 i = 0; i < _assets.length; i++) {
             if (_assets[i].token != ETH_BASE) {
                 total += (_assets[i].amount * getPriceInUSD(_assets[i].token))
-                  / 10**6;//(10**IERC20Metadata(_assets[i].token).decimals());
+                  / 10**IERC20Metadata(_assets[i].token).decimals();
             } else {
                 total += _assets[i].amount * getPriceInUSD(_assets[i].token)
                   / 10**18;
