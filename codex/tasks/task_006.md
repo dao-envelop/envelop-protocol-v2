@@ -309,3 +309,80 @@ RPC: `https://rpc.envelop.is/eth`. Скрипт верификации: `/tmp/ta
 - [ ] Исправить idx 35: убрать ETHx из v1-маппинга (либо в v2 через `setDerivedFeed`).
 - [ ] В тестах фронта для индексов, содержащих фиды из списка `PriceFeedNotFound`, использовать pull-обновление через Hermes до чтения цены.
 
+---
+
+## Verification (2026-05-24) — повторный прогон на новом деплое
+
+Развёрнут **новый** `EnvelopOraclePyth` — `0x88b50e2338911f81dff74a854d710ca709b247b6` (mainnet, chainId 1, broadcast `broadcast/DeployEnvelopOraclePyth.s.sol/1/run-latest.json`). Та же тройная проверка, что и 2026-05-21 (oracle on-chain `priceFeedId`, Hermes off-chain, `PYTH.getPriceUnsafe`). Скрипт: `codex/tasks/task_006_verify.py` (константа `ORACLE` обновлена на новый адрес). RPC: `https://rpc.envelop.is/eth`. PYTH: `0x4305FB66699C3B2702D4d05CF36551390A4c69C6`.
+
+**Перед верификацией** прогнаны fork-тесты (`forge test --match-path "test/fork/*" --rpc-url mainnet --ffi`): **15 passed, 2 failed**.
+- `test/fork/EnvelopOraclePyth_a_01.t.sol` — **8/8 PASS** (включая новый `test_getPYTHUnsafe_matchesMeta`).
+- `test/fork/PredicterTest_a_fork_3.sol::test_EndtoEnd` — **FAIL** с `StalePrice()` (`0x19abf40e`). Тест использует **старый** оракл `0x10A8…4bfa` и резолвит портфель CAKE/UNI/LIT/FLUID через `getPriceNoOlderThan(…, 3600)` + `vm.warp(+200)`; на live-форке свежие VAA никто не пушил → цены старше `MAX_STALE`. Это штатная pull-семантика, не регрессия кода.
+- `test/fork/EnvelopOracle_a_01.t.sol::test_getIndexPrice_success` — **FAIL** (`99 !~= 2e8`). Это **Chainlink**-оракл (не Pyth), расхождение Feed Registry, к задаче #6 не относится.
+
+### Сводная таблица (новый оракл `0x88b5…47b6`)
+
+| # | Symbol | Token | feedId (script) | Oracle has it? | Hermes USD | PYTH.getPriceUnsafe USD | PYTH publishTime |
+|---|---|---|---|---|---|---|---|
+| 0 | LDO | `0x5A98FcBE…1B32` | `0xc63e2a7f…2fa4ad` | YES | 0.3501 | 0.3584 | 1779357024 |
+| 1 | ETHFI | `0x01791F72…45fF` | `0xb27578a9…5a595a` | YES | 0.3750 | 0.3832 | 1779357024 |
+| 2 | ENA | `0x57e114B6…6061` | `0xb7910ba7…5f6bd4` | YES | 0.1011 | 0.1063 | 1779357024 |
+| 3 | SKY | `0x56072C95…9279` | `0xa483243e…9d3fe7` | YES | 0.0703 | 0.0707 | 1779357024 |
+| 4 | AAVE | `0x7Fc66500…DaE9` | `0x2b9ab1e9…e47445` | YES | 86.6923 | 87.6915 | 1779286652 |
+| 5 | MORPHO | `0x58D97B57…c2B2` | `0x5b2a4c54…6fdc42` | YES | 2.1767 | REVERT `PriceFeedNotFound` | — |
+| 6 | SYRUP | `0x643C4E15…2d66` | `0xed86e0c6…8ff1ce` | YES | 0.1973 | REVERT `PriceFeedNotFound` | — |
+| 7 | EUL | `0xd9Fcd98c…E07b` | `0xa7adc417…34c51f` | YES | 1.2310 | 1.2010 | 1776292317 |
+| 8 | SPK | `0xc20059e0…b066` | `0x88a17f29…eb718d` | YES | 0.0277 | REVERT `PriceFeedNotFound` | — |
+| 9 | UNI | `0x1f9840a8…F984` | `0x78d185a7…171501` | YES | 3.4614 | 3.6030 | 1779466244 |
+| 10 | CAKE | `0x152649eA…c898` | `0x2356af95…53ecf9` | YES | 1.4163 | 1.4529 | 1779466244 |
+| 11 | LIT | `0x232CE3bd…4Ee2` | `0xc0c83f00…4e2a9e` | YES | 1.2301 | 1.2549 | 1779466244 |
+| 12 | FLUID | `0x6f40d4A6…03eb` | `0x47d462d8…f1e349` | YES | 1.6979 | 1.7131 | 1779466244 |
+| 13 | **CRV** | `0x4B1E80cA…2Be8` | `0xa19d04ac…5fcae8` | **YES (исправлено)** | 0.2323 | 0.2319 | 1779369701 |
+| 14 | PENDLE | `0x80850712…a827` | `0x9a4df90b…0c8016` | YES | 1.8759 | 1.8359 | 1779370529 |
+| 15 | POL | `0x455e53CB…C3F6` | `0xffd11c5a…d70472` | YES | 0.0916 | 0.2802 (stale) | 1740409566 |
+| 16 | ARB | `0xB50721BC…4ad1` | `0x3fa42528…1adcf5` | YES | 0.1092 | 0.7212 (stale) | 1735740000 |
+| 17 | STRK | `0xCa14007E…2766` | `0x6a182399…6cd870` | YES | 0.0400 | 0.3460 (stale) | 1730728384 |
+| 18 | IMX | `0xF57e7e7C…79fF` | `0x941320a8…ea63a2` | YES | 0.1673 | REVERT `PriceFeedNotFound` | — |
+| 19 | LINK | `0x51491077…86CA` | `0x8ac0c70f…04d221` | YES | 9.5703 | 15.2006 (stale) | 1741504973 |
+| 20 | ZRO | `0x6985884C…71cd` | `0x3bd860be…0b8018` | YES | 1.3206 | REVERT `PriceFeedNotFound` | — |
+| 21 | NEAR | `0x77E06c9e…0A44` | `0xc415de8d…226750` | YES | 2.3799 | REVERT `PriceFeedNotFound` | — |
+| 22 | ATH | `0xbe0Ed413…226B` | `0xf6b551a9…24ad4a` | YES | 0.0064 | REVERT `PriceFeedNotFound` | — |
+| 23 | RENDER | `0x44ff8620…BF73` | `0x3d4a2bd9…49e35d` | YES | 1.9869 | REVERT `PriceFeedNotFound` | — |
+| 24 | TAO | `0x85F17Cf9…f6a4` | `0x410f41de…84e1af` | YES | 280.7975 | REVERT `PriceFeedNotFound` | — |
+| 25 | ONDO | `0xfAbA6f8e…9BE3` | `0xd4047261…ea5ce3` | YES | 0.4435 | 0.2533 (stale) | 1775727471 |
+| 26 | CRCLon | `0x3632DEa9…3fAE` | `0x92b8527a…3f1365` | YES | 113.1453 | REVERT `PriceFeedNotFound` | — |
+| 27 | SPYon | `0xFeDC5f4a…2c08` | `0x19e09bb8…c11cd5` | YES | 745.5950 | 455.4900 (stale) | 1700680342 |
+| 28 | NVDAon | `0x2D1F7226…bDEE` | `0xb1073854…60a593` | YES | 215.3550 | 187.6100 (stale) | 1768585548 |
+| 29 | XAUT | `0x68749665…2F38` | `0x44465e17…a30e67` | YES | 4,511.8766 | 5,173.9195 (stale) | 1772001841 |
+| 30 | WBTC | `0x2260FAC5…C599` | `0xc9d8b075…2ffc33` | YES | 76,551.6754 | 68,051.8518 (stale) | 1772587897 |
+| 31 | ETH | `0xEeeeeEee…EEeE` | `0xff61491a…fd0ace` | YES | 2,118.4575 | 2,118.5000 | 1779609600 |
+| 32 | BNB | `0xB8c77482…DD52` | `0x2f95862b…101c4f` | YES | 657.8010 | 631.9807 (stale) | 1740409566 |
+| 33 | TRX | `0x50327c6c…7AB5` | `0x67aed5a2…f33c2b` | YES | 0.3625 | 0.1537 (stale) | 1727961560 |
+| 34 | WZEC | `0x4A64515E…6E10` | `0xbe9b59d1…25bb24` | YES | 632.7251 | REVERT `PriceFeedNotFound` | — |
+| 35 | **ETHx*** | `0xFe0c3006…c0eB` | `0xb27578a9…5a595a` | YES (но feedId = ETHFI) | 0.3750 | 0.3832 | 1779357024 |
+| 36 | IOTX | `0x6fB3e0A2…4d69` | `0xa8310314…d1e6d8` | YES | 0.0043 | REVERT `PriceFeedNotFound` | — |
+| 37 | WFIL | `0x6e1A19F2…94DE` | `0x150ac9b9…628c0e` | YES | 0.9764 | REVERT `PriceFeedNotFound` | — |
+| 38 | COINon | `0xF042cfa8…493b` | `0x42ded7a3…e9d6b6` | YES | 194.2747 | REVERT `PriceFeedNotFound` | — |
+| 39 | QQQon | `0x0e397938…9aBa` | `0x9695e2b9…30452d` | YES | 717.5700 | 391.1475 (stale) | 1700680342 |
+| 40 | GOOGLon | `0xbA47214e…fEDc` | `0x07d24bb7…0836b4` | YES | 389.9760 | REVERT `PriceFeedNotFound` | — |
+
+### Итоги по трём проверкам
+
+- **Oracle on-chain (`priceFeedId`): 41/41 YES** — все записи скрипта присутствуют на новом контракте, расхождений нет (было 40/41).
+- **Hermes off-chain: 41/41 OK** — все feedId отдают валидную цену (без изменений).
+- **PYTH on-chain без staleness (`getPriceUnsafe`): 26/41 возвращают цену, 15/41 ревертят** `PriceFeedNotFound` (`0x14aebe68`). Список тот же, что и 2026-05-21: MORPHO, SYRUP, SPK, IMX, ZRO, NEAR, ATH, RENDER, TAO, CRCLon, WZEC, IOTX, WFIL, COINon, GOOGLon — эти фиды ни разу не пушились в mainnet-PYTH; читаются только через pull-pattern (`updateAndGetIndexPrice`).
+
+### Изменения относительно 2026-05-21
+
+1. ✅ **CRV (idx 13) исправлен.** На новом контракте `priceFeedId(CRV) = 0xa19d04ac…5fcae8` (`Crypto.CRV/USD`) — совпадает со скриптом. Раньше был MISMATCH (`0x0a0408d6…`).
+2. ✅ **Все 41 записи on-chain.** В `script/DeployEnvelopOraclePyth.s.sol:49-50` массивы теперь `new address[](41)` / `new bytes32[](41)` — прежняя проблема `new …[](35)` (Panic 0x32 при повторном прогоне, idx 35..40 не на чейне) устранена. Скрипт воспроизводим.
+3. ⚠️ **idx 35 — ETHx по-прежнему с feedId ETHFI** (`0xb27578a9…`). v2-derived (`setDerivedFeed(ETHx, ETHX/ETH, ETH/USD)`) ещё не применён → `getPriceInUSD(ETHx)` возвращает цену ETHFI. Остаётся открытым (см. рекомендацию ниже).
+4. Stale-цены в PYTH (POL, ARB, STRK, LINK, ONDO, SPYon, NVDAon, XAUT, WBTC, BNB, TRX, QQQon) — без изменений: `getPriceUnsafe` отдаёт старое значение, `getPriceNoOlderThan(3600)` ревертит. Рабочий путь — `updateAndGetIndexPrice` с Hermes-VAA.
+
+### Открытые рекомендации (актуальны после повторной верификации)
+
+- [ ] **idx 35 (ETHx)** — убрать из v1-маппинга и перевести на v2 `setDerivedFeed(ETHx, ETHX/ETH, ETH/USD)`.
+- [ ] Для индексов с фидами из списка `PriceFeedNotFound`/stale — читать через `updateAndGetIndexPrice` (Hermes pull), не через прямой `getPriceInUSD`.
+- [x] ~~Размер массивов до 41~~ — сделано.
+- [x] ~~CRV on-chain коррекция~~ — на новом деплое feedId уже корректный.
+
