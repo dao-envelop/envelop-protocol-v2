@@ -221,8 +221,19 @@ contract EnvelopOraclePyth is IEnvelopOracle, Ownable {
         PythStructs.Price memory p = PYTH.getPriceNoOlderThan(feedId, MAX_STALE);
         require(p.price > 0, "Price <= 0");
 
-        // Pyth reports price = p.price * 10^p.expo. Normalize to 1e8: target expo = -8.
-        // Typical crypto feeds have expo = -8 → no shift.
+        priceUsd = _normalizeTo1e8(p);
+        roundId = 0;
+        updatedAt = p.publishTime;
+        dec = 8;
+    }
+
+    /**
+     * @dev Normalize a Pyth price to 1e8 decimals (target expo = -8).
+     *      Pyth reports price = p.price * 10^p.expo; typical crypto feeds have expo = -8 → no shift.
+     * @param p Pyth price struct (caller must ensure p.price > 0).
+     * @return priceUsd Price normalized to 1e8 decimals.
+     */
+    function _normalizeTo1e8(PythStructs.Price memory p) private pure returns (uint256 priceUsd) {
         int32 shift = p.expo - int32(-8);
         uint256 raw = uint256(uint64(p.price));
         if (shift >= 0) {
@@ -232,13 +243,29 @@ contract EnvelopOraclePyth is IEnvelopOracle, Ownable {
             // forge-lint: disable-next-line(unsafe-typecast) — -shift is non-negative in this branch
             priceUsd = raw / (10 ** uint32(-shift));
         }
-
-        roundId = 0;
-        updatedAt = p.publishTime;
-        dec = 8;
     }
 
-    function getPYTHUnsafe() public view  {
+    /**
+     * @notice Latest Pyth price for `base` in USD (1e8) WITHOUT any staleness check.
+     * @dev Uses Pyth {getPriceUnsafe}; the returned price may be arbitrarily old.
+     *      Callers MUST inspect `publishTime` to decide if it is fresh enough.
+     *      Unlike {getPriceInUSD}, this never reverts on stale data.
+     * @param base Asset address (or ETH_BASE) to query.
+     * @return price Price normalized to 1e8 decimals.
+     * @return publishTime Pyth publishTime of the returned price.
+     */
+    function getPYTHUnsafe(address base)
+        external
+        view
+        returns (uint256 price, uint256 publishTime)
+    {
+        bytes32 feedId = priceFeedId[base];
+        require(feedId != bytes32(0), "No feed");
 
+        PythStructs.Price memory p = PYTH.getPriceUnsafe(feedId);
+        require(p.price > 0, "Price <= 0");
+
+        price = _normalizeTo1e8(p);
+        publishTime = p.publishTime;
     }
 }
