@@ -120,6 +120,8 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
     /// @dev Thrown if prediction too long
     error TooLongPrediction(uint256 actualTimestamp);
 
+    error NoPortfolioItems();
+
     // ==================================
     //            EVENTS
     // ==================================
@@ -161,7 +163,8 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
      * - Creator MUST NOT have an existing prediction (`expirationTime == 0`).
      */
     function createPrediction(Prediction calldata _pred) external {
-        if (_pred.portfolio.length > MAX_PORTFOLIO_LEN) {
+        if (_pred.portfolio.length == 0) revert NoPortfolioItems();
+        if (_pred.portfolio.length > MAX_PORTFOLIO_LEN ) {
             revert TooManyPortfolioItems(_pred.portfolio.length);
         }
 
