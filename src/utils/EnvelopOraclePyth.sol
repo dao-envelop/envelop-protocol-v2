@@ -44,8 +44,6 @@ contract EnvelopOraclePyth is IEnvelopOracle, Ownable {
     // =========================================================
 
     mapping(address wNFT => uint256 price)   public overridedPrices;
-    mapping(address wNFT => bool)            public isRegistered;
-    mapping(address wNFT => address updater) public authorizedUpdater;
 
     // =========================================================
     //                         Events
@@ -84,7 +82,10 @@ contract EnvelopOraclePyth is IEnvelopOracle, Ownable {
     }
 
     /// @notice Batch variant of {setFeedId}.
-    function setFeedIdBatch(address[] calldata tokens, bytes32[] calldata feedIds) external onlyOwner {
+    function setFeedIdBatch(address[] calldata tokens, bytes32[] calldata feedIds) 
+        external 
+        onlyOwner 
+    {
         require(tokens.length == feedIds.length, "len mismatch");
         for (uint256 i; i < tokens.length; ++i) {
             priceFeedId[tokens[i]] = feedIds[i];
@@ -136,31 +137,6 @@ contract EnvelopOraclePyth is IEnvelopOracle, Ownable {
     function getIndexPrice(address _v2Index) external view returns (uint256) {
         // 1. Manual/Predicter override
         if (overridedPrices[_v2Index] != 0) return overridedPrices[_v2Index];
-
-        // 2. Auto-compute via callback
-        if (isRegistered[_v2Index]) {
-            CompactAsset[] memory assets   = IIndexAssets(_v2Index).getIndexAssets();
-            address amm                    = IIndexAssets(_v2Index).getIndexAmm();
-            address baseAsset              = IIndexAssets(_v2Index).getIndexBaseAsset();
-            uint256 total = 0;
-            for (uint256 i = 0; i < assets.length; i++) {
-                if (amm != address(0)) {
-                    (uint256 price, uint8 dec) = IAMMPriceAdapter(amm)
-                        .getTokenPriceUSD(assets[i].token, assets[i].amount, baseAsset);
-                    if (dec <= 8) {
-                        total += price * 10 ** (8 - dec);
-                    } else {
-                        total += price / 10 ** (dec - 8);
-                    }
-                } else {
-                    uint8 tokenDec = IERC20Metadata(assets[i].token).decimals();
-                    (uint256 unitPrice,,,) = _getLatestPriceInUSD(assets[i].token); // 1e8
-                    total += unitPrice * uint256(assets[i].amount) / (10 ** uint256(tokenDec));
-                }
-            }
-            return total;
-        }
-
         return 0;
     }
 
@@ -176,38 +152,6 @@ contract EnvelopOraclePyth is IEnvelopOracle, Ownable {
         }
     }
 
-    // =========================================================
-    //               IEnvelopOracle — index registry
-    // =========================================================
-
-    function registerIndex() external {
-        require(
-            IERC165(msg.sender).supportsInterface(type(IIndexAssets).interfaceId),
-            "Not IIndexAssets"
-        );
-        isRegistered[msg.sender] = true;
-        emit EnvelopIndexRegistered(msg.sender);
-    }
-
-    function deregisterIndex() external {
-        require(isRegistered[msg.sender], "Not registered");
-        isRegistered[msg.sender] = false;
-        emit EnvelopIndexDeregistered(msg.sender);
-    }
-
-    function setIndexUpdater(address _wNFT, address _updater) external {
-        require(msg.sender == _wNFT, "Only wNFT itself");
-        authorizedUpdater[_wNFT] = _updater;
-    }
-
-    function setIndexPrice(address _wNFT, uint256 _price) external {
-        require(
-            msg.sender == authorizedUpdater[_wNFT] || msg.sender == owner(),
-            "Not authorized"
-        );
-        overridedPrices[_wNFT] = _price;
-        emit EnvelopIndexPriceSet(_wNFT, _price, msg.sender);
-    }
 
     // =========================================================
     //               Legacy owner price override
@@ -292,5 +236,9 @@ contract EnvelopOraclePyth is IEnvelopOracle, Ownable {
         roundId = 0;
         updatedAt = p.publishTime;
         dec = 8;
+    }
+
+    function getPYTHUnsafe() public view  {
+
     }
 }

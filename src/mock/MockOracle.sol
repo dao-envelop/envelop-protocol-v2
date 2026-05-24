@@ -23,20 +23,20 @@ contract MockOracle is IEnvelopOracle {
         return price;
     }
 
-    function registerIndex() external override {
+    function registerIndex() external  {
         isRegistered[msg.sender] = true;
     }
 
-    function deregisterIndex() external override {
+    function deregisterIndex() external  {
         isRegistered[msg.sender] = false;
     }
 
-    function setIndexUpdater(address _wNFT, address _updater) external override {
+    function setIndexUpdater(address _wNFT, address _updater) external  {
         require(msg.sender == _wNFT, "Only wNFT itself");
         authorizedUpdater[_wNFT] = _updater;
     }
 
-    function setIndexPrice(address _wNFT, uint256 _price) external override {
+    function setIndexPrice(address _wNFT, uint256 _price) external  {
         overridedPrices[_wNFT] = _price;
     }
 }

@@ -21,9 +21,9 @@ interface IEnvelopOracle {
     function getIndexPrice(address _v2Index) external view returns (uint256);
     function getIndexPrice(CompactAsset[] calldata _assets) external view returns (uint256);
 
-    function registerIndex() external;
-    function deregisterIndex() external;
-    function setIndexUpdater(address _wNFT, address _updater) external;
-    function setIndexPrice(address _wNFT, uint256 _price) external;
-    function isRegistered(address _wNFT) external view returns (bool);
+    // function registerIndex() external;
+    // function deregisterIndex() external;
+    // function setIndexUpdater(address _wNFT, address _updater) external;
+    // function setIndexPrice(address _wNFT, uint256 _price) external;
+    // function isRegistered(address _wNFT) external view returns (bool);
 }
