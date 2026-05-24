@@ -356,11 +356,7 @@ contract Predicter is ERC6909TokenSupply, ReentrancyGuard {
                    / PERCENT_DENOMINATOR / SCALE;
                 noReward -= estimateFee;   
             }
-
-        } else {
-            currentPrice = _getCurrentOraclePrice(_prediction, p);
         }
-            
     }
 
     /**

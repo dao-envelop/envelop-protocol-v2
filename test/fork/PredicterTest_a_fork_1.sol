@@ -83,7 +83,6 @@ contract PredicterTest_a_fork_1 is BaseForkTest  {
         uint256 reward = strikeAmount - calculatedCreatorFee - calculatedProtocolFee;
         assertEq(mockUsdt.balanceOf(userYes), reward + strikeAmount);
 
-        console2.log(oracle.getTokenDecimals(0xdAC17F958D2ee523a2206206994597C13D831ec7));
     }
 }
 
