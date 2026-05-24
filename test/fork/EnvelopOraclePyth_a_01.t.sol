@@ -98,6 +98,17 @@ contract EnvelopOraclePyth_fork_a_01 is BaseForkTest {
         assertGt(updatedAt, 0);
     }
 
+    function test_getPYTHUnsafe_matchesMeta() public view onlyOnFork {
+        (uint256 unsafePrice, uint256 publishTime) = oracle.getPYTHUnsafe(ETH_BASE);
+        assertGt(unsafePrice, 0, "unsafe price must be positive");
+        assertLe(publishTime, block.timestamp, "publishTime must not be in the future");
+
+        // With the dynamic stale window the checked path is readable too — values must agree.
+        (uint256 metaPrice,, uint256 updatedAt,) = oracle.getPriceInUSDWithMeta(ETH_BASE);
+        assertEq(unsafePrice, metaPrice, "unsafe price must match checked price");
+        assertEq(publishTime, updatedAt, "publishTime must match");
+    }
+
     // -------- basket --------
 
     function test_getIndexPrice_assets_basket() public view onlyOnFork {

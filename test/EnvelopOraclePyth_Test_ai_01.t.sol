@@ -155,6 +155,53 @@ contract EnvelopOraclePyth_Test_ai_01 is Test {
         oracle.getPriceInUSD(address(usdcLike));
     }
 
+    // -------- getPYTHUnsafe (price + time, no staleness check) --------
+
+    function test_getPYTHUnsafe_returnsPriceAndTime() public view {
+        (uint256 price, uint256 publishTime) = oracle.getPYTHUnsafe(address(usdcLike));
+        assertEq(price, 1e8);
+        assertEq(publishTime, block.timestamp); // publishTime seeded in setUp
+    }
+
+    function test_getPYTHUnsafe_ignoresStale() public {
+        uint256 seededAt = block.timestamp;
+
+        // Move far past MAX_STALE: the staleness-checked path must revert...
+        vm.warp(block.timestamp + MAX_STALE + 1);
+        vm.expectRevert(PythErrors.StalePrice.selector);
+        oracle.getPriceInUSD(address(usdcLike));
+
+        // ...but the unsafe getter still returns the (now stale) price and its original publishTime.
+        (uint256 price, uint256 publishTime) = oracle.getPYTHUnsafe(address(usdcLike));
+        assertEq(price, 1e8);
+        assertEq(publishTime, seededAt);
+    }
+
+    function test_getPYTHUnsafe_expoNormalization() public view {
+        // Shares _normalizeTo1e8 with getPriceInUSD → must match for non -8 exponents.
+        (uint256 p6,)  = oracle.getPYTHUnsafe(address(tokenE6));
+        (uint256 p10,) = oracle.getPYTHUnsafe(address(tokenE10));
+        assertEq(p6,  oracle.getPriceInUSD(address(tokenE6)));
+        assertEq(p10, oracle.getPriceInUSD(address(tokenE10)));
+        assertEq(p6,  1234567000000);
+        assertEq(p10, 1234567890);
+    }
+
+    function test_getPYTHUnsafe_revertsOnNoFeed() public {
+        MockERC20Decimals unmapped = new MockERC20Decimals("NoFeed", "NF", 18);
+
+        vm.expectRevert(bytes("No feed"));
+        oracle.getPYTHUnsafe(address(unmapped));
+    }
+
+    function test_getPYTHUnsafe_revertsOnNegativePrice() public {
+        oracle.setFeedId(address(tokenE6), FEED_NEG);
+        _pushPrice(FEED_NEG, int64(0), -8);
+
+        vm.expectRevert(bytes("Price <= 0"));
+        oracle.getPYTHUnsafe(address(tokenE6));
+    }
+
     // -------- admin --------
 
     function test_setFeedId_onlyOwner() public {
