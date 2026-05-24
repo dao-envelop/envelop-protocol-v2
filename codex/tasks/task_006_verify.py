@@ -9,7 +9,7 @@ import urllib.parse
 import urllib.request
 from decimal import Decimal
 
-ORACLE = "0x10a877328959d5b655bc0bba03aba2b383114bfa"
+ORACLE = "0x88b50e2338911f81dff74a854d710ca709b247b6"
 PYTH = "0x4305FB66699C3B2702D4d05CF36551390A4c69C6"
 RPC = "https://rpc.envelop.is/eth"
 ETH_BASE = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
