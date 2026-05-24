@@ -102,6 +102,7 @@ contract PredicterTest_ai is Test, PredictionBuilder {
             uint256 noTotal,
             uint256 yesReward,
             uint256 noReward,
+            uint256 currentPrice
         ) = predicter.getUserEstimates(userYes, creator);
 
         (uint256 yesId, uint256 noId) = predicter.hlpGet6909Ids(creator);
@@ -116,6 +117,8 @@ contract PredicterTest_ai is Test, PredictionBuilder {
         assertEq(yesReward, 0);
         // userYes has 0 noTokens, so noReward = 0
         assertEq(noReward, 0);
+        // changed logic (no oracle call while unresolved): currentPrice stays 0 until resolved
+        assertEq(currentPrice, 0);
 
         // jump after expiration
         vm.warp(exp + 1);
@@ -127,9 +130,11 @@ contract PredicterTest_ai is Test, PredictionBuilder {
         (
              ,,,,
             yesReward,,
-            
+            currentPrice
         ) = predicter.getUserEstimates(userYes, creator);
         assertGt(yesReward, 0);
+        // once resolved, currentPrice mirrors the stored resolvedPrice (set from the oracle price)
+        assertEq(currentPrice, predictedPrice);
         console2.log(yesReward);
     }
 

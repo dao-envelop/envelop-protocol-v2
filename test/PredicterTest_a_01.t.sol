@@ -73,6 +73,18 @@ contract PredicterTest_a_01 is Test, PredictionBuilder {
         predicter.createPrediction(pred);
     }
 
+    function test_createPrediction_revertNoPortfolioItems() public {
+        Predicter.Prediction memory pred;
+        pred.strike = CompactAsset({token: address(token), amount: 1 ether});
+        pred.predictedPrice = OracleData({oracle: address(oracle), amount: 100});
+        pred.expirationTime = uint40(block.timestamp + 1 days);
+        pred.portfolio = new CompactAsset[](0); // empty → must revert
+
+        vm.prank(creator);
+        vm.expectRevert(Predicter.NoPortfolioItems.selector);
+        predicter.createPrediction(pred);
+    }
+
     function test_createPrediction_revertActivePredictionExist() public {
         uint40 exp = uint40(block.timestamp + 1 days);
         uint96 strikeAmount = 10e18;
