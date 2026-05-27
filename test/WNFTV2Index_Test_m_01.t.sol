@@ -139,7 +139,7 @@ contract WNFTV2Index_Test_m_01 is Test {
             index1.tokenURI(1),
             string(
                 abi.encodePacked(
-                    index1.BASE_INDEX_URI(), block.chainid.toString(), "/", uint160(address(index1)).toHexString(), "/1"
+                    index1.BASE_INDEX_URI(), block.chainid.toString(), "/", Strings.toHexString(address(index1)), "/1"
                 )
             )
         );

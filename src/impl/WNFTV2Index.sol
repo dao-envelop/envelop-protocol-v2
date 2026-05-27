@@ -11,7 +11,6 @@ import "./WNFTV2Envelop721.sol";
  */
 contract WNFTV2Index is WNFTV2Envelop721 {
     using Strings for uint256;
-    using Strings for uint160;
 
     string constant nftName = "Envelop wNFT V2 Index";
     string constant nftSymbol = "ENVELOPV2";
@@ -88,7 +87,7 @@ contract WNFTV2Index is WNFTV2Envelop721 {
      */
     function _baseURI() internal view virtual override returns (string memory) {
         return string(
-            abi.encodePacked(BASE_INDEX_URI, block.chainid.toString(), "/", uint160(address(this)).toHexString(), "/")
+            abi.encodePacked(BASE_INDEX_URI, block.chainid.toString(), "/", Strings.toHexString(address(this)), "/")
         );
     }
 }

@@ -24,7 +24,6 @@ interface IERC4906 {
  */
 abstract contract Singleton721 is ERC721Upgradeable, IERC4906 {
     using Strings for uint256;
-    using Strings for uint160;
 
     // Interface ID as defined in ERC-4906. This does not correspond
     // to a traditional interface ID as ERC-4906 only
@@ -87,13 +86,13 @@ abstract contract Singleton721 is ERC721Upgradeable, IERC4906 {
         if (bytes($.customBaseURL).length == 0) {
             return string(
                 abi.encodePacked(
-                    DEFAULT_BASE_URI, block.chainid.toString(), "/", uint160(address(this)).toHexString(), "/"
+                    DEFAULT_BASE_URI, block.chainid.toString(), "/", Strings.toHexString(address(this)), "/"
                 )
             );
         } else {
             return string(
                 abi.encodePacked(
-                    $.customBaseURL, block.chainid.toString(), "/", uint160(address(this)).toHexString(), "/"
+                    $.customBaseURL, block.chainid.toString(), "/", Strings.toHexString(address(this)), "/"
                 )
             );
         }
